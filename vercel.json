@@ -4,5 +4,11 @@
   "installCommand": "npm install --prefix client",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://arth-api-kp9w.onrender.com/api/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
