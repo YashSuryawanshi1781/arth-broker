@@ -1,0 +1,21 @@
+{
+  "name": "arth-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^11.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.1.5",
+    "yahoo-finance2": "^4.0.0"
+  }
+}
