@@ -1,5 +1,6 @@
 # Arth API — long-running Node service (SQLite + SSE market feed).
-# The React client deploys separately to Vercel and points at this URL via VITE_API_BASE.
+# The React client deploys to Vercel and proxies /api here, so session
+# cookies stay first-party on the Vercel domain.
 
 services:
   - type: web
@@ -14,12 +15,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://arth-broker.vercel.app
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_TOKEN_PEPPER
         generateValue: true
-      - key: COOKIE_SAMESITE
-        value: none
       - key: SEED_DEMO
         value: "true"

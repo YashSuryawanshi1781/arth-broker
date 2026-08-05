@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { logout } from '../features/auth/authSlice'
 import { applyTicks, setConnected, setMarketStatus, setSnapshot } from '../features/market/marketSlice'
 import { formatINR, api } from '../lib/api'
-import { apiUrl } from '../lib/config'
+import { streamUrl } from '../lib/config'
 import { BrandLockup } from './Brand'
 import { NavDrawer, initialsOf } from './NavDrawer'
 import { PRIMARY_NAV } from './navConfig'
@@ -41,7 +41,7 @@ export function AppShell() {
 
     const connect = () => {
       if (closed) return
-      es = new EventSource(apiUrl('/api/market/stream'), { withCredentials: true })
+      es = new EventSource(streamUrl('/api/market/stream'), { withCredentials: true })
       es.onmessage = (ev) => {
         try {
           const data = JSON.parse(ev.data)
