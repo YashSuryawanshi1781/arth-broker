@@ -6,6 +6,7 @@ import { useLiveMarket } from '../hooks/useLiveMarket'
 import { enrichHoldings, portfolioTotals } from '../lib/livePortfolio'
 import { daysUntil, nseSession, sessionChip } from '../lib/marketSession'
 import { EmptyState, Screen } from '../components/Screen'
+import { PaperWalletBanner } from '../components/PaperWalletBanner'
 import { Skeleton, SkeletonRows } from '../components/Skeleton'
 import { WatchlistButton } from '../components/WatchlistButton'
 import { PAGE_THEMES } from '../lib/theme'
@@ -200,7 +201,7 @@ export function HomePage() {
         theme: 'kyc',
         icon: IconShield,
         title: 'Finish KYC verification',
-        hint: 'Unlocks trading and ₹1,00,000 demo capital',
+        hint: 'Unlocks trading and ₹1,00,000 paper cash',
         cta: 'Continue',
         to: '/kyc',
       })
@@ -266,6 +267,8 @@ export function HomePage() {
 
   return (
     <Screen theme="home" className="space-y-5">
+      <PaperWalletBanner />
+
       {/* Greeting row */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
@@ -464,7 +467,7 @@ export function HomePage() {
             tone={totalUp ? 'up' : 'down'}
             loading={loadingSummary}
           />
-          <Metric label="Available cash" value={`₹${formatINR(totals.cash)}`} accent loading={loadingSummary} />
+          <Metric label="Paper cash" value={`₹${formatINR(totals.cash)}`} accent loading={loadingSummary} />
         </div>
       </section>
 

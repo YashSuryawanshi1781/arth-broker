@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
 import { EmptyState, PageHeader, Screen } from '../components/Screen'
+import { PaperWalletBanner } from '../components/PaperWalletBanner'
 import { EmptyPortfolioArt, EmptySipArt, EmptyFundsArt } from '../components/Illustrations'
 import {
   IconBriefcase,
@@ -67,14 +68,15 @@ export function InvestmentsPage() {
     <Screen theme="investments" className="space-y-5">
       <PageHeader
         icon={IconBriefcase}
-        eyebrow="Portfolio"
+        eyebrow="Paper portfolio"
         title="Investments"
         subtitle={
           <>
-            Stocks update automatically from the live market feed{' · '}
+            Practice holdings from paper trades · live feed{' · '}
             <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold text-up' : 'font-bold text-down'}>
               {feedLabel}
             </span>
+            {' · '}not real money
           </>
         }
         actions={
@@ -95,10 +97,12 @@ export function InvestmentsPage() {
         }
       />
 
+      <PaperWalletBanner compact />
+
       <section className="card overflow-hidden">
         <div className="hero-mesh grid gap-5 px-5 py-5 text-white md:grid-cols-[1.2fr_1fr] md:px-7">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Equity portfolio</p>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Paper equity portfolio</p>
             <div className="mt-2 font-mono text-3xl font-bold">₹{formatINR(totals.current)}</div>
             <div className={`mt-2 text-sm font-bold ${totals.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
               {totals.pnl >= 0 ? '+' : ''}₹{formatINR(totals.pnl)} ({totals.pnlPct.toFixed(2)}%) overall

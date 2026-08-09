@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import { db } from './db.js'
 import { ACCESS_COOKIE, SESSION_IDLE_MS, verifyAccessToken } from './session.js'
 import { roundMoney } from './money.js'
+import { paperMeta } from './paperTrading.js'
 
 export function authRequired(req, res, next) {
   const token = req.cookies?.[ACCESS_COOKIE]
@@ -38,12 +39,14 @@ export function authRequired(req, res, next) {
 }
 
 export function publicUser(user) {
+  const cash = roundMoney(user.cash)
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     phone: user.phone,
-    cash: roundMoney(user.cash),
+    cash,
+    ...paperMeta(cash),
     kycStep: user.kyc_step,
     kycComplete: !!user.kyc_complete,
     pan: user.pan,

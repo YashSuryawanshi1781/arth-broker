@@ -663,7 +663,7 @@ export function StockPage() {
                   </div>
                 )}
                 <div className="flex items-center justify-between border-t border-line px-3 py-2 text-xs">
-                  <span className="text-muted">Available cash</span>
+                  <span className="text-muted">Paper cash</span>
                   <span className="font-mono">₹{formatINR(user?.cash)}</span>
                 </div>
               </div>
@@ -719,7 +719,7 @@ export function StockPage() {
 
               <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
                 <IconShield size={13} className="text-page-accent" />
-                Simulated order routing · No real money involved
+                Paper trade · uses practice cash · not real money
               </p>
             </div>
           </section>

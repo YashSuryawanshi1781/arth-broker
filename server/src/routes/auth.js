@@ -40,7 +40,11 @@ router.post('/register', async (req, res) => {
   for (const sym of ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'SBIN']) {
     db.prepare('INSERT INTO watchlist_items (watchlist_id, symbol) VALUES (?, ?)').run(wlId, sym)
   }
-  addNotification(id, 'Welcome to Arth', 'Complete KYC to start investing in stocks, MFs and IPOs.')
+  addNotification(
+    id,
+    'Welcome to Arth paper trading',
+    'Complete KYC to unlock your ₹1,00,000 practice wallet. Buy & sell stocks with fake currency — not real money.',
+  )
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id)
   createSession(id, req, res)

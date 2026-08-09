@@ -5,6 +5,7 @@ import { authRequired, publicUser, addNotification } from '../auth.js'
 import { market } from '../market.js'
 import { analyticsForUser } from '../portfolioAnalytics.js'
 import { settleFilledOrder } from '../orderEngine.js'
+import { PAPER_COPY, PAPER_STARTING_CASH, paperMeta } from '../paperTrading.js'
 
 const router = Router()
 
@@ -36,12 +37,46 @@ router.get('/summary', authRequired, (req, res) => {
   const cash = req.user.cash
   res.json({
     cash,
+    ...paperMeta(cash),
     invested: +invested.toFixed(2),
     current: +current.toFixed(2),
     totalPnl: +(current - invested).toFixed(2),
     equity: +(cash + current).toFixed(2),
     holdings: mapped,
+    paperNote: PAPER_COPY.banner,
   })
+})
+
+/** Wipe practice positions and restore the ₹1L paper wallet for learning. */
+router.post('/paper/reset', authRequired, (req, res) => {
+  const userId = req.user.id
+  const now = Date.now()
+  db.transaction(() => {
+    db.prepare('DELETE FROM orders WHERE user_id = ?').run(userId)
+    db.prepare('DELETE FROM holdings WHERE user_id = ?').run(userId)
+    db.prepare('DELETE FROM positions WHERE user_id = ?').run(userId)
+    db.prepare('DELETE FROM trade_lots WHERE user_id = ?').run(userId)
+    db.prepare('DELETE FROM conditional_orders WHERE user_id = ?').run(userId)
+    db.prepare('UPDATE users SET cash = ? WHERE id = ?').run(PAPER_STARTING_CASH, userId)
+    db.prepare(
+      'INSERT INTO ledger (id, user_id, type, amount, balance_after, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      nanoid(10),
+      userId,
+      'credit',
+      PAPER_STARTING_CASH,
+      PAPER_STARTING_CASH,
+      'Paper portfolio reset — ₹1,00,000 fake currency',
+      now,
+    )
+  })()
+  addNotification(
+    userId,
+    'Paper portfolio reset',
+    'Holdings cleared. ₹1,00,000 paper cash restored for practice. Not real money.',
+  )
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
+  res.json({ ok: true, user: publicUser(user) })
 })
 
 router.get('/dividends', authRequired, (req, res) => {
@@ -194,7 +229,11 @@ router.post('/funds/add', authRequired, (req, res) => {
     ).run(nanoid(10), req.user.id, 'credit', amount, cash, 'Add money (Razorpay mock)', now)
   })
   tx()
-  addNotification(req.user.id, 'Money added', `₹${amount.toLocaleString('en-IN')} credited to wallet`)
+  addNotification(
+    req.user.id,
+    'Paper cash added',
+    `₹${amount.toLocaleString('en-IN')} fake currency credited to your practice wallet`,
+  )
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
   res.json({ user: publicUser(user) })
 })

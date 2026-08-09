@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { addNotification, authRequired, publicUser } from '../auth.js'
+import { PAPER_STARTING_CASH } from '../paperTrading.js'
 
 const router = Router()
 
@@ -71,21 +72,29 @@ router.post('/complete', authRequired, (req, res) => {
     return res.status(400).json({ error: 'Complete all KYC steps first' })
   }
   if (!req.body?.accepted) return res.status(400).json({ error: 'Accept risk disclosure to continue' })
-  const target = 100000
+  const target = PAPER_STARTING_CASH
   const bonus = Math.max(0, +(target - fresh.cash).toFixed(2))
   const cash = +(fresh.cash + bonus).toFixed(2)
   db.prepare('UPDATE users SET kyc_complete = 1, kyc_step = 5, cash = ? WHERE id = ?').run(cash, req.user.id)
   if (bonus > 0) {
     db.prepare(
       'INSERT INTO ledger (id, user_id, type, amount, balance_after, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    ).run(nanoid(10), req.user.id, 'credit', bonus, cash, 'KYC welcome bonus', Date.now())
+    ).run(
+      nanoid(10),
+      req.user.id,
+      'credit',
+      bonus,
+      cash,
+      'Paper trading starting capital (₹1,00,000 fake currency)',
+      Date.now(),
+    )
   }
   addNotification(
     req.user.id,
-    'KYC approved',
+    'Paper wallet ready',
     bonus > 0
-      ? `Your account is activated. ₹${bonus.toLocaleString('en-IN')} demo funds credited.`
-      : 'Your account is activated.',
+      ? `KYC done. ₹${bonus.toLocaleString('en-IN')} paper cash credited — buy & sell stocks to learn. Not real money.`
+      : 'KYC done. Your paper wallet is ready for practice trades.',
   )
   res.json({ ok: true, user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)) })
 })
