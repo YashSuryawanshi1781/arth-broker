@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Alert, Box, Button, Paper, TextField, Typography } from '@mui/material'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { clearError, login, register } from '../features/auth/authSlice'
 import { api } from '../lib/api'
 import { IconLock } from '../components/Icons'
 import { BrandLockup } from '../components/Brand'
+import { ApiStatusBanner } from '../components/ApiStatusBanner'
 
 export function LoginPage() {
   const dispatch = useAppDispatch()
@@ -26,26 +28,20 @@ export function LoginPage() {
 
   return (
     <AuthCard title="Welcome back" subtitle="Login to your Arth account">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="label">Email</label>
-          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div>
-          <label className="label">Password</label>
-          <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        {error && <p className="text-sm text-down">{error}</p>}
-        <button className="btn btn-primary w-full" disabled={status === 'loading'}>
+      <Box component="form" onSubmit={onSubmit} className="stack gap-md">
+        <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        {error && <Alert severity="error">{error}</Alert>}
+        <Button type="submit" variant="contained" fullWidth disabled={status === 'loading'}>
           {status === 'loading' ? 'Signing in…' : 'Login'}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted">
-        <Link to="/forgot" className="font-semibold text-accent">Forgot password?</Link>
-      </p>
-      <p className="mt-2 text-center text-sm text-muted">
-        New here? <Link to="/register" className="font-semibold text-accent">Create account</Link>
-      </p>
+        </Button>
+      </Box>
+      <Typography className="mt-lg center text-sm muted">
+        <Link to="/forgot" className="bold accent">Forgot password?</Link>
+      </Typography>
+      <Typography className="mt-sm center text-sm muted">
+        New here? <Link to="/register" className="bold accent">Create account</Link>
+      </Typography>
     </AuthCard>
   )
 }
@@ -66,32 +62,19 @@ export function RegisterPage() {
 
   return (
     <AuthCard title="Open your account" subtitle="Takes under 2 minutes">
-      <form onSubmit={onSubmit} className="space-y-3">
-        {[
-          ['name', 'Full name', 'text'],
-          ['email', 'Email', 'email'],
-          ['phone', 'Mobile', 'tel'],
-          ['password', 'Password', 'password'],
-        ].map(([key, label, type]) => (
-          <div key={key}>
-            <label className="label">{label}</label>
-            <input
-              className="field"
-              type={type}
-              value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              required
-            />
-          </div>
-        ))}
-        {error && <p className="text-sm text-down">{error}</p>}
-        <button className="btn btn-primary w-full" disabled={status === 'loading'}>
+      <Box component="form" onSubmit={onSubmit} className="stack gap-md">
+        <TextField label="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        <TextField label="Mobile" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+        <TextField label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+        {error && <Alert severity="error">{error}</Alert>}
+        <Button type="submit" variant="contained" fullWidth disabled={status === 'loading'}>
           {status === 'loading' ? 'Creating…' : 'Register'}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted">
-        Already have an account? <Link to="/login" className="font-semibold text-accent">Login</Link>
-      </p>
+        </Button>
+      </Box>
+      <Typography className="mt-lg center text-sm muted">
+        Already have an account? <Link to="/login" className="bold accent">Login</Link>
+      </Typography>
     </AuthCard>
   )
 }
@@ -114,27 +97,24 @@ export function ForgotPage() {
 
   return (
     <AuthCard title="Reset password" subtitle="We'll generate a demo reset token">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="label">Email</label>
-          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        {error && <p className="text-sm text-down">{error}</p>}
-        <button className="btn btn-primary w-full">Send reset link</button>
-      </form>
+      <Box component="form" onSubmit={onSubmit} className="stack gap-md">
+        <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        {error && <Alert severity="error">{error}</Alert>}
+        <Button type="submit" variant="contained" fullWidth>Send reset link</Button>
+      </Box>
       {result && (
-        <div className="mt-4 rounded-xl bg-up-bg p-3 text-sm">
-          <p>{result.message}</p>
+        <Alert severity="info" sx={{ mt: 2 }}>
+          {result.message}
           {result.demoResetToken && (
-            <p className="mt-2 font-mono text-xs break-all">
+            <Typography className="mt-sm mono text-xs" component="div">
               Token: {result.demoResetToken}
               <br />
-              <Link className="font-sans font-semibold text-accent" to={`/reset?token=${result.demoResetToken}`}>
+              <Link className="bold accent" to={`/reset?token=${result.demoResetToken}`}>
                 Continue to reset →
               </Link>
-            </p>
+            </Typography>
           )}
-        </div>
+        </Alert>
       )}
     </AuthCard>
   )
@@ -160,38 +140,35 @@ export function ResetPage() {
 
   return (
     <AuthCard title="Choose new password" subtitle="Use the demo reset token">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="label">Token</label>
-          <input className="field" value={token} onChange={(e) => setToken(e.target.value)} required />
-        </div>
-        <div>
-          <label className="label">New password</label>
-          <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        {error && <p className="text-sm text-down">{error}</p>}
-        {message && <p className="text-sm text-up">{message}</p>}
-        <button className="btn btn-primary w-full">Update password</button>
-      </form>
+      <Box component="form" onSubmit={onSubmit} className="stack gap-md">
+        <TextField label="Token" value={token} onChange={(e) => setToken(e.target.value)} required />
+        <TextField label="New password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        {error && <Alert severity="error">{error}</Alert>}
+        {message && <Alert severity="success">{message}</Alert>}
+        <Button type="submit" variant="contained" fullWidth>Update password</Button>
+      </Box>
     </AuthCard>
   )
 }
 
 function AuthCard({ title, subtitle, children }) {
   return (
-    <div className="grid min-h-full place-items-center px-4 py-10">
-      <div className="card w-full max-w-md p-7 shadow-[0_20px_50px_rgb(11_27_51_/_0.08)]">
-        <Link to="/" className="mb-5 inline-block">
-          <BrandLockup size="sm" />
-        </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
-        <p className="mb-5 text-sm text-muted">{subtitle}</p>
-        {children}
-        <p className="mt-6 flex items-center justify-center gap-1.5 border-t border-line pt-4 text-[11px] font-semibold text-muted">
-          <IconLock size={13} className="text-accent" />
-          Paper-trading demo · your data never leaves this device
-        </p>
-      </div>
+    <div className="stack screen">
+      <ApiStatusBanner />
+      <Box className="row-center grow px-lg" sx={{ py: 4 }}>
+        <Paper className="card w-full p-xl" elevation={0} sx={{ maxWidth: 440, p: 3.5 }}>
+          <Link to="/" className="mb-lg inline-flex">
+            <BrandLockup size="sm" />
+          </Link>
+          <Typography variant="h5" fontWeight={800} sx={{ mt: 2 }}>{title}</Typography>
+          <Typography color="text.secondary" className="mb-lg text-sm" sx={{ mb: 2.5 }}>{subtitle}</Typography>
+          {children}
+          <Typography className="mt-xl row-center gap-sm text-xs bold muted" sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
+            <IconLock size={13} />
+            Paper-trading demo · session cookies only
+          </Typography>
+        </Paper>
+      </Box>
     </div>
   )
 }

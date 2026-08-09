@@ -119,6 +119,14 @@ const REPORTS = {
       col('upi', 'UPI ID', text, 'left'),
     ],
   },
+  tax: {
+    label: 'Tax P&L',
+    description: 'Paper STCG / LTCG stub for interview demos',
+    icon: IconCalculator,
+    search: '',
+    defaultSort: 'symbol',
+    columns: [],
+  },
 }
 
 const SUMMARY = {
@@ -179,6 +187,7 @@ export function ReportsPage() {
   const type = REPORTS[requested] ? requested : 'tradebook'
   const config = REPORTS[type]
   const [data, setData] = useState(EMPTY_DATA)
+  const [taxData, setTaxData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchDraft, setSearchDraft] = useState(searchParams.get('search') || '')
@@ -213,6 +222,13 @@ export function ReportsPage() {
   const load = useCallback(() => {
     setLoading(true)
     setError('')
+    if (type === 'tax') {
+      api('/portfolio/analytics')
+        .then(setTaxData)
+        .catch((err) => setError(err.message || 'Could not load tax P&L'))
+        .finally(() => setLoading(false))
+      return
+    }
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== '' && value !== 'all') params.set(key, String(value))
@@ -295,14 +311,14 @@ export function ReportsPage() {
   ].filter(Boolean).length
 
   return (
-    <Screen theme="reports" className="space-y-4">
+    <Screen theme="reports" className="stack gap-md">
       <PageHeader
         icon={IconDocument}
         eyebrow="Statements & insights"
         title="Reports"
         subtitle="Filter, sort, review and export your complete investment activity"
         actions={
-          <div className="flex gap-2">
+          <div className="row gap-sm">
             <button type="button" className="btn btn-ghost text-sm" onClick={load} disabled={loading}>
               <IconRefresh size={16} />
               Refresh
@@ -315,7 +331,7 @@ export function ReportsPage() {
         }
       />
 
-      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+      <nav className="row gap-xs overflow-auto rounded border p-1">
         {Object.entries(REPORTS).map(([id, item]) => {
           const Icon = item.icon
           return (
@@ -323,9 +339,7 @@ export function ReportsPage() {
               key={id}
               type="button"
               onClick={() => switchReport(id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition sm:text-sm ${
-                type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2 hover:text-ink'
-              }`}
+              className={`row shrink-0 gap-sm rounded px-lg py-md text-xs bold ${ type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover: hover:text-ink' }`}
             >
               <Icon size={15} />
               {item.label}
@@ -334,16 +348,16 @@ export function ReportsPage() {
         })}
       </nav>
 
-      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid gap-sm">
         {(SUMMARY[type] || []).map(([key, label, format]) => (
           <SummaryCard key={key} label={label} value={data.summary?.[key]} format={format} />
         ))}
       </section>
 
-      <section className="card p-3">
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="min-w-[210px] flex-1">
-            <span className="mb-1 block text-[10px] font-bold tracking-wide text-muted uppercase">Search</span>
+      <section className="card p-md">
+        <div className="row wrap items-end gap-sm">
+          <label className="w-[210px] grow">
+            <span className="mb-sm block text-[10px] bold muted uppercase">Search</span>
             <span className="field-wrap block">
               <IconSearch size={16} className="field-icon" />
               <input
@@ -377,8 +391,8 @@ export function ReportsPage() {
           ) : null}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-line pt-3">
-          <IconFilter size={14} className="mr-1 text-muted" />
+        <div className="mt-md row wrap gap-sm border-t border">
+          <IconFilter size={14} className="mr-1 muted" />
           {[
             ['today', 'Today'],
             ['7d', '7 days'],
@@ -386,14 +400,14 @@ export function ReportsPage() {
             ['fy', 'This FY'],
             ['all', 'All time'],
           ].map(([id, label]) => (
-            <button key={id} type="button" className="rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-bold text-muted hover:text-ink" onClick={() => setRange(id)}>
+            <button key={id} type="button" className="rounded py-md text-xs bold muted" onClick={() => setRange(id)}>
               {label}
             </button>
           ))}
           {filterCount > 0 && (
             <button
               type="button"
-              className="ml-auto text-xs font-bold text-down"
+              className="ml-auto text-xs bold down"
               onClick={() => {
                 setSearchDraft('')
                 update({ search: '', from: '', to: '', status: '', side: '', product: '', transactionType: '' })
@@ -406,49 +420,70 @@ export function ReportsPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+        <div className="row wrap gap-sm border-b border px-lg py-md">
           <div>
-            <h2 className="font-extrabold">{config.label}</h2>
-            <p className="text-xs text-muted">{config.description}</p>
+            <h2 className="extrabold">{config.label}</h2>
+            <p className="text-xs muted">{config.description}</p>
           </div>
-          <span className="rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-bold text-muted">
+          <span className="rounded py-md text-xs bold muted">
             {data.pagination.total.toLocaleString('en-IN')} records
           </span>
         </div>
 
         {error ? (
-          <div className="grid place-items-center gap-2 px-4 py-14 text-center">
-            <p className="font-bold text-down">Could not load report</p>
-            <p className="text-sm text-muted">{error}</p>
+          <div className="grid gap-sm px-lg py-md center">
+            <p className="bold down">Could not load report</p>
+            <p className="text-sm muted">{error}</p>
             <button type="button" className="btn btn-ghost text-sm" onClick={load}>Try again</button>
           </div>
         ) : loading ? (
           <SkeletonRows rows={Math.min(filters.pageSize, 10)} />
+        ) : type === 'tax' && taxData?.tax ? (
+          <div className="stack gap-lg p-xl">
+            <div className="grid-2 gap-md">
+              <div className="card border p-lg">
+                <p className="text-xs bold muted uppercase">STCG (≤ 1 year)</p>
+                <p className={`mono text-2xl bold mt-sm ${taxData.tax.stcg >= 0 ? 'up' : 'down'}`}>
+                  ₹{formatINR(taxData.tax.stcg)}
+                </p>
+                <p className="text-xs muted mt-sm">Stub tax @ 15%: ₹{formatINR(taxData.tax.stcgTaxStub)}</p>
+              </div>
+              <div className="card border p-lg">
+                <p className="text-xs bold muted uppercase">LTCG (&gt; 1 year)</p>
+                <p className={`mono text-2xl bold mt-sm ${taxData.tax.ltcg >= 0 ? 'up' : 'down'}`}>
+                  ₹{formatINR(taxData.tax.ltcg)}
+                </p>
+                <p className="text-xs muted mt-sm">Stub tax @ 12.5%: ₹{formatINR(taxData.tax.ltcgTaxStub)}</p>
+              </div>
+            </div>
+            <p className="text-xs muted">{taxData.tax.note}</p>
+            {taxData.xirrPct != null && (
+              <p className="text-sm">Portfolio XIRR: <strong className="mono">{taxData.xirrPct}%</strong></p>
+            )}
+          </div>
         ) : data.rows.length === 0 ? (
-          <div className="grid place-items-center px-4 py-14 text-center">
-            <IconDocument size={34} className="text-muted" />
-            <p className="mt-3 font-extrabold">No records found</p>
-            <p className="mt-1 text-sm text-muted">Adjust your dates or filters to broaden this report.</p>
+          <div className="grid px-lg py-md center">
+            <IconDocument size={34} className="muted" />
+            <p className="mt-md extrabold">No records found</p>
+            <p className="mt-sm text-sm muted">Adjust your dates or filters to broaden this report.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max border-collapse text-xs">
+          <div className="overflow-auto">
+            <table className="w-full w-max text-xs">
               <thead>
-                <tr className="border-b border-line bg-surface-2/80">
+                <tr className="border-b border">
                   {config.columns.map((column) => (
                     <th
                       key={column.key}
-                      className={`px-3 py-2.5 font-bold tracking-wide text-muted uppercase ${
-                        column.align === 'left' ? 'text-left' : 'text-right'
-                      }`}
+                      className={`px-lg py-md bold muted uppercase ${ column.align === 'left' ? '' : '' }`}
                     >
                       <button
                         type="button"
-                        className={`inline-flex items-center gap-1 hover:text-ink ${column.align === 'left' ? '' : 'flex-row-reverse'}`}
+                        className={`inline-flex gap-xs ${column.align === 'left' ? '' : ''}`}
                         onClick={() => sort(column.key)}
                       >
                         {column.label}
-                        <span className={filters.sortBy === column.key ? 'text-page-accent' : 'text-line'}>
+                        <span className={filters.sortBy === column.key ? 'text-page-accent' : 'muted'}>
                           {filters.sortBy === column.key ? (filters.sortDir === 'asc' ? '↑' : '↓') : '↕'}
                         </span>
                       </button>
@@ -458,13 +493,11 @@ export function ReportsPage() {
               </thead>
               <tbody>
                 {data.rows.map((row) => (
-                  <tr key={row.id || row.symbol} className="border-b border-line transition last:border-b-0 hover:bg-surface-2/50">
+                  <tr key={row.id || row.symbol} className="border-b border">
                     {config.columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`whitespace-nowrap px-3 py-2.5 ${
-                          column.align === 'left' ? 'text-left' : 'text-right'
-                        } ${column.strong ? 'font-bold text-ink' : 'text-muted'}`}
+                        className={`px-lg py-md ${ column.align === 'left' ? '' : '' } ${column.strong ? 'bold ink' : 'muted'}`}
                       >
                         {column.format(row[column.key], row)}
                       </td>
@@ -480,12 +513,12 @@ export function ReportsPage() {
       </section>
 
       {type === 'charges' && (
-        <p className="rounded-xl border border-gold/30 bg-[#fdf6e7] px-3 py-2 text-xs text-muted">
+        <p className="rounded border bg-[#fdf6e7] px-lg py-md text-xs muted">
           Charges are estimates based on the product and filled turnover. Exchange invoices may differ due to rounding and regulatory changes.
         </p>
       )}
       {type === 'pnl' && (
-        <p className="rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted">
+        <p className="rounded border px-lg py-md text-xs muted">
           Realised P&L uses the running weighted-average acquisition price. Unrealised P&L uses the latest available market price.
         </p>
       )}
@@ -496,9 +529,9 @@ export function ReportsPage() {
 function SummaryCard({ label, value, format }) {
   const output = format(value ?? 0)
   return (
-    <div className="card min-w-0 p-3">
-      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className="mt-1 truncate font-mono text-lg font-bold">{output}</div>
+    <div className="card min- p-md">
+      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className="mt-sm truncate mono text-lg bold">{output}</div>
     </div>
   )
 }
@@ -506,8 +539,8 @@ function SummaryCard({ label, value, format }) {
 function DateField({ label, value, onChange }) {
   return (
     <label>
-      <span className="mb-1 block text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
-      <input type="date" className="field min-w-[142px]" value={value} onChange={(event) => onChange(event.target.value)} />
+      <span className="mb-sm block text-[10px] bold muted uppercase">{label}</span>
+      <input type="date" className="field w-[142px]" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   )
 }
@@ -515,8 +548,8 @@ function DateField({ label, value, onChange }) {
 function SelectFilter({ label, value, options, onChange }) {
   return (
     <label>
-      <span className="mb-1 block text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
-      <select className="field min-w-[120px]" value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="mb-sm block text-[10px] bold muted uppercase">{label}</span>
+      <select className="field w-[120px]" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{title(option)}</option>
         ))}
@@ -531,14 +564,14 @@ function Pagination({ pagination, update }) {
   const end = Math.min(total, page * pageSize)
   const pages = pageWindow(page, totalPages)
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3">
-      <div className="flex items-center gap-2 text-xs text-muted">
+    <div className="row wrap gap-md border-t border px-lg py-md">
+      <div className="row gap-sm text-xs muted">
         <span>Showing {start}–{end} of {total}</span>
-        <select className="rounded-lg border border-line bg-surface px-2 py-1 font-bold" value={pageSize} onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}>
+        <select className="rounded border px-lg py-md bold" value={pageSize} onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}>
           {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size} / page</option>)}
         </select>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="row gap-xs">
         <PageButton label="«" disabled={page <= 1} onClick={() => update({ page: 1 }, false)} />
         <PageButton label="‹" disabled={page <= 1} onClick={() => update({ page: page - 1 }, false)} />
         {pages.map((value) => (
@@ -557,9 +590,7 @@ function PageButton({ label, disabled, active, onClick }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`grid h-8 min-w-8 place-items-center rounded-lg border px-1.5 text-xs font-bold transition disabled:opacity-35 ${
-        active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:bg-surface-2'
-      }`}
+      className={`grid min- rounded border text-xs bold disabled: ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:' }`}
     >
       {label}
     </button>
@@ -628,7 +659,7 @@ function money(value) {
 function pnl(value) {
   const amount = Number(value || 0)
   return (
-    <span className={amount >= 0 ? 'text-up' : 'text-down'}>
+    <span className={amount >= 0 ? 'up' : 'down'}>
       {amount >= 0 ? '+' : '−'}₹{formatINR(Math.abs(amount))}
     </span>
   )
@@ -643,8 +674,8 @@ function dateTime(value) {
   if (!value) return '—'
   return (
     <span>
-      <span className="block text-ink">{date(value)}</span>
-      <span className="block text-[10px] text-muted">
+      <span className="block ink">{date(value)}</span>
+      <span className="block text-[10px] muted">
         {new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
       </span>
     </span>
@@ -656,9 +687,7 @@ function badge(value) {
   const up = ['buy', 'credit', 'filled', 'purchase', 'allotted', 'submitted'].includes(normal)
   const down = ['sell', 'debit', 'rejected', 'cancelled', 'redemption', 'not-allotted'].includes(normal)
   return (
-    <span className={`inline-flex rounded-lg px-2 py-1 text-[10px] font-bold ${
-      up ? 'bg-up-bg text-up' : down ? 'bg-down-bg text-down' : 'bg-surface-2 text-muted'
-    }`}>
+    <span className={`rounded px-lg py-md text-[10px] bold ${ up ? ' ' : down ? '-bg ' : ' text-muted' }`}>
       {title(value)}
     </span>
   )

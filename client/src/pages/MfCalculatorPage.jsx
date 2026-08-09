@@ -64,7 +64,7 @@ export function MfCalculatorPage() {
   }
 
   return (
-    <Screen theme="mf" className="space-y-4">
+    <Screen theme="mf" className="stack gap-md">
       <BreadcrumbBar
         fallback={fund ? `/app/mf/${fund.id}` : '/app/mf'}
         items={[
@@ -94,14 +94,12 @@ export function MfCalculatorPage() {
         <ReturnBasisBar fund={fund} rate={rate} onRate={setRate} />
       )}
 
-      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+      <nav className="row gap-xs overflow-auto rounded border p-1">
         {MODES.map(([id, label, Icon]) => (
           <button
             key={id}
             type="button"
-            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition ${
-              mode === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2'
-            }`}
+            className={`row gap-sm rounded px-lg py-md text-sm bold ${ mode === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:' }`}
             onClick={() => setMode(id)}
           >
             <Icon size={16} />
@@ -111,8 +109,8 @@ export function MfCalculatorPage() {
       </nav>
 
       <section className="card overflow-hidden">
-        <div className="grid lg:grid-cols-[1fr_0.85fr]">
-          <div className="space-y-6 p-5 md:p-7">
+        <div className="grid ]">
+          <div className="stack gap-md p-xl">
             {mode === 'goal' ? (
               <Range
                 label="Target corpus"
@@ -168,21 +166,21 @@ export function MfCalculatorPage() {
             />
 
             {mode !== 'goal' && amount > 0 && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid-3 gap-sm">
                 <MiniFact label="Monthly" value={mode === 'lumpsum' ? '—' : `₹${formatINRShort(amount)}`} />
                 <MiniFact label="Total invested" value={`₹${formatINRShort(result.invested)}`} />
                 <MiniFact label="Wealth gained" value={`₹${formatINRShort(result.gain)}`} tone="up" />
               </div>
             )}
 
-            <p className="rounded-xl bg-surface-2 px-3 py-2.5 text-xs leading-relaxed text-muted">
+            <p className="rounded px-lg py-md text-xs leading-relaxed muted">
               {fund
                 ? `Projections use ${fund.name}'s historical returns. Past performance does not guarantee future results and market-linked returns vary year to year.`
                 : 'Projections assume a constant annual return compounded monthly. Actual mutual fund returns are market-linked, vary year to year, and are not guaranteed.'}
             </p>
           </div>
 
-          <div className="flex flex-col justify-center bg-brand px-6 py-8 text-white md:px-8">
+          <div className="stack px-lg py-md">
             <GrowthDonut
               invested={result.invested}
               gain={result.gain}
@@ -190,25 +188,25 @@ export function MfCalculatorPage() {
               caption={mode === 'goal' ? 'Target corpus' : 'Projected value'}
             />
 
-            <div className="mt-6 space-y-3">
+            <div className="mt-xl stack gap-md">
               {mode === 'goal' && (
-                <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                  <div className="text-xs text-white/55">Monthly SIP required</div>
-                  <div className="mt-1 font-mono text-2xl font-bold">₹{formatINR(result.required || 0)}</div>
+                <div className="rounded border p-md">
+                  <div className="text-xs">Monthly SIP required</div>
+                  <div className="mt-sm mono text-2xl bold">₹{formatINR(result.required || 0)}</div>
                 </div>
               )}
               {mode === 'stepup' && result.finalMonthly && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/65">Final monthly SIP</span>
-                  <span className="font-mono font-bold">₹{formatINR(result.finalMonthly)}</span>
+                <div className="row-between text-sm">
+                  <span className="">Final monthly SIP</span>
+                  <span className="mono bold">₹{formatINR(result.finalMonthly)}</span>
                 </div>
               )}
-              <div className="border-t border-white/15 pt-3">
-                <div className="text-xs text-white/55">
+              <div className="border-t">
+                <div className="text-xs">
                   {mode === 'goal' ? 'Target corpus' : 'Projected value'}
                 </div>
-                <div className="mt-1 font-mono text-3xl font-bold">₹{formatINR(result.value)}</div>
-                <div className="mt-1 text-xs text-white/55">
+                <div className="mt-sm mono text-3xl bold">₹{formatINR(result.value)}</div>
+                <div className="mt-sm text-xs">
                   {((result.gain / (result.invested || 1)) * 100).toFixed(1)}% wealth gain over {years} years
                 </div>
               </div>
@@ -216,7 +214,7 @@ export function MfCalculatorPage() {
 
             <Link
               to={fund ? `/app/mf/${fund.id}` : '/app/mf'}
-              className="btn btn-primary mt-6"
+              className="btn btn-primary mt-xl"
             >
               {fund ? `Invest in ${fund.amcShort}` : 'Explore funds to invest'}
             </Link>
@@ -224,10 +222,10 @@ export function MfCalculatorPage() {
         </div>
       </section>
 
-      <section className="card p-4 md:p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-extrabold tracking-tight">Growth projection</h3>
-          <span className="text-xs text-muted">
+      <section className="card p-lg">
+        <div className="mb-md row wrap gap-sm">
+          <h3 className="extrabold">Growth projection</h3>
+          <span className="text-xs muted">
             {rate}% p.a. compounded monthly over {years} {years === 1 ? 'year' : 'years'}
           </span>
         </div>
@@ -235,28 +233,28 @@ export function MfCalculatorPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="border-b border-line px-4 py-3">
-          <h3 className="font-extrabold tracking-tight">Year-by-year projection</h3>
+        <div className="border-b border px-lg py-md">
+          <h3 className="extrabold">Year-by-year projection</h3>
         </div>
         <div className="max-h-[420px] overflow-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-line bg-surface-2 text-[10px] font-bold tracking-wide text-muted uppercase">
-                <th className="px-4 py-2 text-left">Year</th>
-                <th className="px-4 py-2 text-right">Invested</th>
-                <th className="px-4 py-2 text-right">Returns</th>
-                <th className="px-4 py-2 text-right">Total value</th>
-                <th className="px-4 py-2 text-right">Growth</th>
+            <thead className="sticky">
+              <tr className="border-b border text-[10px] bold muted uppercase">
+                <th className="px-lg py-md">Year</th>
+                <th className="px-lg py-md right">Invested</th>
+                <th className="px-lg py-md right">Returns</th>
+                <th className="px-lg py-md right">Total value</th>
+                <th className="px-lg py-md right">Growth</th>
               </tr>
             </thead>
-            <tbody className="font-mono">
+            <tbody className="mono">
               {result.schedule.slice(1).map((row) => (
-                <tr key={row.year} className="border-b border-line last:border-0">
-                  <td className="px-4 py-2 font-sans font-semibold">Year {row.year}</td>
-                  <td className="px-4 py-2 text-right text-muted">₹{formatINRShort(row.invested)}</td>
-                  <td className="px-4 py-2 text-right font-bold text-up">₹{formatINRShort(row.gain)}</td>
-                  <td className="px-4 py-2 text-right font-bold">₹{formatINRShort(row.value)}</td>
-                  <td className="px-4 py-2 text-right text-muted">
+                <tr key={row.year} className="border-b border last:border-0">
+                  <td className="px-lg py-md bold">Year {row.year}</td>
+                  <td className="px-lg py-md right muted">₹{formatINRShort(row.invested)}</td>
+                  <td className="px-lg py-md right bold up">₹{formatINRShort(row.gain)}</td>
+                  <td className="px-lg py-md right bold">₹{formatINRShort(row.value)}</td>
+                  <td className="px-lg py-md right muted">
                     {row.invested > 0 ? `${((row.gain / row.invested) * 100).toFixed(1)}%` : '—'}
                   </td>
                 </tr>
@@ -281,24 +279,24 @@ function ReturnBasisBar({ fund, rate, onRate }) {
   ].filter(([, value]) => Number.isFinite(value))
 
   return (
-    <section className="card p-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <section className="card p-lg">
+      <div className="row wrap gap-md">
         <FundLogo name={fund.amcShort} />
-        <div className="min-w-0 flex-1">
-          <Link to={`/app/mf/${fund.id}`} className="block truncate font-bold hover:text-page-accent">
+        <div className="min- grow">
+          <Link to={`/app/mf/${fund.id}`} className="block truncate bold">
             {fund.name}
           </Link>
-          <p className="text-xs text-muted">
+          <p className="text-xs muted">
             {fund.subCategory} · Min SIP ₹{formatINR(fund.minSip)} · NAV ₹{formatINR(fund.nav)}
           </p>
         </div>
       </div>
 
-      <div className="mt-3 border-t border-line pt-3">
-        <div className="mb-2 text-[10px] font-bold tracking-wide text-muted uppercase">
+      <div className="mt-md border-t border">
+        <div className="mb-sm text-[10px] bold muted uppercase">
           Project using this fund&apos;s returns
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="row wrap gap-sm">
           {options.map(([label, value]) => {
             const active = Math.abs(rate - value) < 0.05
             return (
@@ -306,14 +304,10 @@ function ReturnBasisBar({ fund, rate, onRate }) {
                 key={label}
                 type="button"
                 onClick={() => onRate(value)}
-                className={`rounded-xl border px-3 py-1.5 text-left transition ${
-                  active
-                    ? 'border-page-accent bg-page-tint'
-                    : 'border-line bg-surface hover:border-page-accent/40'
-                }`}
+                className={`rounded border px-lg ${ active ? 'border-page-accent bg-page-tint' : 'border-line bg-surface hover:border-page-accent' }`}
               >
-                <span className="block text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
-                <span className={`block font-mono text-sm font-bold ${value >= 0 ? 'text-up' : 'text-down'}`}>
+                <span className="block text-[10px] bold muted uppercase">{label}</span>
+                <span className={`block mono text-sm bold ${value >= 0 ? '' : ''}`}>
                   {value >= 0 ? '+' : ''}{value}%
                 </span>
               </button>
@@ -327,9 +321,9 @@ function ReturnBasisBar({ fund, rate, onRate }) {
 
 function MiniFact({ label, value, tone }) {
   return (
-    <div className="rounded-xl border border-line px-3 py-2">
-      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className={`mt-0.5 font-mono text-sm font-bold ${tone === 'up' ? 'text-up' : ''}`}>{value}</div>
+    <div className="rounded border px-lg py-md">
+      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className={`mt-sm mono text-sm bold ${tone === 'up' ? '' : ''}`}>{value}</div>
     </div>
   )
 }
@@ -337,9 +331,9 @@ function MiniFact({ label, value, tone }) {
 function Range({ label, display, min, max, step, value, onChange }) {
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-bold">{label}</span>
-        <span className="rounded-lg bg-up-bg px-2.5 py-1 font-mono text-sm font-bold text-up">{display}</span>
+      <div className="mb-sm row wrap gap-sm">
+        <span className="text-sm bold">{label}</span>
+        <span className="rounded py-md mono text-sm bold up">{display}</span>
       </div>
       <input
         className="w-full accent-[#00a878]"
@@ -350,7 +344,7 @@ function Range({ label, display, min, max, step, value, onChange }) {
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <div className="mt-1 flex justify-between text-[10px] text-muted">
+      <div className="mt-sm row text-[10px] muted">
         <span>{min >= 1000 ? `₹${formatINRShort(min)}` : min}</span>
         <span>{max >= 1000 ? `₹${formatINRShort(max)}` : max}</span>
       </div>

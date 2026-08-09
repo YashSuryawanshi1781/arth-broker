@@ -4,8 +4,13 @@ import { db } from '../db.js'
 import { authRequired, publicUser } from '../auth.js'
 import { market } from '../market.js'
 import { addNotification } from '../auth.js'
+import { analyticsForUser } from '../portfolioAnalytics.js'
 
 const router = Router()
+
+router.get('/analytics', authRequired, (req, res) => {
+  res.json(analyticsForUser(req.user.id))
+})
 
 router.get('/summary', authRequired, (req, res) => {
   const holdings = db.prepare('SELECT * FROM holdings WHERE user_id = ?').all(req.user.id)

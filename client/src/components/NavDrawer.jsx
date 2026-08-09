@@ -42,18 +42,18 @@ export function NavDrawer({ open, onClose }) {
       <div className="drawer-backdrop" onClick={onClose} aria-hidden="true" />
       <aside className="drawer-panel" role="dialog" aria-modal="true" aria-label="Main navigation">
         <div className="drawer-head">
-          <div className="flex items-start justify-between gap-3">
+          <div className="row-start gap-md">
             <BrandLockup size="sm" tone="light" />
             <button type="button" className="drawer-close" onClick={onClose} aria-label="Close navigation">
               <IconClose size={18} />
             </button>
           </div>
 
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-5 row gap-md">
             <span className="drawer-avatar">{initials}</span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-extrabold">{user?.name || 'Investor'}</div>
-              <div className="truncate text-[11px] text-white/55">{user?.email}</div>
+            <div className="min- grow">
+              <div className="truncate text-sm extrabold">{user?.name || 'Investor'}</div>
+              <div className="truncate text-[11px]">{user?.email}</div>
             </div>
             <span className={`drawer-kyc ${user?.kycComplete ? 'is-done' : ''}`}>
               {user?.kycComplete ? <IconCheckCircle size={12} /> : <IconShield size={12} />}
@@ -61,10 +61,10 @@ export function NavDrawer({ open, onClose }) {
             </span>
           </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2.5">
+          <div className="mt-lg row-between rounded border py-md">
             <div>
-              <div className="text-[9px] font-bold tracking-[0.16em] text-white/50 uppercase">Available cash</div>
-              <div className="font-mono text-lg font-bold">₹{formatINR(user?.cash)}</div>
+              <div className="text-[9px] bold tracking-[0.16em] uppercase">Available cash</div>
+              <div className="mono text-lg bold">₹{formatINR(user?.cash)}</div>
             </div>
             <button type="button" className="drawer-add" onClick={() => navigate('/app/funds')}>
               <IconPlus size={15} />
@@ -73,7 +73,7 @@ export function NavDrawer({ open, onClose }) {
           </div>
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto pb-3">
+        <nav className="min- grow overflow-y-auto">
           {!user?.kycComplete && (
             <>
               <div className="drawer-section-label">Get started</div>
@@ -99,7 +99,7 @@ export function NavDrawer({ open, onClose }) {
             <IconLogout size={17} />
             Log out
           </button>
-          <p className="mt-2.5 text-center text-[10px] text-muted">
+          <p className="mt-sm.5 center text-[10px] muted">
             Paper-trading demo · no real money involved
           </p>
         </div>
@@ -120,9 +120,9 @@ function DrawerLink({ item }) {
       <span className="icon-chip icon-chip-md">
         <Icon size={17} />
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min- grow">
         <span className="block truncate">{item.label}</span>
-        {item.hint ? <span className="block truncate text-[11px] font-medium text-muted">{item.hint}</span> : null}
+        {item.hint ? <span className="block truncate text-[11px] bold muted">{item.hint}</span> : null}
       </span>
       <IconArrowRight size={15} className="drawer-link-arrow" />
     </NavLink>

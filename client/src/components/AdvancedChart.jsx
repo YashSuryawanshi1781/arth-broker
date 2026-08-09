@@ -425,33 +425,29 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-3 py-2">
-        <div className="flex items-center">
+      <div className="row wrap gap-x-4 gap-y-2 border-b border px-lg py-md">
+        <div className="row">
           {TIMEFRAMES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTimeframe(t.id)}
-              className={`rounded-md px-2.5 py-1 font-mono text-xs font-semibold transition ${
-                timeframe === t.id ? 'bg-surface-2 text-ink' : 'text-muted hover:text-ink'
-              }`}
+              className={`rounded py-md mono text-xs bold ${ timeframe === t.id ? ' text-ink' : 'text-muted hover:text-ink' }`}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <span className="h-5 w-px bg-line" />
+        <span className="w-px bg-line" />
 
-        <div className="flex items-center">
+        <div className="row">
           {CHART_TYPES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setChartType(t.id)}
-              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
-                chartType === t.id ? 'bg-surface-2 text-ink' : 'text-muted hover:text-ink'
-              }`}
+              className={`rounded py-md text-xs bold ${ chartType === t.id ? ' text-ink' : 'text-muted hover:text-ink' }`}
             >
               {t.label}
             </button>
@@ -461,13 +457,11 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         <div className="relative ml-auto">
           <button
             type="button"
-            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition ${
-              showPanels.overlays ? 'border-accent bg-up-bg text-accent' : 'border-line text-muted hover:bg-surface-2'
-            }`}
+            className={`row gap-sm rounded border py-md text-xs bold ${ showPanels.overlays ? 'border-accent text-accent' : 'border-line text-muted hover:' }`}
             onClick={() => setShowPanels((p) => ({ ...p, overlays: !p.overlays }))}
           >
             Indicators
-            <span className="rounded bg-ink/10 px-1 font-mono text-[10px]">{activeOverlays.length}</span>
+            <span className="rounded px-lg mono text-[10px]">{activeOverlays.length}</span>
           </button>
 
           {showPanels.overlays && (
@@ -475,11 +469,11 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
               <button
                 type="button"
                 aria-label="Close indicators"
-                className="fixed inset-0 z-20 cursor-default"
+                className="fixed cursor-default"
                 onClick={() => setShowPanels((p) => ({ ...p, overlays: false }))}
               />
-              <div className="absolute right-0 z-30 mt-1.5 w-56 overflow-hidden rounded-xl border border-line bg-surface shadow-[0_12px_32px_rgb(11_27_51_/_0.14)]">
-                <div className="border-b border-line px-3 py-2 text-[10px] font-bold tracking-wide text-muted uppercase">
+              <div className="absolute mt-sm.5 overflow-hidden rounded border )]">
+                <div className="border-b border px-lg py-md text-[10px] bold muted uppercase">
                   Overlays
                 </div>
                 {INDICATOR_DEFS.map((ind) => (
@@ -491,7 +485,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
                     onClick={() => toggleIndicator(ind.id)}
                   />
                 ))}
-                <div className="border-y border-line px-3 py-2 text-[10px] font-bold tracking-wide text-muted uppercase">
+                <div className="border-y border px-lg py-md text-[10px] bold muted uppercase">
                   Oscillators
                 </div>
                 <IndicatorToggle
@@ -506,19 +500,19 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line px-3 py-2 font-mono text-[11px]">
-        <span className="text-xs font-bold text-ink">{symbol}</span>
-        <span className="text-muted">{tf.label}</span>
+      <div className="row wrap gap-x-4 gap-y-1 border-b border px-lg py-md mono text-[11px]">
+        <span className="text-xs bold ink">{symbol}</span>
+        <span className="muted">{tf.label}</span>
         <Ohlc label="O" value={display ? formatINR(display.open) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="H" value={display ? formatINR(display.high) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="L" value={display ? formatINR(display.low) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
         {activeOverlays.length > 0 && (
-          <span className="ml-auto flex flex-wrap items-center gap-2 font-sans text-[10px]">
+          <span className="ml-auto row wrap gap-sm text-[10px]">
             {activeOverlays.map((ind) => (
-              <span key={ind.id} className="flex items-center gap-1 text-muted">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: ind.color }} />
+              <span key={ind.id} className="row gap-xs muted">
+                <span className=".5 rounded" style={{ background: ind.color }} />
                 {ind.label}
               </span>
             ))}
@@ -528,14 +522,14 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
       <div className="relative">
         {loading && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-white/70 text-sm font-semibold text-muted">
+          <div className="absolute grid text-sm bold muted">
             Loading chart…
           </div>
         )}
         <div ref={containerRef} className="w-full" />
         {indicators.rsi ? (
-          <div className="border-t border-line">
-            <div className="flex items-center justify-between px-3 py-1 text-[10px] font-bold tracking-wide text-muted uppercase">
+          <div className="border-t border">
+            <div className="row-between px-lg py-md text-[10px] bold muted uppercase">
               <span>RSI (14)</span>
               <span>Overbought 70 · Oversold 30</span>
             </div>
@@ -546,9 +540,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-line px-3 py-1.5 text-[10px] text-muted">
+      <div className="row-between border-t border px-lg text-[10px] muted">
         <span>Hover the chart for OHLC values</span>
-        <span className="flex items-center gap-1.5">
+        <span className="row gap-sm">
           <span className="live-dot" />
             Streaming quotes
         </span>
@@ -562,32 +556,30 @@ function IndicatorToggle({ color, label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold transition hover:bg-surface-2"
+      className="row w-full gap-md px-lg py-md text-xs bold"
     >
       <span
-        className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${
-          active ? 'border-transparent text-white' : 'border-line'
-        }`}
+        className={`grid shrink-0 rounded border ${ active ? 'border-transparent text-white' : 'border-line' }`}
         style={active ? { background: color } : undefined}
       >
         {active && (
-          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg viewBox="0 0 12 12" className=".5" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M2.5 6.5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </span>
       <span className={active ? 'text-ink' : 'text-muted'}>{label}</span>
-      <span className="ml-auto h-1.5 w-1.5 rounded-full" style={{ background: color, opacity: active ? 1 : 0.3 }} />
+      <span className="ml-auto .5 rounded" style={{ background: color, opacity: active ? 1 : 0.3 }} />
     </button>
   )
 }
 
 function Ohlc({ label, value, tone }) {
-  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
+  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
   return (
     <span>
-      <span className="mr-1 text-muted">{label}</span>
-      <span className={`font-semibold ${color}`}>{value}</span>
+      <span className="mr-1 muted">{label}</span>
+      <span className={`bold ${color}`}>{value}</span>
     </span>
   )
 }

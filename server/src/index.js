@@ -16,6 +16,7 @@ import mfRoutes from './routes/mf.js'
 import ipoRoutes from './routes/ipo.js'
 import notificationRoutes from './routes/notifications.js'
 import reportRoutes from './routes/reports.js'
+import alertRoutes from './routes/alerts.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -65,6 +66,7 @@ app.use('/api/mf', mfRoutes)
 app.use('/api/ipo', ipoRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/reports', reportRoutes)
+app.use('/api/alerts', alertRoutes)
 
 // Optional: serve the Vite build from the same process (Render one-box deploy).
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist')

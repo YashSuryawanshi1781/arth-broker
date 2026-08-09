@@ -1,6 +1,7 @@
 import YahooFinance from 'yahoo-finance2'
 import { matchOpenOrders } from './orderMatcher.js'
 import { processDueSips } from './sipRunner.js'
+import { processPriceAlerts } from './alertRunner.js'
 
 export const INSTRUMENTS = [
   { symbol: 'RELIANCE', name: 'Reliance Industries', sector: 'Energy', price: 2845.5, industry: 'Refineries & Petrochemicals', mcap: 1925000, pe: 28.4, pb: 2.1, eps: 100.2, divYield: 0.35, roe: 8.9, week52High: 3217, week52Low: 2220, faceValue: 10, about: 'India\'s largest conglomerate with operations spanning oil-to-chemicals, retail, digital services and new energy.' },
@@ -331,6 +332,9 @@ class MarketEngine {
   broadcast(payload) {
     if (payload?.type === 'ticks' && Array.isArray(payload.ticks)) {
       const prices = new Map(payload.ticks.map((tick) => [tick.symbol, tick.price]))
+      for (const [key, idx] of Object.entries(this.indices || {})) {
+        if (idx?.value != null) prices.set(key.toUpperCase(), idx.value)
+      }
       try {
         matchOpenOrders(prices)
       } catch (err) {
@@ -340,6 +344,11 @@ class MarketEngine {
         processDueSips()
       } catch (err) {
         console.warn('SIP runner error:', err.message)
+      }
+      try {
+        processPriceAlerts(prices)
+      } catch (err) {
+        console.warn('Alert runner error:', err.message)
       }
     }
     const data = `data: ${JSON.stringify(payload)}\n\n`

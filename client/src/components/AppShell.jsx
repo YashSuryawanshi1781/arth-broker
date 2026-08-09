@@ -1,13 +1,28 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Divider,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Switch,
+  Typography,
+} from '@mui/material'
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { logout } from '../features/auth/authSlice'
 import { applyTicks, setConnected, setMarketStatus, setSnapshot } from '../features/market/marketSlice'
 import { formatINR, api } from '../lib/api'
 import { streamUrl } from '../lib/config'
+import { useThemeMode } from '../theme/ThemeModeProvider'
 import { BrandLockup } from './Brand'
 import { NavDrawer, initialsOf } from './NavDrawer'
 import { PRIMARY_NAV } from './navConfig'
+import { CommandPalette } from './CommandPalette'
+import { ApiStatusBanner } from './ApiStatusBanner'
 import {
   IconBell,
   IconBriefcase,
@@ -30,6 +45,7 @@ export function AppShell() {
   const navigate = useNavigate()
 
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [unread, setUnread] = useState(0)
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
@@ -60,7 +76,6 @@ export function AppShell() {
       }
     }
 
-    // Fallback snapshot if SSE is slow/blocked
     api('/market/instruments')
       .then((data) => {
         if (data.instruments?.length) {
@@ -91,17 +106,18 @@ export function AppShell() {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        navigate('/app/explore')
+        setPaletteOpen(true)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [navigate])
+  }, [])
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="stack full">
+      <ApiStatusBanner />
       <header className="app-header">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
+        <div className="page row gap-md px-lg" style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
           <button
             type="button"
             className="nav-icon-btn"
@@ -115,7 +131,7 @@ export function AppShell() {
             <BrandLockup size="sm" tone="light" />
           </Link>
 
-          <nav className="nav-rail mx-auto hidden lg:flex">
+          <nav className="nav-rail page hidden lg-show" style={{ display: undefined }}>
             {PRIMARY_NAV.map((l) => (
               <NavLink
                 key={l.to}
@@ -131,13 +147,13 @@ export function AppShell() {
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 lg:ml-0">
+          <div className="ml-auto row shrink-0 gap-sm">
             <button
               type="button"
               className="nav-search"
-              onClick={() => navigate('/app/explore')}
-              aria-label="Search stocks"
-              title="Search stocks (⌘K)"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search"
+              title="Search (⌘K)"
             >
               <IconSearch size={16} />
             </button>
@@ -152,13 +168,13 @@ export function AppShell() {
               {unread > 0 && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
             </button>
 
-            <Link to="/app/funds" className="wallet-chip hidden sm:flex">
-              <IconWallet size={17} className="text-[#7dffc8]" />
-              <span className="text-right leading-none">
-                <span className="block text-[9px] font-bold tracking-[0.12em] text-white/50 uppercase">
+            <Link to="/app/funds" className="wallet-chip hidden sm-show">
+              <IconWallet size={17} />
+              <span className="right">
+                <span className="block text-xs bold uppercase muted" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Wallet
                 </span>
-                <span className="mt-0.5 block font-mono text-[13px] font-bold text-[#7dffc8]">
+                <span className="mt-sm block mono text-sm bold" style={{ color: '#7dffc8' }}>
                   ₹{formatINR(user?.cash)}
                 </span>
               </span>
@@ -172,9 +188,9 @@ export function AppShell() {
         </div>
 
         <div className="ticker-bar">
-          <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 py-1.5 font-mono text-xs">
-            <span className="flex shrink-0 items-center gap-1.5 font-sans text-[10px] font-bold tracking-[0.1em]">
-              <span className={`live-dot ${connected && marketStatus?.source === 'yahoo' ? '' : 'bg-down'}`} />
+          <div className="page row gap-lg overflow-auto px-lg mono text-xs" style={{ paddingTop: 6, paddingBottom: 6 }}>
+            <span className="row shrink-0 gap-sm text-xs bold uppercase">
+              <span className={`live-dot ${connected && marketStatus?.source === 'yahoo' ? '' : ''}`} />
               {!connected
                 ? 'OFFLINE'
                 : marketStatus?.source === 'yahoo'
@@ -187,26 +203,23 @@ export function AppShell() {
               <button
                 key={key}
                 type="button"
-                className="whitespace-nowrap transition hover:text-white"
+                className="pointer"
+                style={{ background: 'none', border: 0, color: 'inherit' }}
                 onClick={() => navigate(`/app/indices/${key}`)}
               >
-                <span className="text-white/55">{idx.name}</span>{' '}
-                <span className="font-semibold">{Number(idx.value).toLocaleString('en-IN')}</span>{' '}
-                <span className={idx.changePct >= 0 ? 'text-[#7dffc8]' : 'text-[#ff8f8f]'}>
+                <span style={{ opacity: 0.55 }}>{idx.name}</span>{' '}
+                <span className="bold">{Number(idx.value).toLocaleString('en-IN')}</span>{' '}
+                <span style={{ color: idx.changePct >= 0 ? '#7dffc8' : '#ff8f8f' }}>
                   {idx.changePct >= 0 ? '+' : ''}
                   {idx.changePct}%
                 </span>
               </button>
             ))}
-            {marketStatus?.source === 'yahoo' && (
-              <span className="hidden shrink-0 font-sans text-[10px] whitespace-nowrap text-white/40 md:inline">
-                Yahoo Finance · may be delayed
-              </span>
-            )}
             {!user?.kycComplete && (
               <button
                 type="button"
-                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 font-sans text-[11px] font-bold whitespace-nowrap text-[#7dffc8] transition hover:bg-white/20"
+                className="ml-auto row shrink-0 gap-sm pointer bold text-xs"
+                style={{ background: 'rgba(255,255,255,0.1)', border: 0, color: '#7dffc8', borderRadius: 8, padding: '4px 10px' }}
                 onClick={() => navigate('/kyc')}
               >
                 <IconShield size={13} />
@@ -217,89 +230,86 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-10">
+      <main className="page w-full grow px-lg page-pad">
         <Outlet />
       </main>
 
       <NavDrawer open={drawerOpen} onClose={closeDrawer} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   )
 }
 
 function AccountMenu({ user, onLogout }) {
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef(null)
-
-  useEffect(() => {
-    if (!open) return undefined
-    const onPointer = (e) => {
-      if (!wrapRef.current?.contains(e.target)) setOpen(false)
-    }
-    const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onPointer)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onPointer)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const [anchor, setAnchor] = useState(null)
+  const { mode, toggleMode } = useThemeMode()
+  const open = Boolean(anchor)
 
   return (
-    <div className="relative" ref={wrapRef}>
+    <>
       <button
         type="button"
         className="avatar-btn"
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => setAnchor(e.currentTarget)}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <span className="avatar">{initialsOf(user)}</span>
-        <IconChevronDown
-          size={14}
-          className={`hidden text-white/55 transition sm:block ${open ? 'rotate-180' : ''}`}
-        />
+        <IconChevronDown size={14} style={{ color: 'rgba(255,255,255,0.55)' }} />
       </button>
 
-      {open && (
-        <div className="menu-pop" role="menu">
-          <div className="border-b border-line px-2.5 pt-1.5 pb-2.5">
-            <div className="truncate text-sm font-extrabold">{user?.name || 'Investor'}</div>
-            <div className="truncate text-[11px] text-muted">{user?.email}</div>
-            <span className={`menu-kyc ${user?.kycComplete ? 'is-done' : ''}`}>
-              <IconShield size={11} />
-              {user?.kycComplete ? 'KYC verified' : 'KYC pending'}
-            </span>
-          </div>
-
-          <div className="py-1">
-            <Link to="/app/account" className="menu-item" onClick={() => setOpen(false)}>
-              <IconUser size={16} className="text-muted" />
-              Profile & alerts
-            </Link>
-            <Link to="/app/investments" className="menu-item" onClick={() => setOpen(false)}>
-              <IconBriefcase size={16} className="text-muted" />
-              My investments
-            </Link>
-            <Link to="/app/orders" className="menu-item" onClick={() => setOpen(false)}>
-              <IconList size={16} className="text-muted" />
-              Order book
-            </Link>
-            <Link to="/app/funds" className="menu-item" onClick={() => setOpen(false)}>
-              <IconWallet size={16} className="text-muted" />
-              Funds & ledger
-            </Link>
-          </div>
-
-          <div className="border-t border-line pt-1">
-            <button type="button" className="menu-item menu-item-danger" onClick={onLogout}>
-              <IconLogout size={16} />
-              Log out
-            </button>
-          </div>
+      <Menu
+        anchorEl={anchor}
+        open={open}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ sx: { width: 260, mt: 1, borderRadius: 3 } }}
+      >
+        <div className="stack gap-xs" style={{ padding: '8px 16px 12px' }}>
+          <Typography fontWeight={800}>{user?.name || 'Investor'}</Typography>
+          <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
+          <span className={`menu-kyc ${user?.kycComplete ? 'is-done' : ''}`}>
+            <IconShield size={11} />
+            {user?.kycComplete ? 'KYC verified' : 'KYC pending'}
+          </span>
         </div>
-      )}
-    </div>
+        <Divider />
+        <MenuItem onClick={toggleMode}>
+          <ListItemIcon>
+            {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText primary={mode === 'dark' ? 'Light mode' : 'Dark mode'} />
+          <Switch edge="end" checked={mode === 'dark'} size="small" />
+        </MenuItem>
+        <MenuItem component={Link} to="/app/account" onClick={() => setAnchor(null)}>
+          <ListItemIcon><IconUser size={18} /></ListItemIcon>
+          <ListItemText>Profile & alerts</ListItemText>
+        </MenuItem>
+        <MenuItem component={Link} to="/app/investments" onClick={() => setAnchor(null)}>
+          <ListItemIcon><IconBriefcase size={18} /></ListItemIcon>
+          <ListItemText>My investments</ListItemText>
+        </MenuItem>
+        <MenuItem component={Link} to="/app/orders" onClick={() => setAnchor(null)}>
+          <ListItemIcon><IconList size={18} /></ListItemIcon>
+          <ListItemText>Order book</ListItemText>
+        </MenuItem>
+        <MenuItem component={Link} to="/app/funds" onClick={() => setAnchor(null)}>
+          <ListItemIcon><IconWallet size={18} /></ListItemIcon>
+          <ListItemText>Funds & ledger</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            setAnchor(null)
+            onLogout()
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <ListItemIcon><IconLogout size={18} /></ListItemIcon>
+          <ListItemText>Log out</ListItemText>
+        </MenuItem>
+      </Menu>
+    </>
   )
 }

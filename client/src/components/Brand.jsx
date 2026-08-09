@@ -75,18 +75,16 @@ export function BrandLockup({ size = 'md', tone = 'dark', tagline = true, classN
   const light = tone === 'light'
 
   return (
-    <span className={`flex items-center gap-2.5 ${className}`}>
+    <span className={`row gap-md ${className}`}>
       <BrandMark size={s.mark} />
-      <span className="flex flex-col justify-center leading-none">
-        <span className={`${s.name} font-extrabold tracking-[-0.03em] ${light ? 'text-white' : 'text-ink'}`}>
+      <span className="stack">
+        <span className={`${s.name} extrabold tracking-[-0.03em] ${light ? 'text-white' : 'text-ink'}`}>
           Arth
           <span className={light ? 'text-[#7dffc8]' : 'text-accent'}>.</span>
         </span>
         {tagline ? (
           <span
-            className={`mt-1 ${s.tag} font-bold tracking-[0.22em] uppercase ${
-              light ? 'text-white/55' : 'text-muted'
-            }`}
+            className={`mt-sm ${s.tag} bold tracking-[0.22em] uppercase ${ light ? 'text-white' : 'text-muted' }`}
           >
             Broking
           </span>

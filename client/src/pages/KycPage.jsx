@@ -175,20 +175,20 @@ export function KycPage() {
   const progress = ((step + (stepReady ? 0.5 : 0)) / STEPS.length) * 100
 
   return (
-    <Screen theme="kyc" className="min-h-screen px-4 py-6 sm:py-10">
-      <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[300px_1fr]">
+    <Screen theme="kyc" className="screen px-lg page-pad">
+      <div className="page grid gap-lg ]">
         {/* Trust rail */}
-        <aside className="kyc-rail hidden p-6 lg:block">
+        <aside className="kyc-rail hidden p-xl">
           <BrandLockup size="sm" tone="light" />
 
-          <h2 className="mt-6 text-xl font-extrabold tracking-tight">
+          <h2 className="mt-xl text-xl extrabold">
             Activate your investing account
           </h2>
-          <p className="mt-1.5 text-sm text-white/60">
+          <p className="mt-sm.5 text-sm">
             Five quick steps. Takes about two minutes.
           </p>
 
-          <div className="mt-6">
+          <div className="mt-xl">
             {STEPS.map((item, index) => {
               const done = index < step
               const isActive = index === step
@@ -203,9 +203,9 @@ export function KycPage() {
                     </span>
                     {index < STEPS.length - 1 && <span className="kyc-step-line" />}
                   </div>
-                  <div className={`pb-5 ${done || isActive ? '' : 'opacity-55'}`}>
-                    <div className="text-sm font-bold">{item.label}</div>
-                    <div className="text-xs text-white/55">
+                  <div className={`${done || isActive ? '' : 'opacity-55'}`}>
+                    <div className="text-sm bold">{item.label}</div>
+                    <div className="text-xs">
                       {done ? verifiedHint(item.id, verified) || 'Verified' : item.hint}
                     </div>
                   </div>
@@ -214,12 +214,12 @@ export function KycPage() {
             })}
           </div>
 
-          <div className="mt-2 rounded-2xl border border-white/12 bg-white/8 p-3.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#7dffc8]">
+          <div className="mt-sm rounded border p-md.5">
+            <div className="row gap-sm text-xs bold text-[#7dffc8]">
               <IconLock size={14} />
               Your data stays on this device
             </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-white/55">
+            <p className="mt-sm.5 text-[11px] leading-relaxed">
               Arth is a simulated brokerage built for learning. No documents are sent to any
               regulator and no real money is involved.
             </p>
@@ -227,26 +227,26 @@ export function KycPage() {
         </aside>
 
         {/* Form column */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 lg:hidden">
+        <div className="stack gap-md">
+          <div className="row-between gap-md lg-hide">
             <BrandLockup size="sm" />
             <button type="button" className="btn btn-ghost text-xs" onClick={() => navigate('/app')}>
               Skip for now
             </button>
           </div>
 
-          <div className="card p-5 sm:p-6">
-            <div className="mb-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
+          <div className="card p-xl">
+            <div className="mb-lg">
+              <div className="mb-sm row-between gap-md">
+                <span className="text-[11px] bold tracking-[0.12em] muted uppercase">
                   Step {step + 1} of {STEPS.length}
                 </span>
-                <span className="hidden text-xs font-bold text-page-accent lg:block">
+                <span className="hidden text-xs bold text-page-accent">
                   {Math.round(progress)}% complete
                 </span>
                 <button
                   type="button"
-                  className="text-xs font-bold text-muted hover:text-ink lg:hidden"
+                  className="text-xs bold muted lg-hide"
                   onClick={() => navigate('/app')}
                 >
                   Skip
@@ -257,17 +257,17 @@ export function KycPage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="row-start gap-md">
               <span className="icon-chip icon-chip-lg">
                 <ActiveIcon size={21} />
               </span>
-              <div className="min-w-0">
-                <h1 className="text-lg font-extrabold tracking-tight sm:text-xl">{active.title}</h1>
-                <p className="mt-0.5 text-sm text-muted">{active.subtitle}</p>
+              <div className="min-">
+                <h1 className="text-lg extrabold">{active.title}</h1>
+                <p className="mt-sm text-sm muted">{active.subtitle}</p>
               </div>
             </div>
 
-            <div className="mt-5 space-y-4">
+            <div className="mt-5 stack gap-md">
               {step === 0 && (
                 <>
                   <Field
@@ -329,18 +329,18 @@ export function KycPage() {
                   />
 
                   <div>
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="mb-sm row wrap gap-sm">
                       <span className="label mb-0">One-time password</span>
                       <button
                         type="button"
-                        className="rounded-lg bg-page-tint px-2.5 py-1 text-[11px] font-bold text-page-accent"
+                        className="rounded bg-page-tint py-md text-[11px] bold text-page-accent"
                         onClick={() => update({ otp: '123456' })}
                       >
                         Use demo OTP
                       </button>
                     </div>
                     <OtpInput value={form.otp} onChange={(v) => update({ otp: v })} />
-                    <p className="mt-2 text-xs text-muted">
+                    <p className="mt-sm text-xs muted">
                       Sent to the mobile linked with your Aadhaar. Demo OTP is <strong>123456</strong>.
                     </p>
                   </div>
@@ -387,30 +387,28 @@ export function KycPage() {
 
               {step === 4 && (
                 <>
-                  <div className="rounded-2xl border border-accent/25 bg-up-bg/60 p-4 text-center">
-                    <KycShieldArt accent="#00a878" className="mx-auto" width={158} height={118} />
-                    <p className="mt-1 text-sm font-extrabold">You are one tap away</p>
-                    <p className="mt-1 text-xs text-muted">
+                  <div className="rounded border /60 p-lg center">
+                    <KycShieldArt accent="#00a878" className="page" width={158} height={118} />
+                    <p className="mt-sm text-sm extrabold">You are one tap away</p>
+                    <p className="mt-sm text-xs muted">
                       Activating unlocks the full trading terminal on live NSE prices.
                     </p>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-sm">
                     <Perk icon={IconSparkles} title="₹1,00,000" body="Demo capital credited instantly" />
                     <Perk icon={IconShield} title="Live prices" body="Real NSE quotes via Yahoo" />
                     <Perk icon={IconDocument} title="Full reports" body="Tradebook, P&L and statements" />
                   </div>
 
                   <label
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-sm transition ${
-                      form.accepted ? 'border-accent bg-page-tint' : 'border-line hover:border-accent/40'
-                    }`}
+                    className={`row pointer gap-md rounded border p-md.5 text-sm ${ form.accepted ? 'border-accent bg-page-tint' : 'border-line hover:border-accent' }`}
                   >
                     <input
                       type="checkbox"
                       checked={form.accepted}
                       onChange={(e) => update({ accepted: e.target.checked })}
-                      className="mt-0.5 h-4 w-4 accent-[#00a878]"
+                      className="mt-sm accent-[#00a878]"
                     />
                     <span className="leading-relaxed">
                       I understand equity investing carries market risk and that Arth is a{' '}
@@ -421,13 +419,13 @@ export function KycPage() {
               )}
 
               {error && (
-                <p className="flex items-start gap-2 rounded-xl bg-down-bg px-3 py-2.5 text-sm font-semibold text-down">
-                  <IconXCircle size={16} className="mt-0.5 shrink-0" />
+                <p className="row-start gap-sm rounded px-lg py-md text-sm bold down">
+                  <IconXCircle size={16} className="mt-sm shrink-0" />
                   {error}
                 </p>
               )}
 
-              <div className="flex gap-2 pt-1">
+              <div className="row gap-sm">
                 {step > 0 && (
                   <button
                     type="button"
@@ -444,7 +442,7 @@ export function KycPage() {
                 )}
                 <button
                   type="button"
-                  className="btn btn-primary flex-1 py-3 disabled:opacity-50"
+                  className="btn btn-primary grow py-md disabled:"
                   onClick={submit}
                   disabled={!stepReady || busy}
                 >
@@ -455,7 +453,7 @@ export function KycPage() {
             </div>
           </div>
 
-          <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted">
+          <p className="row-center gap-sm center text-[11px] muted">
             <IconLock size={12} />
             Simulated verification · nothing you enter leaves this device
           </p>
@@ -494,14 +492,12 @@ function Field({
       <label className="label">{label}</label>
       <div className="relative">
         {prefix && (
-          <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm font-bold text-muted">
+          <span className="absolute /2 -translate-y-1 text-sm bold muted">
             {prefix}
           </span>
         )}
         <input
-          className={`field ${mono ? 'font-mono tracking-wide' : ''} ${valid ? 'field-ok' : ''} ${
-            invalid ? 'field-bad' : ''
-          }`}
+          className={`field ${mono ? 'font-mono tracking-wide' : ''} ${valid ? 'field-ok' : ''} ${ invalid ? 'field-bad' : '' }`}
           style={{
             paddingLeft: prefix ? '3rem' : undefined,
             paddingRight: valid ? '2.6rem' : undefined,
@@ -512,12 +508,12 @@ function Field({
           {...rest}
         />
         {valid && (
-          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-up">
+          <span className="absolute /2 -translate-y-1 up">
             <IconCheckCircle size={18} />
           </span>
         )}
       </div>
-      {hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
+      {hint && <p className="mt-sm.5 text-xs muted">{hint}</p>}
     </div>
   )
 }
@@ -528,7 +524,7 @@ function OtpInput({ value, onChange, length = 6 }) {
   return (
     <div className="relative">
       <input
-        className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0"
+        className="absolute h-full w-full cursor-text"
         value={value}
         inputMode="numeric"
         autoComplete="one-time-code"
@@ -538,7 +534,7 @@ function OtpInput({ value, onChange, length = 6 }) {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-6 gap-sm">
         {Array.from({ length }).map((_, index) => {
           const caret = focused && (index === value.length || (index === length - 1 && value.length === length))
           return (
@@ -557,8 +553,8 @@ function OtpInput({ value, onChange, length = 6 }) {
 
 function InfoNote({ children }) {
   return (
-    <p className="flex items-start gap-2 rounded-xl bg-surface-2 px-3 py-2.5 text-xs leading-relaxed text-muted">
-      <IconShield size={14} className="mt-0.5 shrink-0 text-page-accent" />
+    <p className="row-start gap-sm rounded px-lg py-md text-xs leading-relaxed muted">
+      <IconShield size={14} className="mt-sm shrink-0 text-page-accent" />
       {children}
     </p>
   )
@@ -566,12 +562,12 @@ function InfoNote({ children }) {
 
 function Perk({ icon: Icon, title, body }) {
   return (
-    <div className="rounded-xl border border-line px-3 py-2.5">
+    <div className="rounded border px-lg py-md">
       <span className="icon-chip icon-chip-sm">
         <Icon size={14} />
       </span>
-      <div className="mt-1.5 text-sm font-extrabold">{title}</div>
-      <div className="text-[11px] leading-snug text-muted">{body}</div>
+      <div className="mt-sm.5 text-sm extrabold">{title}</div>
+      <div className="text-[11px] leading-snug muted">{body}</div>
     </div>
   )
 }

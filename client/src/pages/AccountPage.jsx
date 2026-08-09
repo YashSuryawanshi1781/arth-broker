@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, formatINR } from '../lib/api'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser, signedOut } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
@@ -24,6 +24,7 @@ export function AccountPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
+  const [alerts, setAlerts] = useState([])
   const [sessions, setSessions] = useState([])
   const [sessionsBusy, setSessionsBusy] = useState(false)
   const [name, setName] = useState(user?.name || '')
@@ -33,7 +34,18 @@ export function AccountPage() {
   useEffect(() => {
     api('/notifications').then((d) => setNotifications(d.notifications || [])).catch(() => {})
     api('/auth/sessions').then((d) => setSessions(d.sessions || [])).catch(() => {})
+    api('/alerts').then((d) => setAlerts(d.alerts || [])).catch(() => {})
   }, [])
+
+  const removeAlert = async (id) => {
+    try {
+      await api(`/alerts/${id}`, { method: 'DELETE' })
+      setAlerts((items) => items.filter((a) => a.id !== id))
+      dispatch(showToast({ type: 'success', title: 'Alert removed' }))
+    } catch (err) {
+      dispatch(showToast({ type: 'error', title: 'Could not remove alert', message: err.message }))
+    }
+  }
 
   const saveProfile = async (e) => {
     e.preventDefault()
@@ -119,27 +131,25 @@ export function AccountPage() {
   return (
     <Screen theme="account">
       <PageHeader icon={IconUser} eyebrow="Profile" title="Account" subtitle="Personal details, security and alerts" />
-      <div className="grid gap-4 lg:grid-cols-2">
-      <section className="card space-y-4 p-5">
-        <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-brand text-base font-extrabold text-mint">
+      <div className="grid gap-lg">
+      <section className="card stack gap-md p-xl">
+        <div className="row gap-md">
+          <span className="grid shrink-0 rounded text-md extrabold text-mint">
             {initials}
           </span>
-          <div className="min-w-0">
-            <div className="truncate font-extrabold">{user?.name || 'Investor'}</div>
-            <div className="truncate text-sm text-muted">{user?.email}</div>
+          <div className="min-">
+            <div className="truncate extrabold">{user?.name || 'Investor'}</div>
+            <div className="truncate text-sm muted">{user?.email}</div>
           </div>
           <span
-            className={`ml-auto flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
-              user?.kycComplete ? 'bg-up-bg text-up' : 'bg-[#fff6e8] text-gold'
-            }`}
+            className={`ml-auto row gap-xs rounded py-md text-[10px] bold uppercase ${ user?.kycComplete ? ' ' : 'bg-[#fff6e8] text-gold' }`}
           >
             {user?.kycComplete ? <IconCheckCircle size={13} /> : <IconShield size={13} />}
             {user?.kycComplete ? 'KYC done' : 'KYC pending'}
           </span>
         </div>
 
-        <div className="space-y-2 rounded-xl bg-surface-2/70 p-3 text-sm">
+        <div className="stack gap-md rounded /70 p-md text-sm">
           <DetailRow icon={IconIdCard} label="PAN" value={user?.pan || '—'} />
           <DetailRow
             icon={IconBank}
@@ -147,15 +157,15 @@ export function AccountPage() {
             value={`${user?.bankName || '—'} ${user?.bankAccount || ''}`.trim()}
           />
           {!user?.kycComplete && (
-            <Link to="/kyc" className="inline-flex items-center gap-1.5 font-semibold text-accent">
+            <Link to="/kyc" className="gap-sm bold accent">
               <IconShield size={15} />
               Complete KYC →
             </Link>
           )}
         </div>
 
-        <form onSubmit={saveProfile} className="space-y-3">
-          <h2 className="flex items-center gap-2 font-semibold">
+        <form onSubmit={saveProfile} className="stack gap-md">
+          <h2 className="row gap-sm bold">
             <IconUser size={16} className="text-page-accent" />
             Profile
           </h2>
@@ -170,8 +180,8 @@ export function AccountPage() {
           <button className="btn btn-primary" type="submit">Save</button>
         </form>
 
-        <form onSubmit={changePassword} className="space-y-3 border-t border-line pt-4">
-          <h2 className="flex items-center gap-2 font-semibold">
+        <form onSubmit={changePassword} className="stack gap-md border-t border">
+          <h2 className="row gap-sm bold">
             <IconLock size={16} className="text-page-accent" />
             Security
           </h2>
@@ -187,21 +197,21 @@ export function AccountPage() {
         </form>
       </section>
 
-      <section className="card p-5">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <section className="card p-xl">
+        <div className="mb-lg row wrap gap-md">
           <div>
-            <h2 className="flex items-center gap-2 text-xl font-bold">
+            <h2 className="row gap-sm text-xl bold">
               <span className="icon-chip icon-chip-md">
                 <IconLock size={16} />
               </span>
               Active sessions
             </h2>
-            <p className="mt-1 text-xs text-muted">Devices currently signed in to your Arth account.</p>
+            <p className="mt-sm text-xs muted">Devices currently signed in to your Arth account.</p>
           </div>
           {sessions.length > 1 && (
             <button
               type="button"
-              className="btn btn-ghost px-3 py-2 text-xs"
+              className="btn btn-ghost px-lg py-md text-xs"
               onClick={closeOtherSessions}
               disabled={sessionsBusy}
             >
@@ -210,30 +220,26 @@ export function AccountPage() {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="stack gap-md">
           {sessions.map((session) => (
             <div
               key={session.id}
-              className={`flex items-center gap-3 rounded-xl border p-3 ${
-                session.current ? 'border-accent/30 bg-page-tint' : 'border-line'
-              }`}
+              className={`row gap-md rounded border p-md ${ session.current ? 'border-accent bg-page-tint' : 'border-line' }`}
             >
-              <span className={`grid h-9 w-9 flex-none place-items-center rounded-xl ${
-                session.current ? 'bg-up-bg text-up' : 'bg-surface-2 text-muted'
-              }`}>
+              <span className={`grid shrink-0 rounded ${ session.current ? ' ' : ' text-muted' }`}>
                 <IconShield size={17} />
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate text-sm font-bold">{session.device}</span>
+              <div className="min- grow">
+                <div className="row wrap gap-sm">
+                  <span className="truncate text-sm bold">{session.device}</span>
                   {session.current && (
-                    <span className="rounded-full bg-up-bg px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-up uppercase">
+                    <span className="rounded px-lg text-[9px] extrabold up uppercase">
                       This device
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
-                  <span className="flex items-center gap-1">
+                <div className="mt-sm row wrap gap-x-3 gap-y-1 text-[11px] muted">
+                  <span className="row gap-xs">
                     <IconClock size={11} />
                     Active {relativeTime(session.lastSeenAt)}
                   </span>
@@ -242,7 +248,7 @@ export function AccountPage() {
               </div>
               <button
                 type="button"
-                className="grid h-8 w-8 flex-none place-items-center rounded-lg text-muted transition hover:bg-down-bg hover:text-down disabled:opacity-40"
+                className="grid shrink-0 rounded muted disabled:"
                 onClick={() => closeSession(session)}
                 disabled={sessionsBusy}
                 aria-label={`Sign out ${session.device}`}
@@ -253,13 +259,13 @@ export function AccountPage() {
             </div>
           ))}
           {sessions.length === 0 && (
-            <p className="rounded-xl bg-surface-2 p-3 text-sm text-muted">Loading active session…</p>
+            <p className="rounded p-md text-sm muted">Loading active session…</p>
           )}
         </div>
 
         <button
           type="button"
-          className="mt-3 flex items-center gap-1.5 text-xs font-bold text-down disabled:opacity-50"
+          className="mt-md row gap-sm text-xs bold down disabled:"
           onClick={closeAllSessions}
           disabled={sessionsBusy}
         >
@@ -267,54 +273,80 @@ export function AccountPage() {
           Sign out everywhere, including this device
         </button>
 
-        <div className="my-6 border-t border-line" />
+        <div className="border-t border" />
 
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-xl font-bold">
+        <div className="mb-md row-between">
+          <h2 className="row gap-sm text-xl bold">
+            <span className="icon-chip icon-chip-md">
+              <IconBell size={16} />
+            </span>
+            Price alerts
+          </h2>
+        </div>
+        <div className="stack gap-sm mb-xl">
+          {alerts.map((a) => (
+            <div key={a.id} className="row-between gap-md rounded border p-md">
+              <div>
+                <div className="bold mono">{a.symbol}</div>
+                <div className="text-xs muted">
+                  {a.direction} ₹{formatINR(a.targetPrice)}
+                  {a.triggeredAt ? ' · triggered' : ' · watching'}
+                </div>
+              </div>
+              <button type="button" className="btn btn-ghost text-xs" onClick={() => removeAlert(a.id)}>
+                Remove
+              </button>
+            </div>
+          ))}
+          {alerts.length === 0 && (
+            <p className="text-sm muted">No alerts yet. Set one from any stock page.</p>
+          )}
+        </div>
+
+        <div className="mb-md row-between">
+          <h2 className="row gap-sm text-xl bold">
             <span className="icon-chip icon-chip-md">
               <IconBell size={16} />
             </span>
             Notifications
           </h2>
-          <button type="button" className="text-sm font-semibold text-accent" onClick={markRead}>Mark all read</button>
+          <button type="button" className="text-sm bold accent" onClick={markRead}>Mark all read</button>
         </div>
-        <div className="space-y-2">
+        <div className="stack gap-md">
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`flex gap-3 rounded-xl border border-line p-3 ${n.read ? 'opacity-60' : 'bg-mint/10'}`}
+              className={`row gap-md rounded border p-md ${n.read ? '' : ''}`}
             >
               <span
-                className={`grid h-8 w-8 flex-none place-items-center rounded-xl ${
-                  n.read ? 'bg-surface-2 text-muted' : 'bg-up-bg text-up'
-                }`}
+                className={`grid shrink-0 rounded ${ n.read ? ' text-muted' : ' ' }`}
               >
                 <IconBell size={15} />
               </span>
-              <div className="min-w-0">
-                <div className="font-semibold">{n.title}</div>
-                <div className="text-sm text-muted">{n.body}</div>
-                <div className="mt-1 text-[11px] text-muted">{new Date(n.createdAt).toLocaleString('en-IN')}</div>
+              <div className="min-">
+                <div className="bold">{n.title}</div>
+                <div className="text-sm muted">{n.body}</div>
+                <div className="mt-sm text-[11px] muted">{new Date(n.createdAt).toLocaleString('en-IN')}</div>
               </div>
             </div>
           ))}
           {notifications.length === 0 && (
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <div className="stack gap-sm py-md center">
               <span className="icon-chip icon-chip-lg icon-chip-muted">
                 <IconBell size={22} />
               </span>
-              <p className="text-sm font-bold">You&apos;re all caught up</p>
-              <p className="text-xs text-muted">Order fills and KYC updates will show up here.</p>
+              <p className="text-sm bold">You&apos;re all caught up</p>
+              <p className="text-xs muted">Order fills and KYC updates will show up here.</p>
             </div>
           )}
         </div>
 
-        <div className="mt-6 rounded-xl bg-surface-2/70 p-4 text-sm">
-          <h3 className="flex items-center gap-2 font-semibold">
+        <div className="mt-xl rounded /70 p-lg text-sm">
+          <h3 className="row gap-sm bold">
             <IconInfo size={16} className="text-page-accent" />
             Help / FAQ
           </h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
+          <ul className="mt-sm stack gap-md muted">
             <li>This is a paper-trading demo — no real money.</li>
             <li>Demo login: demo@arth.app / Demo@1234</li>
             <li>Aadhaar OTP for KYC: 123456</li>
@@ -329,10 +361,10 @@ export function AccountPage() {
 
 function DetailRow({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon size={15} className="flex-none text-muted" />
-      <span className="text-muted">{label}:</span>
-      <span className="min-w-0 truncate font-semibold">{value || '—'}</span>
+    <div className="row gap-sm">
+      <Icon size={15} className="shrink-0 muted" />
+      <span className="muted">{label}:</span>
+      <span className="min- truncate bold">{value || '—'}</span>
     </div>
   )
 }

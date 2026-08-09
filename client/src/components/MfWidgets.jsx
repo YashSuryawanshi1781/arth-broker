@@ -1,7 +1,7 @@
 export function FundLogo({ name, size = 'md' }) {
   const dim = size === 'lg' ? 'h-14 w-14 text-base rounded-2xl' : 'h-10 w-10 text-sm rounded-xl'
   return (
-    <span className={`grid ${dim} shrink-0 place-items-center bg-brand font-extrabold text-white`}>
+    <span className={`grid ${dim} shrink-0 extrabold`}>
       {(name || '?').slice(0, 2).toUpperCase()}
     </span>
   )
@@ -18,11 +18,11 @@ export function Stars({ count = 0 }) {
 
 export function RiskBadge({ risk }) {
   const tone = risk === 'Low' || risk === 'Moderate'
-    ? 'bg-up-bg text-up'
+    ? 'bg-up-bg up'
     : risk === 'Very High'
-      ? 'bg-down-bg text-down'
+      ? 'bg-down-bg down'
       : 'bg-[#fff6e8] text-gold'
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tone}`}>{risk}</span>
+  return <span className={`rounded px-lg text-[10px] bold ${tone}`}>{risk}</span>
 }
 
 export function Donut({ segments, size = 'h-24 w-24' }) {
@@ -36,9 +36,9 @@ export function Donut({ segments, size = 'h-24 w-24' }) {
     .join(', ')
 
   return (
-    <div className={`relative ${size} shrink-0 rounded-full`} style={{ background: `conic-gradient(${stops})` }}>
-      <div className="absolute inset-[24%] grid place-items-center rounded-full bg-surface">
-        <span className="text-[10px] font-bold text-muted">{segments.length}</span>
+    <div className={`relative ${size} shrink-0 rounded`} style={{ background: `conic-gradient(${stops})` }}>
+      <div className="absolute inset-[24%] grid rounded">
+        <span className="text-[10px] bold muted">{segments.length}</span>
       </div>
     </div>
   )
@@ -50,19 +50,19 @@ export function Riskometer({ level = 3 }) {
   const colors = ['#2dd4a7', '#5ec98a', '#f0c419', '#f59e0b', '#f2743a', '#e5484d']
   return (
     <div>
-      <div className="flex gap-1">
+      <div className="row gap-xs">
         {colors.map((color, i) => (
           <div
             key={color}
-            className="h-2 flex-1 rounded-full transition"
+            className="grow rounded"
             style={{ background: color, opacity: i + 1 <= level ? 1 : 0.18 }}
           />
         ))}
       </div>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-[10px] text-muted">Low risk</span>
-        <span className="text-xs font-bold" style={{ color: colors[level - 1] }}>{labels[level - 1]}</span>
-        <span className="text-[10px] text-muted">Very high</span>
+      <div className="mt-sm row-between">
+        <span className="text-[10px] muted">Low risk</span>
+        <span className="text-xs bold" style={{ color: colors[level - 1] }}>{labels[level - 1]}</span>
+        <span className="text-[10px] muted">Very high</span>
       </div>
     </div>
   )
@@ -71,7 +71,7 @@ export function Riskometer({ level = 3 }) {
 /** Lightweight SVG area chart used for the NAV history. */
 export function NavChart({ data, height = 220 }) {
   if (!data || data.length < 2) {
-    return <div className="grid h-56 place-items-center text-sm text-muted">Loading NAV history…</div>
+    return <div className="grid text-sm muted">Loading NAV history…</div>
   }
 
   const values = data.map((d) => d.nav)
@@ -95,14 +95,14 @@ export function NavChart({ data, height = 220 }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between">
+      <div className="mb-sm row">
         <div>
-          <span className="font-mono text-2xl font-bold">₹{last.nav.toFixed(2)}</span>
-          <span className={`ml-2 text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
+          <span className="mono text-2xl bold">₹{last.nav.toFixed(2)}</span>
+          <span className={`ml-2 text-sm bold ${up ? '' : ''}`}>
             {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
           </span>
         </div>
-        <span className="text-[10px] text-muted">
+        <span className="text-[10px] muted">
           {first.date} → {last.date}
         </span>
       </div>
@@ -119,7 +119,7 @@ export function NavChart({ data, height = 220 }) {
         <polygon points={`0,${height} ${points.join(' ')} ${width},${height}`} fill="url(#navFill)" />
         <polyline points={points.join(' ')} fill="none" stroke={stroke} strokeWidth="2" strokeLinejoin="round" />
       </svg>
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-muted">
+      <div className="mt-sm row mono text-[10px] muted">
         <span>Low ₹{min.toFixed(2)}</span>
         <span>High ₹{max.toFixed(2)}</span>
       </div>

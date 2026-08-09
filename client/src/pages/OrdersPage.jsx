@@ -72,7 +72,7 @@ export function OrdersPage() {
         : 'Demo fallback'
 
   return (
-    <Screen theme="orders" className="space-y-4">
+    <Screen theme="orders" className="stack gap-md">
       <PageHeader
         icon={IconList}
         eyebrow="Order book"
@@ -80,7 +80,7 @@ export function OrdersPage() {
         subtitle={
           <>
             Open orders show live LTP and distance from trigger{' · '}
-            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold text-up' : 'font-bold text-down'}>
+            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold up' : 'font-bold down'}>
               {feedLabel}
             </span>
           </>
@@ -89,7 +89,7 @@ export function OrdersPage() {
           <div className="field-wrap">
             <IconFilter size={16} className="field-icon" />
             <select
-              className="field field-has-icon max-w-[180px]"
+              className="field field-has-icon ]"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
@@ -102,7 +102,7 @@ export function OrdersPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid-2 gap-md">
         <OrderMetric label="All orders" value={counts.all} icon={IconList} />
         <OrderMetric label="Open" value={counts.open} tone="gold" icon={IconClock} />
         <OrderMetric label="Filled" value={counts.filled} tone="up" icon={IconCheckCircle} />
@@ -110,53 +110,53 @@ export function OrdersPage() {
       </div>
 
       <div className="card overflow-auto">
-        <table className="w-full min-w-[940px] text-left text-sm">
+        <table className="w-full w-[940px] text-sm">
           <thead>
-            <tr className="bg-surface-2 text-[10px] font-bold tracking-wide text-muted uppercase">
-              <th className="px-4 py-3">Time</th>
+            <tr className="text-[10px] bold muted uppercase">
+              <th className="px-lg py-md">Time</th>
               <th>Symbol</th>
               <th>Side</th>
               <th>Type</th>
               <th>Qty</th>
-              <th className="text-right">Order price</th>
-              <th className="text-right">Live LTP</th>
-              <th className="text-right">Live value</th>
+              <th className="right">Order price</th>
+              <th className="right">Live LTP</th>
+              <th className="right">Live value</th>
               <th>Status</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {rows.map((o) => (
-              <tr key={o.id} className="border-t border-line">
-                <td className="px-4 py-2 text-muted">
+              <tr key={o.id} className="border-t border">
+                <td className="px-lg py-md muted">
                   {new Date(o.createdAt).toLocaleString('en-IN', { hour12: false })}
                 </td>
                 <td>
-                  <Link to={`/app/stocks/${o.symbol}`} className="font-mono font-bold hover:text-accent">{o.symbol}</Link>
+                  <Link to={`/app/stocks/${o.symbol}`} className="mono bold">{o.symbol}</Link>
                 </td>
-                <td className={`font-mono font-bold ${o.side === 'buy' ? 'text-up' : 'text-down'}`}>{o.side.toUpperCase()}</td>
-                <td className="capitalize text-muted">{o.type} · {o.product}</td>
-                <td className="font-mono">{o.qty}</td>
-                <td className="text-right font-mono">₹{formatINR(o.referencePrice || 0)}</td>
-                <td className="text-right">
+                <td className={`mono bold ${o.side === 'buy' ? '' : ''}`}>{o.side.toUpperCase()}</td>
+                <td className="capitalize muted">{o.type} · {o.product}</td>
+                <td className="mono">{o.qty}</td>
+                <td className="right mono">₹{formatINR(o.referencePrice || 0)}</td>
+                <td className="right">
                   {o.ltp != null ? (
                     <>
-                      <div className="font-mono font-bold">₹{formatINR(o.ltp)}</div>
+                      <div className="mono bold">₹{formatINR(o.ltp)}</div>
                       {o.distance != null && (
-                        <div className={`text-[10px] font-bold ${o.distance <= 0 ? 'text-up' : 'text-gold'}`}>
+                        <div className={`text-[10px] bold ${o.distance <= 0 ? '' : 'text-gold'}`}>
                           {Math.abs(o.distance).toFixed(2)}% {o.distance <= 0 ? 'through limit' : 'away'}
                         </div>
                       )}
                     </>
                   ) : '—'}
                 </td>
-                <td className="text-right font-mono">{o.marketValue != null ? `₹${formatINR(o.marketValue)}` : '—'}</td>
+                <td className="right mono">{o.marketValue != null ? `₹${formatINR(o.marketValue)}` : '—'}</td>
                 <td><StatusBadge status={o.status} /></td>
-                <td className="px-4">
+                <td className="px-lg">
                   {o.status === 'open' && (
                     <button
                       type="button"
-                      className="flex items-center gap-1 font-sans text-xs font-semibold text-down"
+                      className="row gap-xs text-xs bold down"
                       onClick={() => cancel(o.id)}
                     >
                       <IconXCircle size={14} />
@@ -169,7 +169,7 @@ export function OrdersPage() {
           </tbody>
         </table>
         {loading ? (
-          <div className="px-4 py-10 text-center text-sm text-muted">Loading orders…</div>
+          <div className="px-lg py-md center text-sm muted">Loading orders…</div>
         ) : orders.length === 0 ? (
           <EmptyState
             art={EmptyOrdersArt}
@@ -190,25 +190,25 @@ export function OrdersPage() {
 }
 
 function OrderMetric({ label, value, tone, icon: Icon }) {
-  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : tone === 'gold' ? 'text-gold' : 'text-ink'
+  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : tone === 'gold' ? 'text-gold' : 'text-ink'
   const chip =
     tone === 'up'
-      ? 'bg-up-bg text-up'
+      ? 'bg-up-bg up'
       : tone === 'down'
-        ? 'bg-down-bg text-down'
+        ? 'bg-down-bg down'
         : tone === 'gold'
           ? 'bg-[#fff6e8] text-gold'
           : 'bg-surface-2 text-muted'
   return (
-    <div className="card flex items-center gap-3 px-4 py-3">
+    <div className="card row gap-md px-lg py-md">
       {Icon ? (
-        <span className={`grid h-9 w-9 flex-none place-items-center rounded-xl ${chip}`}>
+        <span className={`grid shrink-0 rounded ${chip}`}>
           <Icon size={18} />
         </span>
       ) : null}
-      <div className="min-w-0">
-        <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-        <div className={`font-mono text-xl font-bold ${color}`}>{value}</div>
+      <div className="min-">
+        <div className="text-[10px] bold muted uppercase">{label}</div>
+        <div className={`mono text-xl bold ${color}`}>{value}</div>
       </div>
     </div>
   )
@@ -216,9 +216,9 @@ function OrderMetric({ label, value, tone, icon: Icon }) {
 
 function StatusBadge({ status }) {
   const tone = status === 'filled'
-    ? 'bg-up-bg text-up'
+    ? 'bg-up-bg up'
     : status === 'open'
       ? 'bg-[#fff6e8] text-gold'
       : 'bg-surface-2 text-muted'
-  return <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${tone}`}>{status}</span>
+  return <span className={`rounded px-lg py-md text-[10px] bold uppercase ${tone}`}>{status}</span>
 }

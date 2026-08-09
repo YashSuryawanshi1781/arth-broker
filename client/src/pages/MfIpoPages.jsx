@@ -53,53 +53,51 @@ export function IpoPage() {
   }
 
   return (
-    <Screen theme="ipo" className="space-y-5">
+    <Screen theme="ipo" className="stack gap-md">
       <PageHeader
         icon={IconRocket}
         eyebrow="Primary market"
         title="IPOs"
         subtitle="Apply with UPI and track allotment status"
         actions={
-          <span className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-xs font-bold text-muted">
+          <span className="row gap-sm rounded border px-lg text-xs bold muted">
             <IconClock size={15} />
             {ipos.filter((i) => i.status === 'open').length} open now
           </span>
         }
       />
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-md">
         {ipos.map((ipo) => (
-          <div key={ipo.id} className="card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 gap-3">
+          <div key={ipo.id} className="card p-lg">
+            <div className="row-start gap-md">
+              <div className="row min- gap-md">
                 <span className="icon-chip">
                   <IconRocket size={18} />
                 </span>
-                <div className="min-w-0">
-                  <div className="truncate font-semibold">{ipo.name}</div>
-                  <div className="text-xs text-muted">
+                <div className="min-">
+                  <div className="truncate bold">{ipo.name}</div>
+                  <div className="text-xs muted">
                     ₹{ipo.priceMin}–{ipo.priceMax} · Lot {ipo.lotSize}
                   </div>
                 </div>
               </div>
-              <span className={`flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                ipo.status === 'open' ? 'bg-up-bg text-up' : ipo.status === 'upcoming' ? 'bg-surface-2 text-muted' : 'bg-down-bg text-down'
-              }`}>
+              <span className={`row shrink-0 gap-xs rounded px-lg text-[10px] bold uppercase ${ ipo.status === 'open' ? ' ' : ipo.status === 'upcoming' ? ' text-muted' : '-bg ' }`}>
                 {ipo.status === 'open' ? <IconCheckCircle size={12} /> : <IconClock size={12} />}
                 {ipo.status}
               </span>
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
-              <span className="flex items-center gap-1">
+            <div className="mt-md row wrap gap-md text-xs muted">
+              <span className="row gap-xs">
                 <IconClock size={14} />
                 {ipo.openDate} → {ipo.closeDate}
               </span>
-              <span className="flex items-center gap-1 font-semibold text-up">
+              <span className="row gap-xs bold up">
                 <IconTrendingUp size={14} />
                 GMP ₹{ipo.gmp}
               </span>
             </div>
             {ipo.status === 'open' && (
-              <button type="button" className="btn btn-primary mt-3 text-sm" onClick={() => setSelected(ipo)}>
+              <button type="button" className="btn btn-primary mt-md text-sm" onClick={() => setSelected(ipo)}>
                 <IconRocket size={16} />
                 Apply
               </button>
@@ -108,8 +106,8 @@ export function IpoPage() {
         ))}
       </div>
 
-      <section className="card p-4">
-        <h2 className="mb-3 flex items-center gap-2 font-extrabold tracking-tight">
+      <section className="card p-lg">
+        <h2 className="mb-md row gap-sm extrabold">
           <span className="icon-chip icon-chip-sm">
             <IconDocument size={15} />
           </span>
@@ -123,16 +121,16 @@ export function IpoPage() {
             message="Apply to an open issue above and track allotment here."
           />
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="stack gap-md text-sm">
             {apps.map((a) => (
-              <div key={a.id} className="flex justify-between border-b border-line py-2">
+              <div key={a.id} className="row border-b border py-md">
                 <div>
-                  <div className="font-semibold">{a.name}</div>
-                  <div className="text-xs text-muted">{a.lots} lot(s) · {a.upi}</div>
+                  <div className="bold">{a.name}</div>
+                  <div className="text-xs muted">{a.lots} lot(s) · {a.upi}</div>
                 </div>
-                <div className="text-right font-mono">
+                <div className="right mono">
                   <div>₹{formatINR(a.amount)}</div>
-                  <div className="text-xs text-muted">{a.status}</div>
+                  <div className="text-xs muted">{a.status}</div>
                 </div>
               </div>
             ))}
@@ -141,9 +139,9 @@ export function IpoPage() {
       </section>
 
       {selected && (
-        <div className="fixed inset-0 z-[90] grid place-items-center bg-ink/40 p-4">
-          <div className="card theme-ipo w-full max-w-md space-y-3 p-5">
-            <h2 className="flex items-center gap-2.5 text-lg font-bold">
+        <div className="fixed z-[90] grid p-lg">
+          <div className="card theme-ipo w-full stack gap-md p-xl">
+            <h2 className="row gap-md text-lg bold">
               <span className="icon-chip">
                 <IconRocket size={18} />
               </span>
@@ -157,13 +155,13 @@ export function IpoPage() {
               <label className="label">UPI ID</label>
               <input className="field" value={upi} onChange={(e) => setUpi(e.target.value)} />
             </div>
-            <p className="flex items-center gap-2 rounded-xl bg-page-tint px-3 py-2 text-sm font-semibold">
+            <p className="row gap-sm rounded bg-page-tint px-lg py-md text-sm bold">
               <IconCalculator size={16} className="text-page-accent" />
               Amount ≈ ₹{formatINR(selected.priceMax * selected.lotSize * Number(lots || 1))}
             </p>
-            <div className="flex gap-2">
-              <button type="button" className="btn btn-ghost flex-1" onClick={() => setSelected(null)}>Close</button>
-              <button type="button" className="btn btn-primary flex-1" onClick={apply}>
+            <div className="row gap-sm">
+              <button type="button" className="btn btn-ghost grow" onClick={() => setSelected(null)}>Close</button>
+              <button type="button" className="btn btn-primary grow" onClick={apply}>
                 <IconCheckCircle size={16} />
                 Submit
               </button>

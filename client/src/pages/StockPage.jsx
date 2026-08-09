@@ -7,6 +7,7 @@ import { showToast } from '../features/ui/uiSlice'
 import { AdvancedChart } from '../components/AdvancedChart'
 import { BreadcrumbBar } from '../components/BreadcrumbBar'
 import { WatchlistButton } from '../components/WatchlistButton'
+import { PriceAlertButton } from '../components/PriceAlertButton'
 import { Screen } from '../components/Screen'
 import { EmptySearchArt } from '../components/Illustrations'
 import { useWatchlist } from '../hooks/useWatchlist'
@@ -87,7 +88,7 @@ export function StockPage() {
   if (!live) {
     const feedReady = Object.keys(allInstruments).length > 0
     return (
-      <Screen theme="stock" className="space-y-4">
+      <Screen theme="stock" className="stack gap-md">
         <BreadcrumbBar
           fallback="/app/explore"
           items={[
@@ -95,14 +96,14 @@ export function StockPage() {
             { label: sym || '…' },
           ]}
         />
-        <div className="card grid place-items-center p-8 text-center">
+        <div className="card grid p-8 center">
           <EmptySearchArt accent="#0f766e" width={170} height={128} className={feedReady ? '' : 'animate-pulse'} />
-          <p className="font-semibold">{feedReady ? `${sym} not found` : `Loading ${sym}…`}</p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="bold">{feedReady ? `${sym} not found` : `Loading ${sym}…`}</p>
+          <p className="mt-sm text-sm muted">
             {feedReady ? 'This symbol is not in the Arth universe.' : 'Waiting for live market feed'}
           </p>
           {feedReady && (
-            <Link to="/app/explore" className="btn btn-primary mt-4">Back to Explore</Link>
+            <Link to="/app/explore" className="btn btn-primary mt-lg">Back to Explore</Link>
           )}
         </div>
       </Screen>
@@ -191,7 +192,7 @@ export function StockPage() {
     : '/app/explore'
 
   return (
-    <Screen theme="stock" className="space-y-4">
+    <Screen theme="stock" className="stack gap-md">
       <BreadcrumbBar
         fallback={sectorHref}
         items={[
@@ -203,52 +204,53 @@ export function StockPage() {
 
       {/* Instrument header */}
       <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-          <div className="flex gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand text-base font-extrabold text-white">
+        <div className="row wrap gap-lg p-lg">
+          <div className="row gap-md">
+            <span className="grid shrink-0 rounded text-md extrabold">
               {live.symbol.slice(0, 2)}
             </span>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-mono text-2xl font-extrabold tracking-tight">{live.symbol}</h1>
-                <span className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold text-muted">NSE</span>
+              <div className="row wrap gap-sm">
+                <h1 className="mono text-2xl extrabold">{live.symbol}</h1>
+                <span className="rounded border text-[10px] bold muted">NSE</span>
                 <Link
                   to={sectorHref}
-                  className="rounded-lg bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-muted transition hover:bg-page-tint hover:text-page-accent"
+                  className="rounded px-lg text-[11px] bold muted"
                 >
                   {live.sector}
                 </Link>
               </div>
-              <p className="mt-0.5 text-sm text-muted">{live.name}</p>
-              <p className="mt-1 text-[11px] text-muted">{live.industry || live.sector}</p>
+              <p className="mt-sm text-sm muted">{live.name}</p>
+              <p className="mt-sm text-[11px] muted">{live.industry || live.sector}</p>
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="mb-2 flex items-center justify-end gap-2">
+          <div className="right">
+            <div className="mb-sm row-end gap-sm wrap">
               <WatchlistButton
                 symbol={live.symbol}
                 watched={watchlist.has(live.symbol)}
                 busy={watchlist.busy === live.symbol}
                 onToggle={watchlist.toggle}
               />
+              <PriceAlertButton symbol={live.symbol} ltp={live.price} />
               <span className="live-dot" />
-              <span className="text-[10px] font-bold tracking-wide text-accent uppercase">
+              <span className="text-xs bold accent uppercase">
                 {marketStatus?.source === 'yahoo' ? 'Yahoo Finance' : marketStatus?.source === 'yahoo-stale' ? 'Yahoo stale' : 'Demo'}
               </span>
             </div>
-            <div className="font-mono text-3xl font-bold">₹{formatINR(live.price)}</div>
-            <div className={`flex items-center justify-end gap-1 text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
+            <div className="mono text-3xl bold">₹{formatINR(live.price)}</div>
+            <div className={`row-end gap-xs text-sm bold ${up ? '' : ''}`}>
               {up ? <IconTrendingUp size={15} /> : <IconTrendingDown size={15} />}
               {up ? '+' : ''}{formatINR(live.change)} ({up ? '+' : ''}{live.changePct}%)
             </div>
-            <div className="mt-0.5 text-[10px] text-muted">
+            <div className="mt-sm text-[10px] muted">
               Updated {new Date(live.lastUpdate || Date.now()).toLocaleTimeString('en-IN', { hour12: false })}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 lg:grid-cols-7 lg:divide-y-0">
+        <div className="grid-2 border-t border">
           <Quote label="Open" value={`₹${formatINR(live.open)}`} />
           <Quote label="High" value={`₹${formatINR(live.high)}`} tone="up" />
           <Quote label="Low" value={`₹${formatINR(live.low)}`} tone="down" />
@@ -258,18 +260,18 @@ export function StockPage() {
           <Quote label="Ask" value={bestAsk ? `₹${formatINR(bestAsk)}` : '—'} tone="down" />
         </div>
 
-        <div className="grid gap-4 border-t border-line p-4 sm:grid-cols-2">
+        <div className="grid gap-lg border-t border p-lg">
           <RangeBar label="Day range" low={live.low} high={live.high} pct={dayRangePct} />
           <RangeBar label="52 week range" low={week52Low} high={week52High} pct={week52Pct} />
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <div className="space-y-4">
+      <div className="grid gap-lg ]">
+        <div className="stack gap-md">
           <AdvancedChart symbol={live.symbol} live={live} />
 
           <div className="card overflow-hidden">
-            <div className="flex gap-1 overflow-x-auto border-b border-line px-2 pt-2">
+            <div className="row gap-xs overflow-auto border-b border px-lg">
               {[
                 ['overview', 'Overview', IconCandles],
                 ['fundamentals', 'Fundamentals', IconPieChart],
@@ -280,9 +282,7 @@ export function StockPage() {
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pt-1 pb-2.5 text-sm font-bold transition ${
-                    tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
-                  }`}
+                  className={`row gap-sm border-b-2 px-lg .5 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -290,10 +290,10 @@ export function StockPage() {
               ))}
             </div>
 
-            <div className="p-4">
+            <div className="p-lg">
               {tab === 'overview' && (
-                <div className="space-y-4">
-                  <div className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+                <div className="stack gap-md">
+                  <div className="grid gap-x-6 gap-y-0">
                     <DetailRow label="Upper circuit" value={`₹${formatINR(live.prevClose * 1.2)}`} />
                     <DetailRow label="Lower circuit" value={`₹${formatINR(live.prevClose * 0.8)}`} />
                     <DetailRow label="Average traded price" value={`₹${formatINR((live.open + live.high + live.low + live.price) / 4)}`} />
@@ -305,27 +305,27 @@ export function StockPage() {
                   </div>
 
                   <div>
-                    <div className="mb-2 flex items-center justify-between text-xs font-bold">
-                      <span className="text-up">Buyers {buyPressure.toFixed(0)}%</span>
-                      <span className="text-muted uppercase">Order book pressure</span>
-                      <span className="text-down">Sellers {(100 - buyPressure).toFixed(0)}%</span>
+                    <div className="mb-sm row-between text-xs bold">
+                      <span className="up">Buyers {buyPressure.toFixed(0)}%</span>
+                      <span className="muted uppercase">Order book pressure</span>
+                      <span className="down">Sellers {(100 - buyPressure).toFixed(0)}%</span>
                     </div>
-                    <div className="flex h-2 overflow-hidden rounded-full bg-surface-2">
+                    <div className="row overflow-hidden rounded">
                       <div className="bg-up" style={{ width: `${buyPressure}%` }} />
-                      <div className="flex-1 bg-down" />
+                      <div className="grow" />
                     </div>
                   </div>
                 </div>
               )}
 
               {tab === 'fundamentals' && (
-                <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
+                <div className="stack gap-md">
+                  <div className="grid gap-md">
                     <FundamentalCard label="Market cap" value={live.mcap ? `₹${Number(live.mcap).toLocaleString('en-IN')} Cr` : '—'} />
                     <FundamentalCard label="P/E ratio" value={live.pe ? live.pe.toFixed(2) : 'N/A'} />
                     <FundamentalCard label="P/B ratio" value={live.pb ? live.pb.toFixed(2) : '—'} />
                   </div>
-                  <div className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+                  <div className="grid gap-x-6 gap-y-0">
                     <DetailRow label="Earnings per share (EPS)" value={live.eps != null ? `₹${live.eps.toFixed(2)}` : '—'} />
                     <DetailRow label="Return on equity (ROE)" value={live.roe != null ? `${live.roe}%` : '—'} />
                     <DetailRow label="Dividend yield" value={live.divYield != null ? `${live.divYield}%` : '—'} />
@@ -335,7 +335,7 @@ export function StockPage() {
                     <DetailRow label="Industry" value={live.industry || live.sector} />
                     <DetailRow label="Face value" value={live.faceValue ? `₹${live.faceValue}` : '—'} />
                   </div>
-                  <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
+                  <p className="rounded px-lg py-md text-xs muted">
                     Fundamental figures are indicative and provided for demonstration of the platform only.
                   </p>
                 </div>
@@ -343,39 +343,39 @@ export function StockPage() {
 
               {tab === 'depth' && (
                 <div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid-2 gap-xl">
                     <div>
-                      <div className="mb-2 flex justify-between text-[10px] font-bold tracking-wide text-muted uppercase">
-                        <span className="text-up">Bid price</span>
+                      <div className="mb-sm row text-[10px] bold muted uppercase">
+                        <span className="up">Bid price</span>
                         <span>Quantity</span>
                       </div>
                       {depth.bids?.slice(0, 10).map((b, i) => (
-                        <div key={`b-${b.price}-${i}`} className="relative mb-px grid grid-cols-2 py-1 font-mono text-xs">
-                          <div className="absolute inset-y-0 left-0 rounded-sm bg-up/10" style={{ width: `${Math.min(100, (b.size / (totalBidQty || 1)) * 400)}%` }} />
-                          <span className="relative font-semibold text-up">{formatINR(b.price)}</span>
-                          <span className="relative text-right text-muted">{b.size.toLocaleString('en-IN')}</span>
+                        <div key={`b-${b.price}-${i}`} className="relative mb-px grid-2 py-md mono text-xs">
+                          <div className="absolute inset-y-0 rounded" style={{ width: `${Math.min(100, (b.size / (totalBidQty || 1)) * 400)}%` }} />
+                          <span className="relative bold up">{formatINR(b.price)}</span>
+                          <span className="relative right muted">{b.size.toLocaleString('en-IN')}</span>
                         </div>
                       ))}
-                      <div className="mt-2 flex justify-between border-t border-line pt-2 text-xs font-bold">
-                        <span className="text-muted">Total</span>
-                        <span className="font-mono text-up">{totalBidQty.toLocaleString('en-IN')}</span>
+                      <div className="mt-sm row border-t border text-xs bold">
+                        <span className="muted">Total</span>
+                        <span className="mono up">{totalBidQty.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                     <div>
-                      <div className="mb-2 flex justify-between text-[10px] font-bold tracking-wide text-muted uppercase">
+                      <div className="mb-sm row text-[10px] bold muted uppercase">
                         <span>Quantity</span>
-                        <span className="text-down">Ask price</span>
+                        <span className="down">Ask price</span>
                       </div>
                       {depth.asks?.slice(0, 10).map((a, i) => (
-                        <div key={`a-${a.price}-${i}`} className="relative mb-px grid grid-cols-2 py-1 font-mono text-xs">
-                          <div className="absolute inset-y-0 right-0 rounded-sm bg-down/10" style={{ width: `${Math.min(100, (a.size / (totalAskQty || 1)) * 400)}%` }} />
-                          <span className="relative text-muted">{a.size.toLocaleString('en-IN')}</span>
-                          <span className="relative text-right font-semibold text-down">{formatINR(a.price)}</span>
+                        <div key={`a-${a.price}-${i}`} className="relative mb-px grid-2 py-md mono text-xs">
+                          <div className="absolute inset-y-0 rounded" style={{ width: `${Math.min(100, (a.size / (totalAskQty || 1)) * 400)}%` }} />
+                          <span className="relative muted">{a.size.toLocaleString('en-IN')}</span>
+                          <span className="relative right bold down">{formatINR(a.price)}</span>
                         </div>
                       ))}
-                      <div className="mt-2 flex justify-between border-t border-line pt-2 text-xs font-bold">
-                        <span className="font-mono text-down">{totalAskQty.toLocaleString('en-IN')}</span>
-                        <span className="text-muted">Total</span>
+                      <div className="mt-sm row border-t border text-xs bold">
+                        <span className="mono down">{totalAskQty.toLocaleString('en-IN')}</span>
+                        <span className="muted">Total</span>
                       </div>
                     </div>
                   </div>
@@ -383,17 +383,17 @@ export function StockPage() {
               )}
 
               {tab === 'about' && (
-                <div className="space-y-4">
-                  <p className="text-sm leading-relaxed text-muted">
+                <div className="stack gap-md">
+                  <p className="text-sm leading-relaxed muted">
                     {live.about || `${live.name} is listed on the National Stock Exchange under the ${live.sector} sector.`}
                   </p>
-                  <div className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+                  <div className="grid gap-x-6 gap-y-0">
                     <DetailRow label="Company" value={live.name} />
                     <DetailRow label="Ticker" value={`${live.symbol} · NSE`} />
                     <DetailRow label="Sector" value={live.sector} />
                     <DetailRow label="Industry" value={live.industry || live.sector} />
                   </div>
-                  <p className="rounded-xl border border-line px-3 py-2 text-xs text-muted">
+                  <p className="rounded border px-lg py-md text-xs muted">
                     Prices on Arth are simulated and stream over Server-Sent Events. They do not represent real
                     exchange data and no real money is involved.
                   </p>
@@ -404,34 +404,34 @@ export function StockPage() {
 
           {peers.length > 0 && (
             <section className="card overflow-hidden">
-              <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                <h3 className="flex items-center gap-2 font-extrabold tracking-tight">
+              <div className="row-between border-b border px-lg py-md">
+                <h3 className="row gap-sm extrabold">
                   <span className="icon-chip icon-chip-sm">
                     <IconStar size={15} />
                   </span>
                   More from {live.sector}
                 </h3>
-                <Link to={sectorHref} className="text-sm font-bold text-accent">
+                <Link to={sectorHref} className="text-sm bold accent">
                   View all
                 </Link>
               </div>
-              <div className="divide-y divide-line">
+              <div className="">
                 {peers.map((p) => {
                   const pUp = p.changePct >= 0
                   return (
                     <button
                       key={p.symbol}
                       type="button"
-                      className="flex w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-surface-2/70"
+                      className="row w-full px-lg py-md"
                       onClick={() => navigate(`/app/stocks/${p.symbol}`)}
                     >
-                      <div className="min-w-0">
-                        <div className="font-mono text-sm font-bold">{p.symbol}</div>
-                        <div className="truncate text-xs text-muted">{p.name}</div>
+                      <div className="min-">
+                        <div className="mono text-sm bold">{p.symbol}</div>
+                        <div className="truncate text-xs muted">{p.name}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-mono text-sm font-semibold">₹{formatINR(p.price)}</div>
-                        <div className={`text-xs font-bold ${pUp ? 'text-up' : 'text-down'}`}>
+                      <div className="right">
+                        <div className="mono text-sm bold">₹{formatINR(p.price)}</div>
+                        <div className={`text-xs bold ${pUp ? '' : ''}`}>
                           {pUp ? '+' : ''}{p.changePct}%
                         </div>
                       </div>
@@ -444,14 +444,14 @@ export function StockPage() {
         </div>
 
         {/* Order ticket */}
-        <div className="space-y-4 xl:sticky xl:top-[7.5rem] xl:h-fit">
+        <div className="stack gap-md ]">
           {position && (
-            <section className="card p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-extrabold tracking-tight">Your position</h3>
-                <span className="rounded-lg bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">HOLDING</span>
+            <section className="card p-lg">
+              <div className="row-between">
+                <h3 className="text-sm extrabold">Your position</h3>
+                <span className="rounded px-lg text-[10px] bold muted">HOLDING</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-md grid-2 gap-md">
                 <PositionStat label="Quantity" value={position.qty} />
                 <PositionStat label="Avg price" value={`₹${formatINR(position.avgPrice)}`} />
                 <PositionStat label="Current value" value={`₹${formatINR(position.qty * live.price)}`} />
@@ -465,28 +465,24 @@ export function StockPage() {
           )}
 
           <section id="order-ticket" className="card overflow-hidden">
-            <div className="grid grid-cols-2">
+            <div className="grid-2">
               <button
                 type="button"
-                className={`py-3 text-sm font-extrabold tracking-wide transition ${
-                  side === 'buy' ? 'bg-up text-white' : 'bg-surface-2 text-muted hover:text-ink'
-                }`}
+                className={`py-md text-sm extrabold ${ side === 'buy' ? 'bg-up text-white' : ' text-muted hover:text-ink' }`}
                 onClick={() => setSide('buy')}
               >
                 BUY
               </button>
               <button
                 type="button"
-                className={`py-3 text-sm font-extrabold tracking-wide transition ${
-                  side === 'sell' ? 'bg-down text-white' : 'bg-surface-2 text-muted hover:text-ink'
-                }`}
+                className={`py-md text-sm extrabold ${ side === 'sell' ? ' text-white' : ' text-muted hover:text-ink' }`}
                 onClick={() => setSide('sell')}
               >
                 SELL
               </button>
             </div>
 
-            <div className="space-y-3.5 p-4">
+            <div className="stack gap-md.5 p-lg">
               <Segmented
                 label="Product"
                 options={[
@@ -509,27 +505,25 @@ export function StockPage() {
 
               <div>
                 <label className="label" htmlFor="order-qty">Quantity</label>
-                <div className="flex gap-2">
-                  <button type="button" className="btn btn-ghost w-11 shrink-0 px-0" onClick={() => setQty(Math.max(1, Number(qty) - 1))}>−</button>
+                <div className="row gap-sm">
+                  <button type="button" className="btn btn-ghost shrink-0 px-lg" onClick={() => setQty(Math.max(1, Number(qty) - 1))}>−</button>
                   <input
                     id="order-qty"
-                    className="field text-center font-mono font-bold"
+                    className="field center mono bold"
                     type="number"
                     min={1}
                     step={1}
                     value={qty}
                     onChange={(e) => setQty(e.target.value)}
                   />
-                  <button type="button" className="btn btn-ghost w-11 shrink-0 px-0" onClick={() => setQty(Number(qty) + 1)}>+</button>
+                  <button type="button" className="btn btn-ghost shrink-0 px-lg" onClick={() => setQty(Number(qty) + 1)}>+</button>
                 </div>
-                <div className="mt-2 grid grid-cols-5 gap-1">
+                <div className="mt-sm grid grid-cols-5 gap-xs">
                   {[1, 5, 10, 25, 50].map((n) => (
                     <button
                       key={n}
                       type="button"
-                      className={`rounded-lg border py-1 text-[11px] font-bold transition ${
-                        Number(qty) === n ? 'border-accent bg-up-bg text-accent' : 'border-line text-muted hover:bg-surface-2'
-                      }`}
+                      className={`rounded border py-md text-[11px] bold ${ Number(qty) === n ? 'border-accent text-accent' : 'border-line text-muted hover:' }`}
                       onClick={() => setQty(n)}
                     >
                       {n}
@@ -541,10 +535,10 @@ export function StockPage() {
               {type === 'limit' && (
                 <div>
                   <label className="label" htmlFor="limit-price">Limit price</label>
-                  <div className="flex gap-2">
+                  <div className="row gap-sm">
                     <input
                       id="limit-price"
-                      className="field font-mono"
+                      className="field mono"
                       type="number"
                       step="0.05"
                       value={limitPrice}
@@ -553,7 +547,7 @@ export function StockPage() {
                     />
                     <button
                       type="button"
-                      className="btn btn-ghost shrink-0 px-3 text-xs"
+                      className="btn btn-ghost shrink-0 px-lg text-xs"
                       onClick={() => setLimitPrice(String(live.price))}
                     >
                       LTP
@@ -562,7 +556,7 @@ export function StockPage() {
                 </div>
               )}
 
-              <div className="rounded-xl border border-line">
+              <div className="rounded border">
                 <SummaryRow label="Order value" value={`₹${formatINR(orderValue)}`} />
                 <SummaryRow
                   label={product === 'intraday' ? 'Margin required' : 'Amount required'}
@@ -571,16 +565,16 @@ export function StockPage() {
                 />
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between border-t border-line px-3 py-2 text-left text-xs"
+                  className="row w-full border-t border px-lg py-md text-xs"
                   onClick={() => setShowCharges((v) => !v)}
                 >
-                  <span className="font-semibold text-muted">
+                  <span className="bold muted">
                     Estimated charges {showCharges ? '▲' : '▼'}
                   </span>
-                  <span className="font-mono font-bold">₹{formatINR(charges.total)}</span>
+                  <span className="mono bold">₹{formatINR(charges.total)}</span>
                 </button>
                 {showCharges && (
-                  <div className="space-y-1 border-t border-line bg-surface-2/50 px-3 py-2 text-[11px]">
+                  <div className="stack gap-md border-t border /50 px-lg py-md text-[11px]">
                     <ChargeLine label="Brokerage" value={charges.brokerage} />
                     <ChargeLine label="STT / CTT" value={charges.stt} />
                     <ChargeLine label="Exchange txn" value={charges.exchange} />
@@ -589,28 +583,28 @@ export function StockPage() {
                     <ChargeLine label="GST (18%)" value={charges.gst} />
                   </div>
                 )}
-                <div className="flex justify-between border-t border-line px-3 py-2 text-xs">
-                  <span className="text-muted">Available cash</span>
-                  <span className="font-mono">₹{formatINR(user?.cash)}</span>
+                <div className="row border-t border px-lg py-md text-xs">
+                  <span className="muted">Available cash</span>
+                  <span className="mono">₹{formatINR(user?.cash)}</span>
                 </div>
               </div>
 
               {side === 'buy' && shortfall > 0 && (
-                <div className="flex items-start gap-2 rounded-xl border border-down/30 bg-down-bg px-3 py-2 text-xs">
-                  <IconAlertTriangle size={15} className="mt-px flex-none text-down" />
+                <div className="row-start gap-sm rounded border px-lg py-md text-xs">
+                  <IconAlertTriangle size={15} className="mt-px shrink-0 down" />
                   <span>
-                    <span className="font-bold text-down">Insufficient funds. </span>
-                    <span className="text-muted">Add ₹{formatINR(shortfall)} to place this order.</span>
+                    <span className="bold down">Insufficient funds. </span>
+                    <span className="muted">Add ₹{formatINR(shortfall)} to place this order.</span>
                   </span>
                 </div>
               )}
 
               {sellShort && (
-                <div className="flex items-start gap-2 rounded-xl border border-down/30 bg-down-bg px-3 py-2 text-xs">
-                  <IconAlertTriangle size={15} className="mt-px flex-none text-down" />
+                <div className="row-start gap-sm rounded border px-lg py-md text-xs">
+                  <IconAlertTriangle size={15} className="mt-px shrink-0 down" />
                   <span>
-                    <span className="font-bold text-down">Not enough shares. </span>
-                    <span className="text-muted">You hold {position?.qty || 0} {live.symbol}.</span>
+                    <span className="bold down">Not enough shares. </span>
+                    <span className="muted">You hold {position?.qty || 0} {live.symbol}.</span>
                   </span>
                 </div>
               )}
@@ -618,13 +612,13 @@ export function StockPage() {
               <button
                 type="button"
                 disabled={!canSubmit}
-                className={`btn w-full py-3 ${side === 'buy' ? 'btn-up' : 'btn-down'} disabled:opacity-60`}
+                className={`btn w-full py-md ${side === 'buy' ? 'btn-up' : 'btn-down'} disabled:`}
                 onClick={placeOrder}
               >
                 {busy ? 'Placing…' : `${side === 'buy' ? 'BUY' : 'SELL'} ${qty} ${live.symbol}`}
               </button>
 
-              <p className="flex items-center justify-center gap-1.5 text-center text-[10px] text-muted">
+              <p className="row-center gap-sm center text-[10px] muted">
                 <IconShield size={13} className="text-page-accent" />
                 Simulated order routing · No real money involved
               </p>
@@ -634,17 +628,17 @@ export function StockPage() {
       </div>
 
       {/* Mobile sticky trade CTA — industry pattern so the ticket isn't buried under the chart */}
-      <div className="trade-dock xl:hidden">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-          <div className="min-w-0 flex-1">
-            <div className="font-mono text-sm font-extrabold">₹{formatINR(live.price)}</div>
-            <div className={`text-[11px] font-bold ${up ? 'text-up' : 'text-down'}`}>
+      <div className="trade-dock">
+        <div className="page row gap-md px-lg py-md">
+          <div className="min- grow">
+            <div className="mono text-sm extrabold">₹{formatINR(live.price)}</div>
+            <div className={`text-[11px] bold ${up ? '' : ''}`}>
               {up ? '+' : ''}{live.changePct}%
             </div>
           </div>
           <button
             type="button"
-            className="btn btn-down flex-1 py-2.5"
+            className="btn btn-down grow py-md"
             onClick={() => {
               setSide('sell')
               document.getElementById('order-ticket')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -654,7 +648,7 @@ export function StockPage() {
           </button>
           <button
             type="button"
-            className="btn btn-up flex-1 py-2.5"
+            className="btn btn-up grow py-md"
             onClick={() => {
               setSide('buy')
               document.getElementById('order-ticket')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -669,11 +663,11 @@ export function StockPage() {
 }
 
 function Quote({ label, value, tone }) {
-  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
+  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
   return (
-    <div className="px-3 py-2.5">
-      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className={`mt-0.5 font-mono text-sm font-bold ${color}`}>{value}</div>
+    <div className="px-lg py-md">
+      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
     </div>
   )
 }
@@ -682,17 +676,17 @@ function RangeBar({ label, low, high, pct }) {
   const clamped = Math.min(100, Math.max(0, pct))
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold tracking-wide text-muted uppercase">
+      <div className="mb-sm.5 row-between text-[10px] bold muted uppercase">
         <span>{label}</span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-surface-2">
-        <div className="h-full rounded-full bg-gradient-to-r from-down via-gold to-up" style={{ width: '100%' }} />
+      <div className="relative .5 rounded">
+        <div className="h-full rounded bg-gradient-" style={{ width: '100%' }} />
         <div
-          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-ink shadow"
+          className="absolute /2 -translate-x-1 -translate-y-1 rounded border-2 border-white bg-ink shadow"
           style={{ left: `${clamped}%` }}
         />
       </div>
-      <div className="mt-1.5 flex justify-between font-mono text-[11px] text-muted">
+      <div className="mt-sm.5 row mono text-[11px] muted">
         <span>₹{formatINR(low)}</span>
         <span>₹{formatINR(high)}</span>
       </div>
@@ -702,28 +696,28 @@ function RangeBar({ label, low, high, pct }) {
 
 function DetailRow({ label, value }) {
   return (
-    <div className="flex items-center justify-between border-b border-line py-2.5 text-sm last:border-0">
-      <span className="text-muted">{label}</span>
-      <span className="font-mono font-semibold">{value}</span>
+    <div className="row-between border-b border py-md text-sm last:border-0">
+      <span className="muted">{label}</span>
+      <span className="mono bold">{value}</span>
     </div>
   )
 }
 
 function FundamentalCard({ label, value }) {
   return (
-    <div className="rounded-xl bg-surface-2 px-3 py-3">
-      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className="mt-1 font-mono text-lg font-bold">{value}</div>
+    <div className="rounded px-lg py-md">
+      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className="mt-sm mono text-lg bold">{value}</div>
     </div>
   )
 }
 
 function PositionStat({ label, value, tone }) {
-  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
+  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
   return (
     <div>
-      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className={`mt-0.5 font-mono text-sm font-bold ${color}`}>{value}</div>
+      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
     </div>
   )
 }
@@ -732,18 +726,16 @@ function Segmented({ label, options, value, onChange }) {
   return (
     <div>
       <span className="label">{label}</span>
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
+      <div className="grid-2 gap-xs rounded p-1">
         {options.map(([id, title, sub]) => (
           <button
             key={id}
             type="button"
             onClick={() => onChange(id)}
-            className={`rounded-lg px-2 py-1.5 text-center transition ${
-              value === id ? 'bg-white shadow-sm' : 'hover:bg-white/60'
-            }`}
+            className={`rounded px-lg center ${ value === id ? 'bg-white shadow-sm' : 'hover:bg-white' }`}
           >
-            <span className={`block text-xs font-bold ${value === id ? 'text-ink' : 'text-muted'}`}>{title}</span>
-            <span className="block text-[9px] text-muted">{sub}</span>
+            <span className={`block text-xs bold ${value === id ? 'text-ink' : 'text-muted'}`}>{title}</span>
+            <span className="block text-[9px] muted">{sub}</span>
           </button>
         ))}
       </div>
@@ -753,18 +745,18 @@ function Segmented({ label, options, value, onChange }) {
 
 function SummaryRow({ label, value, strong }) {
   return (
-    <div className="flex justify-between border-b border-line px-3 py-2 text-xs last:border-0">
-      <span className="text-muted">{label}</span>
-      <span className={`font-mono ${strong ? 'font-bold' : ''}`}>{value}</span>
+    <div className="row border-b border px-lg py-md text-xs last:border-0">
+      <span className="muted">{label}</span>
+      <span className={`mono ${strong ? 'font-bold' : ''}`}>{value}</span>
     </div>
   )
 }
 
 function ChargeLine({ label, value }) {
   return (
-    <div className="flex justify-between">
-      <span className="text-muted">{label}</span>
-      <span className="font-mono">₹{value.toFixed(2)}</span>
+    <div className="row">
+      <span className="muted">{label}</span>
+      <span className="mono">₹{value.toFixed(2)}</span>
     </div>
   )
 }

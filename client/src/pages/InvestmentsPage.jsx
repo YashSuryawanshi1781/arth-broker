@@ -21,6 +21,7 @@ export function InvestmentsPage() {
   const [holdings, setHoldings] = useState([])
   const [mf, setMf] = useState([])
   const [sips, setSips] = useState([])
+  const [analytics, setAnalytics] = useState(null)
   const user = useAppSelector((s) => s.auth.user)
   const market = useLiveMarket(500)
 
@@ -28,6 +29,7 @@ export function InvestmentsPage() {
     api('/portfolio/holdings').then((d) => setHoldings(d.holdings || [])).catch(() => {})
     api('/mf/holdings').then((d) => setMf(d.holdings || [])).catch(() => {})
     api('/mf/sips').then((d) => setSips(d.sips || [])).catch(() => {})
+    api('/portfolio/analytics').then(setAnalytics).catch(() => {})
   }
 
   useEffect(load, [])
@@ -52,7 +54,7 @@ export function InvestmentsPage() {
         : 'Demo fallback'
 
   return (
-    <Screen theme="investments" className="space-y-5">
+    <Screen theme="investments" className="stack gap-md">
       <PageHeader
         icon={IconBriefcase}
         eyebrow="Portfolio"
@@ -60,7 +62,7 @@ export function InvestmentsPage() {
         subtitle={
           <>
             Stocks update automatically from the live market feed{' · '}
-            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold text-up' : 'font-bold text-down'}>
+            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold up' : 'font-bold down'}>
               {feedLabel}
             </span>
           </>
@@ -84,25 +86,51 @@ export function InvestmentsPage() {
       />
 
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-5 px-5 py-5 text-white md:grid-cols-[1.2fr_1fr] md:px-7">
+        <div className="hero-mesh grid gap-lg px-lg p-xl" style={{ color: '#fff' }}>
           <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Equity portfolio</p>
-            <div className="mt-2 font-mono text-3xl font-bold">₹{formatINR(totals.current)}</div>
-            <div className={`mt-2 text-sm font-bold ${totals.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
+            <p className="text-xs bold uppercase">Equity portfolio</p>
+            <div className="mt-sm mono text-3xl bold">₹{formatINR(totals.current)}</div>
+            <div className={`mt-sm text-sm bold ${totals.pnl >= 0 ? 'up' : 'down'}`}>
               {totals.pnl >= 0 ? '+' : ''}₹{formatINR(totals.pnl)} ({totals.pnlPct.toFixed(2)}%) overall
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 self-end">
+          <div className="grid-3 gap-sm">
             <HeroMetric label="Invested" value={`₹${formatINR(totals.invested)}`} />
             <HeroMetric
               label="Today's P&L"
               value={`${totals.dayPnl >= 0 ? '+' : ''}₹${formatINR(totals.dayPnl)}`}
               tone={totals.dayPnl >= 0 ? 'up' : 'down'}
             />
-            <HeroMetric label="Holdings" value={String(liveHoldings.length)} />
+            <HeroMetric label="XIRR" value={analytics?.xirrPct != null ? `${analytics.xirrPct}%` : '—'} />
           </div>
         </div>
       </section>
+
+      {analytics?.sectorExposure?.length > 0 && (
+        <section className="card p-lg stack gap-md">
+          <h3 className="text-sm extrabold">Sector exposure</h3>
+          <div className="stack gap-sm">
+            {analytics.sectorExposure.map((s) => (
+              <div key={s.sector} className="stack gap-xs">
+                <div className="row-between text-xs">
+                  <span className="bold">{s.sector}</span>
+                  <span className="mono muted">{s.weightPct}% · ₹{formatINR(s.value)}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 99, background: 'var(--color-surface-2)' }}>
+                  <div
+                    style={{
+                      width: `${Math.min(100, s.weightPct)}%`,
+                      height: '100%',
+                      borderRadius: 99,
+                      background: 'var(--page-accent)',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <Section
         title="Stock holdings"
@@ -119,41 +147,41 @@ export function InvestmentsPage() {
             action={<Link to="/app/explore" className="btn btn-primary text-sm"><IconCandles size={16} />Explore stocks</Link>}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="overflow-auto">
+            <table className="w-full w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-line bg-surface-2 text-[10px] font-bold tracking-wide text-muted uppercase">
-                  <th className="px-4 py-2">Instrument</th>
-                  <th className="px-3 text-right">Qty</th>
-                  <th className="px-3 text-right">Avg price</th>
-                  <th className="px-3 text-right">LTP</th>
-                  <th className="px-3 text-right">Current value</th>
-                  <th className="px-4 text-right">Total P&L</th>
+                <tr className="border-b border text-[10px] bold muted uppercase">
+                  <th className="px-lg py-md">Instrument</th>
+                  <th className="px-lg right">Qty</th>
+                  <th className="px-lg right">Avg price</th>
+                  <th className="px-lg right">LTP</th>
+                  <th className="px-lg right">Current value</th>
+                  <th className="px-lg right">Total P&L</th>
                 </tr>
               </thead>
               <tbody>
                 {liveHoldings.map((holding) => (
-                  <tr key={holding.symbol} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3">
-                      <Link to={`/app/stocks/${holding.symbol}`} className="font-mono font-bold hover:text-accent">
+                  <tr key={holding.symbol} className="border-b border last:border-0">
+                    <td className="px-lg py-md">
+                      <Link to={`/app/stocks/${holding.symbol}`} className="mono bold">
                         {holding.symbol}
                       </Link>
-                      <div className="text-xs text-muted">{holding.name}</div>
+                      <div className="text-xs muted">{holding.name}</div>
                     </td>
-                    <td className="px-3 text-right font-mono">{holding.qty}</td>
-                    <td className="px-3 text-right font-mono">₹{formatINR(holding.avgPrice)}</td>
-                    <td className="px-3 text-right">
-                      <div className="font-mono font-bold">₹{formatINR(holding.ltp)}</div>
-                      <div className={`text-xs font-bold ${holding.dayChangePct >= 0 ? 'text-up' : 'text-down'}`}>
+                    <td className="px-lg right mono">{holding.qty}</td>
+                    <td className="px-lg right mono">₹{formatINR(holding.avgPrice)}</td>
+                    <td className="px-lg right">
+                      <div className="mono bold">₹{formatINR(holding.ltp)}</div>
+                      <div className={`text-xs bold ${holding.dayChangePct >= 0 ? '' : ''}`}>
                         {holding.dayChangePct >= 0 ? '+' : ''}{holding.dayChangePct.toFixed(2)}%
                       </div>
                     </td>
-                    <td className="px-3 text-right font-mono font-bold">₹{formatINR(holding.value)}</td>
-                    <td className={`px-4 text-right ${holding.pnl >= 0 ? 'text-up' : 'text-down'}`}>
-                      <div className="font-mono font-bold">
+                    <td className="px-lg right mono bold">₹{formatINR(holding.value)}</td>
+                    <td className={`px-lg right ${holding.pnl >= 0 ? '' : ''}`}>
+                      <div className="mono bold">
                         {holding.pnl >= 0 ? '+' : ''}₹{formatINR(holding.pnl)}
                       </div>
-                      <div className="text-xs font-bold">
+                      <div className="text-xs bold">
                         {holding.pnlPct >= 0 ? '+' : ''}{holding.pnlPct.toFixed(2)}%
                       </div>
                     </td>
@@ -180,20 +208,20 @@ export function InvestmentsPage() {
             action={<Link to="/app/mf" className="btn btn-primary text-sm"><IconCoins size={16} />Browse funds</Link>}
           />
         ) : (
-          <div className="space-y-2 p-4">
+          <div className="stack gap-md p-lg">
             {mf.map((h) => (
               <Link
                 key={h.id}
                 to={`/app/mf/${h.fundId}`}
-                className="flex items-center justify-between rounded-xl bg-surface-2/60 px-3 py-2 transition hover:bg-page-tint"
+                className="row-between rounded /60 px-lg py-md"
               >
                 <div>
-                  <div className="font-semibold">{h.name}</div>
-                  <div className="text-xs text-muted">{h.units} units · avg NAV ₹{formatINR(h.avgNav)}</div>
+                  <div className="bold">{h.name}</div>
+                  <div className="text-xs muted">{h.units} units · avg NAV ₹{formatINR(h.avgNav)}</div>
                 </div>
-                <div className="text-right font-mono text-sm">
+                <div className="right mono text-sm">
                   <div>₹{formatINR(h.value)}</div>
-                  <div className={h.pnl >= 0 ? 'text-up' : 'text-down'}>{h.pnl >= 0 ? '+' : ''}{formatINR(h.pnl)}</div>
+                  <div className={h.pnl >= 0 ? 'up' : 'down'}>{h.pnl >= 0 ? '+' : ''}{formatINR(h.pnl)}</div>
                 </div>
               </Link>
             ))}
@@ -211,12 +239,12 @@ export function InvestmentsPage() {
             action={<Link to="/app/mf" className="btn btn-primary text-sm"><IconSparkles size={16} />Start a SIP</Link>}
           />
         ) : (
-          <div className="space-y-2 p-4">
+          <div className="stack gap-md p-lg">
             {sips.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm">
+              <div key={s.id} className="row-between rounded border px-lg py-md text-sm">
                 <div>
-                  <div className="font-semibold">{s.name}</div>
-                  <div className="text-muted">₹{formatINR(s.amount)} on day {s.dayOfMonth} · {s.status}</div>
+                  <div className="bold">{s.name}</div>
+                  <div className="muted">₹{formatINR(s.amount)} on day {s.dayOfMonth} · {s.status}</div>
                 </div>
                 <SipActions id={s.id} status={s.status} onDone={load} />
               </div>
@@ -239,9 +267,9 @@ function SipActions({ id, status, onDone }) {
       dispatch(showToast({ type: 'error', title: 'SIP update failed', message: err.message }))
     }
   }
-  if (status === 'cancelled') return <span className="text-xs text-muted">Cancelled</span>
+  if (status === 'cancelled') return <span className="text-xs muted">Cancelled</span>
   return (
-    <div className="flex gap-2">
+    <div className="row gap-sm">
       {status === 'active' ? (
         <button type="button" className="btn btn-ghost text-xs" onClick={() => toggle('paused')}>Pause</button>
       ) : (
@@ -255,9 +283,9 @@ function SipActions({ id, status, onDone }) {
 function HeroMetric({ label, value, tone }) {
   const color = tone === 'up' ? 'text-[#7dffc8]' : tone === 'down' ? 'text-[#ff9d9d]' : ''
   return (
-    <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
-      <div className="text-[9px] font-bold tracking-wide text-white/50 uppercase">{label}</div>
-      <div className={`mt-1 font-mono text-sm font-bold ${color}`}>{value}</div>
+    <div className="rounded border p-sm.5">
+      <div className="text-[9px] bold uppercase">{label}</div>
+      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
     </div>
   )
 }
@@ -265,8 +293,8 @@ function HeroMetric({ label, value, tone }) {
 function Section({ title, meta, icon: Icon, theme, children }) {
   return (
     <section className={`card overflow-hidden ${theme ? `theme-${theme}` : ''}`}>
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-        <h2 className="flex items-center gap-2 font-extrabold tracking-tight">
+      <div className="row-between gap-md border-b border px-lg py-md">
+        <h2 className="row gap-sm extrabold">
           {Icon ? (
             <span className="icon-chip icon-chip-sm">
               <Icon size={15} />
@@ -274,7 +302,7 @@ function Section({ title, meta, icon: Icon, theme, children }) {
           ) : null}
           {title}
         </h2>
-        {meta && <span className="text-[11px] text-muted">{meta}</span>}
+        {meta && <span className="text-[11px] muted">{meta}</span>}
       </div>
       {children}
     </section>

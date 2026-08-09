@@ -8,7 +8,7 @@ export function ProtectedRoute({ children }) {
 
   if (!bootstrapped) {
     return (
-      <div className="grid h-full place-items-center text-muted">
+      <div className="grid h-full muted">
         Loading Arth…
       </div>
     )
@@ -22,7 +22,7 @@ export function PublicOnly({ children }) {
   const bootstrapped = useAppSelector((s) => s.auth.bootstrapped)
   if (!bootstrapped) {
     return (
-      <div className="grid h-full place-items-center text-muted">
+      <div className="grid h-full muted">
         Loading Arth…
       </div>
     )

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useAppDispatch } from './app/hooks'
 import { fetchMe, signedOut } from './features/auth/authSlice'
 import { Toast } from './components/Toast'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedRoute, PublicOnly } from './components/ProtectedRoute'
 import { AppShell } from './components/AppShell'
 import { LandingPage } from './pages/LandingPage'
@@ -49,6 +50,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <Toast />
       <Routes>
         <Route path="/" element={<PublicOnly><LandingPage /></PublicOnly>} />
@@ -77,6 +79,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

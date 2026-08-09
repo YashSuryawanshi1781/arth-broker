@@ -51,7 +51,7 @@ export function GrowthDonut({
   const gainMultiple = invested > 0 ? total / invested : 0
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="stack">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Invested versus returns split">
           <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
@@ -91,16 +91,16 @@ export function GrowthDonut({
           </g>
         </svg>
 
-        <div className="absolute inset-0 grid place-items-center px-6 text-center">
+        <div className="absolute grid px-lg center">
           <div>
-            <div className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: colors.muted }}>
+            <div className="text-[10px] bold tracking-[0.12em] uppercase" style={{ color: colors.muted }}>
               {caption}
             </div>
-            <div className="mt-1 font-mono text-xl font-bold" style={{ color: colors.ink }}>
+            <div className="mt-sm mono text-xl bold" style={{ color: colors.ink }}>
               ₹{formatINRShort(total)}
             </div>
             {gainMultiple > 0 && (
-              <div className="mt-0.5 text-[11px] font-bold" style={{ color: colors.gain }}>
+              <div className="mt-sm text-[11px] bold" style={{ color: colors.gain }}>
                 {gainMultiple.toFixed(2)}× your capital
               </div>
             )}
@@ -108,7 +108,7 @@ export function GrowthDonut({
         </div>
       </div>
 
-      <div className="mt-4 grid w-full grid-cols-2 gap-2">
+      <div className="mt-lg grid w-full grid-2 gap-sm">
         <LegendCell
           color={colors.invested}
           label="Invested"
@@ -131,19 +131,19 @@ export function GrowthDonut({
 function LegendCell({ color, label, value, share, colors }) {
   return (
     <div
-      className="rounded-xl px-2.5 py-2"
+      className="rounded py-md"
       style={{ background: colors.track }}
     >
-      <div className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: color }} />
-        <span className="text-[10px] font-bold tracking-wide uppercase" style={{ color: colors.muted }}>
+      <div className="row gap-sm">
+        <span className=".5 shrink-0 rounded" style={{ background: color }} />
+        <span className="text-[10px] bold uppercase" style={{ color: colors.muted }}>
           {label}
         </span>
       </div>
-      <div className="mt-1 font-mono text-sm font-bold" style={{ color: colors.ink }}>
+      <div className="mt-sm mono text-sm bold" style={{ color: colors.ink }}>
         ₹{formatINRShort(value)}
       </div>
-      <div className="text-[10px] font-semibold" style={{ color: colors.muted }}>
+      <div className="text-[10px] bold" style={{ color: colors.muted }}>
         {share.toFixed(1)}%
       </div>
     </div>
@@ -190,7 +190,7 @@ export function GrowthChart({ schedule, height = 280, variant = 'light' }) {
 
   if (!geometry) {
     return (
-      <div className="grid place-items-center text-sm" style={{ height, color: colors.muted }}>
+      <div className="grid text-sm" style={{ height, color: colors.muted }}>
         Adjust the inputs to see a projection.
       </div>
     )
@@ -300,13 +300,13 @@ export function GrowthChart({ schedule, height = 280, variant = 'light' }) {
         )}
       </svg>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="mt-sm row wrap gap-sm text-[11px]">
+        <div className="row wrap gap-md">
           <LegendKey color={colors.gain} label="Total value" colors={colors} />
           <LegendKey color={colors.invested} label="Invested" colors={colors} dashed />
         </div>
         {hovered ? (
-          <span className="font-mono font-bold" style={{ color: colors.ink }}>
+          <span className="mono bold" style={{ color: colors.ink }}>
             {hovered.year === 0 ? 'Start' : `Year ${hovered.year}`} · ₹{formatINR(hovered.value)}
             <span style={{ color: colors.muted }}> (invested ₹{formatINRShort(hovered.invested)})</span>
           </span>
@@ -320,16 +320,16 @@ export function GrowthChart({ schedule, height = 280, variant = 'light' }) {
 
 function LegendKey({ color, label, colors, dashed = false }) {
   return (
-    <span className="flex items-center gap-1.5" style={{ color: colors.muted }}>
+    <span className="row gap-sm" style={{ color: colors.muted }}>
       <span
-        className="inline-block h-0.5 w-5 rounded-full"
+        className="inline-block .5 rounded"
         style={{
           background: dashed
             ? `repeating-linear-gradient(90deg, ${color} 0 5px, transparent 5px 9px)`
             : color,
         }}
       />
-      <span className="font-semibold">{label}</span>
+      <span className="bold">{label}</span>
     </span>
   )
 }
