@@ -7,6 +7,13 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedRoute, PublicOnly } from './components/ProtectedRoute'
 import { AppShell } from './components/AppShell'
 import { LandingPage } from './pages/LandingPage'
+import {
+  AboutPage,
+  ContactPage,
+  PricingPage,
+  PrivacyPage,
+  TermsPage,
+} from './pages/MarketingPages'
 import { LoginPage, RegisterPage, ForgotPage, ResetPage } from './pages/AuthPages'
 import { KycPage } from './pages/KycPage'
 import { HomePage } from './pages/HomePage'
@@ -66,6 +73,11 @@ export default function App() {
       <OnboardingTour />
       <Routes>
         <Route path="/" element={<PublicOnly><LandingPage /></PublicOnly>} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
         <Route path="/forgot" element={<PublicOnly><ForgotPage /></PublicOnly>} />

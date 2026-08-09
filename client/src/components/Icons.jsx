@@ -187,6 +187,15 @@ export function IconInfo(props) {
   )
 }
 
+export function IconMail(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="m4.5 7.5 7.5 5.5 7.5-5.5" />
+    </Icon>
+  )
+}
+
 export function IconPlus(props) {
   return (
     <Icon {...props}>
@@ -392,6 +401,32 @@ export function IconGrid(props) {
       <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
       <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
       <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
+    </Icon>
+  )
+}
+
+export function IconMaximize(props) {
+  return (
+    <Icon {...props}>
+      <path d="M8 3.5H4.5V7M16 3.5h3.5V7M8 20.5H4.5V17M16 20.5h3.5V17" />
+    </Icon>
+  )
+}
+
+export function IconMinimize(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 8H8V4.5M16 4.5V8h3.5M4.5 16H8v3.5M16 19.5V16h3.5" />
+    </Icon>
+  )
+}
+
+export function IconTrash(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 7h15" />
+      <path d="M9.5 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5V7" />
+      <path d="M6.5 7l.8 12a2 2 0 0 0 2 1.8h5.4a2 2 0 0 0 2-1.8l.8-12" />
     </Icon>
   )
 }
