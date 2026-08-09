@@ -360,35 +360,33 @@ export function ReportsPage() {
   ].filter(Boolean).length
 
   return (
-    <Screen theme="reports" className="stack gap-md">
+    <Screen theme="reports" className="reports-page">
       <PageHeader
         icon={IconDocument}
-        eyebrow="Statements & insights"
+        eyebrow="Paper statements"
         title="Reports"
-        subtitle="Filter, sort, review and export your complete investment activity"
+        subtitle="Tradebook, P&L, funds and charges from your practice account"
         actions={
-          <div className="row gap-sm">
-            <button type="button" className="btn btn-ghost text-sm" onClick={load} disabled={loading}>
-              <IconRefresh size={16} />
+          <div className="reports-actions">
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={load} disabled={loading}>
+              <IconRefresh size={15} />
               Refresh
             </button>
-            <button type="button" className="btn btn-ghost text-sm" onClick={exportPdf} disabled={!data.rows.length}>
-              <IconDocument size={16} />
-              Download PDF
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={exportPdf} disabled={!data.rows.length}>
+              PDF
             </button>
-            <button type="button" className="btn btn-ghost text-sm" onClick={exportExcel} disabled={exporting || !data.rows.length}>
-              <IconDocument size={16} />
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={exportExcel} disabled={exporting || !data.rows.length}>
               Excel
             </button>
-            <button type="button" className="btn btn-primary text-sm" onClick={exportCsv} disabled={exporting || !data.rows.length}>
-              <IconArrowDownLeft size={16} />
-              {exporting ? 'Exporting…' : 'Export CSV'}
+            <button type="button" className="btn btn-primary text-xs bold" onClick={exportCsv} disabled={exporting || !data.rows.length}>
+              <IconArrowDownLeft size={15} />
+              {exporting ? 'Exporting…' : 'CSV'}
             </button>
           </div>
         }
       />
 
-      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
+      <nav className="reports-tabs" aria-label="Report type">
         {Object.entries(REPORTS).map(([id, item]) => {
           const Icon = item.icon
           return (
@@ -396,33 +394,33 @@ export function ReportsPage() {
               key={id}
               type="button"
               onClick={() => switchReport(id)}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition ${
-                type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2 hover:text-ink'
-              }`}
+              className={`reports-tab${type === id ? ' is-active' : ''}`}
             >
-              <Icon size={15} />
+              <Icon size={14} />
               {item.label}
             </button>
           )
         })}
       </nav>
 
-      <section className="grid gap-sm">
-        {(SUMMARY[type] || []).map(([key, label, format]) => (
-          <SummaryCard key={key} label={label} value={data.summary?.[key]} format={format} />
-        ))}
-      </section>
+      {(SUMMARY[type] || []).length > 0 && (
+        <section className="reports-summary">
+          {(SUMMARY[type] || []).map(([key, label, format]) => (
+            <SummaryCard key={key} label={label} value={data.summary?.[key]} format={format} />
+          ))}
+        </section>
+      )}
 
-      <section className="card p-md">
-        <div className="row flex-wrap items-end gap-sm">
-          <label className="w-[210px] grow">
-            <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">Search</span>
+      <section className="card reports-filters">
+        <div className="reports-filters-row">
+          <label className="reports-search">
+            <span className="reports-label">Search</span>
             <span className="field-wrap block">
-              <IconSearch size={16} className="field-icon" />
+              <IconSearch size={15} className="field-icon" />
               <input
                 className="field field-has-icon w-full"
                 value={searchDraft}
-                placeholder={config.search}
+                placeholder={config.search || 'Search'}
                 onChange={(event) => setSearchDraft(event.target.value)}
               />
             </span>
@@ -450,8 +448,8 @@ export function ReportsPage() {
           ) : null}
         </div>
 
-        <div className="mt-md row flex-wrap gap-sm border-t border-line">
-          <IconFilter size={14} className="mr-1 muted" />
+        <div className="reports-ranges">
+          <IconFilter size={14} className="text-muted" />
           {[
             ['today', 'Today'],
             ['7d', '7 days'],
@@ -459,90 +457,95 @@ export function ReportsPage() {
             ['fy', 'This FY'],
             ['all', 'All time'],
           ].map(([id, label]) => (
-            <button key={id} type="button" className="rounded py-md text-xs bold muted" onClick={() => setRange(id)}>
+            <button key={id} type="button" className="reports-chip" onClick={() => setRange(id)}>
               {label}
             </button>
           ))}
           {filterCount > 0 && (
             <button
               type="button"
-              className="ml-auto text-xs font-bold text-down"
+              className="reports-clear"
               onClick={() => {
                 setSearchDraft('')
                 update({ search: '', from: '', to: '', status: '', side: '', product: '', transactionType: '' })
               }}
             >
-              Clear {filterCount} filter{filterCount === 1 ? '' : 's'}
+              Clear {filterCount}
             </button>
           )}
         </div>
       </section>
 
-      <section className="card overflow-hidden">
-        <div className="row flex-wrap gap-sm border-b border-line px-lg py-md">
+      <section className="card reports-table-card overflow-hidden">
+        <div className="reports-table-head">
           <div>
-            <h2 className="extrabold">{config.label}</h2>
-            <p className="text-xs muted">{config.description}</p>
+            <h2>{config.label}</h2>
+            <p>{config.description}</p>
           </div>
-          <span className="rounded py-md text-xs bold muted">
-            {data.pagination.total.toLocaleString('en-IN')} records
+          <span className="reports-count">
+            {(data.pagination.total || 0).toLocaleString('en-IN')} records
           </span>
         </div>
 
         {error ? (
-          <div className="grid gap-sm px-lg py-md center">
-            <p className="bold down">Could not load report</p>
-            <p className="text-sm muted">{error}</p>
-            <button type="button" className="btn btn-ghost text-sm" onClick={load}>Try again</button>
+          <div className="reports-empty">
+            <p className="font-bold text-down">Could not load report</p>
+            <p className="text-sm text-muted">{error}</p>
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={load}>Try again</button>
           </div>
         ) : loading ? (
-          <SkeletonRows rows={Math.min(filters.pageSize, 10)} />
+          <div className="p-4">
+            <SkeletonRows rows={Math.min(filters.pageSize, 8)} />
+          </div>
         ) : type === 'tax' && taxData?.tax ? (
-          <div className="stack gap-lg p-xl">
-            <div className="grid-2 gap-md">
-              <div className="card border p-lg">
-                <p className="text-xs bold muted uppercase">STCG (≤ 1 year)</p>
-                <p className={`mono text-2xl bold mt-sm ${taxData.tax.stcg >= 0 ? 'text-up' : 'down'}`}>
+          <div className="reports-tax">
+            <div className="reports-tax-grid">
+              <div className="reports-tax-card">
+                <p>STCG (≤ 1 year)</p>
+                <strong className={taxData.tax.stcg >= 0 ? 'text-up' : 'text-down'}>
                   ₹{formatINR(taxData.tax.stcg)}
-                </p>
-                <p className="text-xs muted mt-sm">Stub tax @ 15%: ₹{formatINR(taxData.tax.stcgTaxStub)}</p>
+                </strong>
+                <span>Stub tax @ 15%: ₹{formatINR(taxData.tax.stcgTaxStub)}</span>
               </div>
-              <div className="card border p-lg">
-                <p className="text-xs bold muted uppercase">LTCG (&gt; 1 year)</p>
-                <p className={`mono text-2xl bold mt-sm ${taxData.tax.ltcg >= 0 ? 'text-up' : 'down'}`}>
+              <div className="reports-tax-card">
+                <p>LTCG (&gt; 1 year)</p>
+                <strong className={taxData.tax.ltcg >= 0 ? 'text-up' : 'text-down'}>
                   ₹{formatINR(taxData.tax.ltcg)}
-                </p>
-                <p className="text-xs muted mt-sm">Stub tax @ 12.5%: ₹{formatINR(taxData.tax.ltcgTaxStub)}</p>
+                </strong>
+                <span>Stub tax @ 12.5%: ₹{formatINR(taxData.tax.ltcgTaxStub)}</span>
               </div>
             </div>
-            <p className="text-xs muted">{taxData.tax.note}</p>
+            <p className="text-xs text-muted">{taxData.tax.note}</p>
             {taxData.xirrPct != null && (
-              <p className="text-sm">Portfolio XIRR: <strong className="mono">{taxData.xirrPct}%</strong></p>
+              <p className="text-sm font-semibold">
+                Portfolio XIRR:{' '}
+                <span className="font-mono">{taxData.xirrPct}%</span>
+              </p>
             )}
           </div>
         ) : data.rows.length === 0 ? (
-          <div className="grid px-lg py-md center">
-            <IconDocument size={34} className="muted" />
-            <p className="mt-md extrabold">No records found</p>
-            <p className="mt-sm text-sm muted">Adjust your dates or filters to broaden this report.</p>
+          <div className="reports-empty">
+            <IconDocument size={32} className="text-muted" />
+            <p className="font-extrabold">No records found</p>
+            <p className="text-sm text-muted">Adjust dates or filters, or place paper trades to populate this report.</p>
           </div>
         ) : (
-          <div className="overflow-auto">
-            <table className="w-full w-max text-xs">
+          <div className="reports-table-wrap">
+            <table className="reports-table">
               <thead>
-                <tr className="border-b border-line">
+                <tr>
                   {config.columns.map((column) => (
                     <th
                       key={column.key}
-                      className={`px-lg py-md bold muted uppercase ${ column.align === 'left' ? 'text-left' : 'text-right' }`}
+                      className={column.align === 'left' ? 'is-left' : 'is-right'}
                     >
                       <button
                         type="button"
-                        className={`inline-flex gap-xs ${column.align === 'left' ? 'text-left' : 'text-right'}`}
+                        className="reports-sort"
                         onClick={() => sort(column.key)}
                       >
                         {column.label}
-                        <span className={filters.sortBy === column.key ? 'text-page-accent' : 'muted'}>
+                        <span className={filters.sortBy === column.key ? 'text-page-accent' : 'text-muted'}>
                           {filters.sortBy === column.key ? (filters.sortDir === 'asc' ? '↑' : '↓') : '↕'}
                         </span>
                       </button>
@@ -552,11 +555,11 @@ export function ReportsPage() {
               </thead>
               <tbody>
                 {data.rows.map((row) => (
-                  <tr key={row.id || row.symbol} className="border-b border-line">
+                  <tr key={row.id || row.symbol}>
                     {config.columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`px-lg py-md ${ column.align === 'left' ? 'text-left' : 'text-right' } ${column.strong ? 'bold ink' : 'muted'}`}
+                        className={`${column.align === 'left' ? 'is-left' : 'is-right'}${column.strong ? ' is-strong' : ''}`}
                       >
                         {column.format(row[column.key], row)}
                       </td>
@@ -568,17 +571,17 @@ export function ReportsPage() {
           </div>
         )}
 
-        <Pagination pagination={data.pagination} update={update} />
+        {type !== 'tax' && <Pagination pagination={data.pagination} update={update} />}
       </section>
 
       {type === 'charges' && (
-        <p className="rounded border bg-[#fdf6e7] px-lg py-md text-xs muted">
-          Charges are estimates based on the product and filled turnover. Exchange invoices may differ due to rounding and regulatory changes.
+        <p className="reports-footnote">
+          Charges are estimates based on product and filled turnover. Demo values may differ from live exchange invoices.
         </p>
       )}
       {type === 'pnl' && (
-        <p className="rounded border px-lg py-md text-xs muted">
-          Realised P&L uses the running weighted-average acquisition price. Unrealised P&L uses the latest available market price.
+        <p className="reports-footnote">
+          Realised P&L uses weighted-average buy price. Unrealised P&L uses the latest market price on your paper holdings.
         </p>
       )}
     </Screen>
@@ -588,27 +591,27 @@ export function ReportsPage() {
 function SummaryCard({ label, value, format }) {
   const output = format(value ?? 0)
   return (
-    <div className="card min-w-0 p-md">
-      <div className="bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
-      <div className="mt-sm truncate mono text-lg bold">{output}</div>
+    <div className="reports-summary-card">
+      <div className="reports-label">{label}</div>
+      <div className="reports-summary-value">{output}</div>
     </div>
   )
 }
 
 function DateField({ label, value, onChange }) {
   return (
-    <label>
-      <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
-      <input type="date" className="field w-[142px]" value={value} onChange={(event) => onChange(event.target.value)} />
+    <label className="reports-field">
+      <span className="reports-label">{label}</span>
+      <input type="date" className="field" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   )
 }
 
 function SelectFilter({ label, value, options, onChange }) {
   return (
-    <label>
-      <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
-      <select className="field w-[120px]" value={value} onChange={(event) => onChange(event.target.value)}>
+    <label className="reports-field">
+      <span className="reports-label">{label}</span>
+      <select className="field" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{title(option)}</option>
         ))}
@@ -623,14 +626,20 @@ function Pagination({ pagination, update }) {
   const end = Math.min(total, page * pageSize)
   const pages = pageWindow(page, totalPages)
   return (
-    <div className="row flex-wrap gap-md border-t border-line px-lg py-md">
-      <div className="row gap-sm text-xs muted">
+    <div className="reports-pagination">
+      <div className="reports-pagination-meta">
         <span>Showing {start}–{end} of {total}</span>
-        <select className="rounded border px-lg py-md bold" value={pageSize} onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}>
-          {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size} / page</option>)}
+        <select
+          className="reports-page-size"
+          value={pageSize}
+          onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}
+        >
+          {[10, 20, 50, 100].map((size) => (
+            <option key={size} value={size}>{size} / page</option>
+          ))}
         </select>
       </div>
-      <div className="row gap-xs">
+      <div className="reports-pagination-pages">
         <PageButton label="«" disabled={page <= 1} onClick={() => update({ page: 1 }, false)} />
         <PageButton label="‹" disabled={page <= 1} onClick={() => update({ page: page - 1 }, false)} />
         {pages.map((value) => (
@@ -649,7 +658,7 @@ function PageButton({ label, disabled, active, onClick }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`grid min-w-0 rounded border text-xs bold ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:bg-surface-2' }`}
+      className={`reports-page-btn${active ? ' is-active' : ''}`}
     >
       {label}
     </button>
