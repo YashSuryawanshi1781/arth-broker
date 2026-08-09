@@ -32,7 +32,8 @@ import {
 } from '../lib/indicators.js'
 import {
   DRAW_COLORS,
-  DRAW_TOOLS,
+  DRAW_TOOL_GROUPS,
+  FIB_EXT_LEVELS,
   FIB_LEVELS,
   clearDrawingsStorage,
   loadDrawings,
@@ -103,7 +104,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [showTools, setShowTools] = useState(false)
+  const [showTools, setShowTools] = useState(true)
   const [drawTool, setDrawTool] = useState('pan')
   const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
   const [draft, setDraft] = useState(null)
@@ -115,7 +116,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     if (!isPage) return 360
     const header = 52
     const toolbar = 42
-    const tools = showTools ? 40 : 0
+    const tools = showTools ? 72 : 0
     const ohlc = 30
     const osc = showOsc ? 128 : 0
     return Math.max(380, window.innerHeight - header - toolbar - tools - ohlc - osc - 4)
@@ -590,6 +591,19 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     return { x, y }
   }
 
+  function finishDrawing(type, points, extra = {}) {
+    const drawing = {
+      id: newDrawingId(),
+      type,
+      points,
+      color: DRAW_COLORS[type] || '#2563eb',
+      ...extra,
+    }
+    persistDrawings([...drawingsRef.current, drawing])
+    setSelectedId(drawing.id)
+    setDraft(null)
+  }
+
   function onOverlayPointerDown(e) {
     if (drawTool === 'pan') return
 
@@ -604,40 +618,70 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     e.preventDefault()
 
     const need = pointsNeeded(drawTool)
-    if (need === 1) {
-      const drawing = {
-        id: newDrawingId(),
-        type: drawTool,
-        points: [point],
-        color: DRAW_COLORS[drawTool] || '#2563eb',
+    const color = DRAW_COLORS[drawTool] || '#2563eb'
+
+    if (drawTool === 'brush') {
+      try {
+        e.currentTarget.setPointerCapture?.(e.pointerId)
+      } catch {
+        /* ignore */
       }
-      persistDrawings([...drawingsRef.current, drawing])
-      setSelectedId(drawing.id)
-      setDraft(null)
+      setDraft({ type: 'brush', points: [point], color, brushing: true })
+      return
+    }
+
+    if (need === 1) {
+      if (drawTool === 'text') {
+        const label = window.prompt('Text label', 'Note')
+        if (!label?.trim()) return
+        finishDrawing('text', [point], { text: label.trim().slice(0, 80) })
+        return
+      }
+      finishDrawing(drawTool, [point])
       return
     }
 
     if (!draft || draft.type !== drawTool) {
-      setDraft({ type: drawTool, points: [point], color: DRAW_COLORS[drawTool] || '#2563eb' })
+      setDraft({ type: drawTool, points: [point], color })
       return
     }
 
-    const drawing = {
-      id: newDrawingId(),
-      type: drawTool,
-      points: [draft.points[0], point],
-      color: draft.color,
+    const nextPoints = [...draft.points, point]
+    if (nextPoints.length < need) {
+      setDraft({ type: drawTool, points: nextPoints, color: draft.color })
+      return
     }
-    persistDrawings([...drawingsRef.current, drawing])
-    setSelectedId(drawing.id)
-    setDraft(null)
+
+    finishDrawing(drawTool, nextPoints.slice(0, need))
   }
 
   function onOverlayPointerMove(e) {
     if (!draft) return
     const point = eventToPoint(e)
     if (!point) return
+    if (draft.type === 'brush' && draft.brushing) {
+      setDraft((prev) => {
+        if (!prev?.brushing) return prev
+        const last = prev.points[prev.points.length - 1]
+        if (last && Math.hypot(point.price - last.price, Number(point.time) - Number(last.time)) < 1e-9) return prev
+        // throttle by screen distance
+        const a = pointToXY(last)
+        const b = pointToXY(point)
+        if (a && b && Math.hypot(b.x - a.x, b.y - a.y) < 3) return prev
+        return { ...prev, points: [...prev.points, point] }
+      })
+      return
+    }
     setDraft((prev) => (prev ? { ...prev, hover: point } : prev))
+  }
+
+  function onOverlayPointerUp() {
+    if (!draft || draft.type !== 'brush' || !draft.brushing) return
+    if (draft.points.length >= 2) {
+      finishDrawing('brush', draft.points)
+    } else {
+      setDraft(null)
+    }
   }
 
   function hitTestDrawing(e) {
@@ -650,14 +694,26 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     for (const d of drawingsRef.current) {
       const coords = d.points.map(pointToXY).filter(Boolean)
       if (!coords.length) continue
-      if (d.type === 'hline') {
+      if (d.type === 'hline' || d.type === 'hray') {
         const y = coords[0].y
         const dist = Math.abs(xy.y - y)
         if (dist < bestDist) {
           bestDist = dist
           best = d.id
         }
-      } else if (d.type === 'rect' && coords.length >= 2) {
+      } else if (d.type === 'vline') {
+        const dist = Math.abs(xy.x - coords[0].x)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = d.id
+        }
+      } else if (d.type === 'text') {
+        const dist = Math.hypot(xy.x - coords[0].x, xy.y - coords[0].y)
+        if (dist < bestDist + 10) {
+          bestDist = dist
+          best = d.id
+        }
+      } else if ((d.type === 'rect' || d.type === 'ellipse') && coords.length >= 2) {
         const minX = Math.min(coords[0].x, coords[1].x)
         const maxX = Math.max(coords[0].x, coords[1].x)
         const minY = Math.min(coords[0].y, coords[1].y)
@@ -666,6 +722,39 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
           const edge = Math.min(xy.x - minX, maxX - xy.x, xy.y - minY, maxY - xy.y)
           if (edge < bestDist) {
             bestDist = edge
+            best = d.id
+          }
+        }
+      } else if (d.type === 'brush' && coords.length >= 2) {
+        for (let i = 1; i < coords.length; i += 1) {
+          const dist = distToSegment(xy, coords[i - 1], coords[i])
+          if (dist < bestDist) {
+            bestDist = dist
+            best = d.id
+          }
+        }
+      } else if (d.type === 'triangle' && coords.length >= 3) {
+        for (let i = 0; i < 3; i += 1) {
+          const dist = distToSegment(xy, coords[i], coords[(i + 1) % 3])
+          if (dist < bestDist) {
+            bestDist = dist
+            best = d.id
+          }
+        }
+      } else if (d.type === 'channel' && coords.length >= 3) {
+        const [a, b, c] = coords
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const t = ((c.x - a.x) * dx + (c.y - a.y) * dy) / (dx * dx + dy * dy || 1)
+        const proj = { x: a.x + t * dx, y: a.y + t * dy }
+        const ox = c.x - proj.x
+        const oy = c.y - proj.y
+        const a2 = { x: a.x + ox, y: a.y + oy }
+        const b2 = { x: b.x + ox, y: b.y + oy }
+        for (const [p, q] of [[a, b], [a2, b2], [a, a2], [b, b2]]) {
+          const dist = distToSegment(xy, p, q)
+          if (dist < bestDist) {
+            bestDist = dist
             best = d.id
           }
         }
@@ -705,7 +794,14 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   const activeOverlays = [...OVERLAY_DEFS, ...OSCILLATOR_DEFS].filter((ind) => indicators[ind.id])
   const activeOscDef = OSCILLATOR_DEFS.find((d) => d.id === activeOsc)
   const preview = draft
-    ? { ...draft, points: draft.hover ? [...draft.points, draft.hover] : draft.points }
+    ? {
+      ...draft,
+      points: draft.brushing
+        ? draft.points
+        : draft.hover
+          ? [...draft.points, draft.hover]
+          : draft.points,
+    }
     : null
 
   // touch drawVersion so SVG remaps after pan/zoom
@@ -814,21 +910,25 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
 
       {showTools && (
         <div className="chart-tools-bar">
-          <div className="chart-tools-pills">
-            {DRAW_TOOLS.map((tool) => (
-              <button
-                key={tool.id}
-                type="button"
-                title={tool.tip}
-                className={`chart-pill${drawTool === tool.id ? ' is-active' : ''}`}
-                onClick={() => {
-                  setDrawTool(tool.id)
-                  setDraft(null)
-                  if (tool.id === 'pan') setSelectedId(null)
-                }}
-              >
-                {tool.label}
-              </button>
+          <div className="chart-tools-groups">
+            {DRAW_TOOL_GROUPS.map((group) => (
+              <div key={group.id} className="chart-tools-group" data-label={group.label}>
+                {group.tools.map((tool) => (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    title={tool.tip}
+                    className={`chart-pill${drawTool === tool.id ? ' is-active' : ''}`}
+                    onClick={() => {
+                      setDrawTool(tool.id)
+                      setDraft(null)
+                      if (tool.id === 'pan') setSelectedId(null)
+                    }}
+                  >
+                    {tool.label}
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
           <div className="chart-tools-pills">
@@ -845,6 +945,12 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
               Save
             </button>
           </div>
+          {draft && !draft.brushing && (
+            <span className="chart-tools-hint">
+              {draft.points.length}/{pointsNeeded(draft.type)} clicks
+              {draft.type === 'triangle' || draft.type === 'channel' || draft.type === 'fibext' ? ' · Esc cancel' : ''}
+            </span>
+          )}
         </div>
       )}
 
@@ -873,6 +979,8 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
           style={{ height: chartHeight }}
           onPointerDown={onOverlayPointerDown}
           onPointerMove={onOverlayPointerMove}
+          onPointerUp={onOverlayPointerUp}
+          onPointerCancel={onOverlayPointerUp}
         >
           {[...drawings, ...(preview ? [{ ...preview, id: 'draft' }] : [])].map((d) => (
             <DrawingShape
@@ -903,12 +1011,51 @@ function DrawingShape({ drawing, toXY, selected, width }) {
   const stroke = selected ? '#0b1b33' : color
   const widthStroke = selected ? 2.4 : 1.6
   const pts = drawing.points.map(toXY).filter(Boolean)
+  const height = 2000
 
   if (drawing.type === 'hline' && pts[0]) {
     return (
       <g>
         <line x1={0} y1={pts[0].y} x2={width} y2={pts[0].y} stroke={stroke} strokeWidth={widthStroke} strokeDasharray="6 4" />
         <circle cx={24} cy={pts[0].y} r={3.5} fill={color} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'vline' && pts[0]) {
+    return (
+      <g>
+        <line x1={pts[0].x} y1={-40} x2={pts[0].x} y2={height} stroke={stroke} strokeWidth={widthStroke} strokeDasharray="6 4" />
+        <circle cx={pts[0].x} cy={18} r={3.5} fill={color} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'hray' && pts.length >= 2) {
+    const y = pts[0].y
+    const x1 = pts[0].x
+    const x2 = pts[1].x >= pts[0].x ? width + 40 : -40
+    return (
+      <g>
+        <line x1={x1} y1={y} x2={x2} y2={y} stroke={stroke} strokeWidth={widthStroke} />
+        <circle cx={pts[0].x} cy={y} r={3.5} fill={color} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'arrow' && pts.length >= 2) {
+    const { x: x1, y: y1 } = pts[0]
+    const { x: x2, y: y2 } = pts[1]
+    const angle = Math.atan2(y2 - y1, x2 - x1)
+    const head = 10
+    const ax = x2 - head * Math.cos(angle - Math.PI / 6)
+    const ay = y2 - head * Math.sin(angle - Math.PI / 6)
+    const bx = x2 - head * Math.cos(angle + Math.PI / 6)
+    const by = y2 - head * Math.sin(angle + Math.PI / 6)
+    return (
+      <g>
+        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth={widthStroke} />
+        <polygon points={`${x2},${y2} ${ax},${ay} ${bx},${by}`} fill={stroke} />
       </g>
     )
   }
@@ -948,6 +1095,60 @@ function DrawingShape({ drawing, toXY, selected, width }) {
     )
   }
 
+  if (drawing.type === 'ellipse' && pts.length >= 2) {
+    const cx = (pts[0].x + pts[1].x) / 2
+    const cy = (pts[0].y + pts[1].y) / 2
+    const rx = Math.abs(pts[1].x - pts[0].x) / 2
+    const ry = Math.abs(pts[1].y - pts[0].y) / 2
+    return (
+      <g>
+        <ellipse cx={cx} cy={cy} rx={Math.max(rx, 1)} ry={Math.max(ry, 1)} fill={`${color}18`} stroke={stroke} strokeWidth={widthStroke} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'triangle' && pts.length >= 2) {
+    const poly = pts.length >= 3 ? pts : pts
+    const points = poly.map((p) => `${p.x},${p.y}`).join(' ')
+    return (
+      <g>
+        {pts.length >= 3 ? (
+          <polygon points={points} fill={`${color}18`} stroke={stroke} strokeWidth={widthStroke} />
+        ) : (
+          <polyline points={points} fill="none" stroke={stroke} strokeWidth={widthStroke} strokeDasharray="4 3" />
+        )}
+      </g>
+    )
+  }
+
+  if (drawing.type === 'channel' && pts.length >= 2) {
+    const [a, b, c] = pts
+    if (!c) {
+      return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={stroke} strokeWidth={widthStroke} strokeDasharray="4 3" />
+    }
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const t = ((c.x - a.x) * dx + (c.y - a.y) * dy) / (dx * dx + dy * dy || 1)
+    const proj = { x: a.x + t * dx, y: a.y + t * dy }
+    const ox = c.x - proj.x
+    const oy = c.y - proj.y
+    const a2 = { x: a.x + ox, y: a.y + oy }
+    const b2 = { x: b.x + ox, y: b.y + oy }
+    return (
+      <g>
+        <polygon
+          points={`${a.x},${a.y} ${b.x},${b.y} ${b2.x},${b2.y} ${a2.x},${a2.y}`}
+          fill={`${color}14`}
+          stroke="none"
+        />
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={stroke} strokeWidth={widthStroke} />
+        <line x1={a2.x} y1={a2.y} x2={b2.x} y2={b2.y} stroke={stroke} strokeWidth={widthStroke} />
+        <line x1={a.x} y1={a.y} x2={a2.x} y2={a2.y} stroke={stroke} strokeWidth={1} strokeDasharray="3 3" strokeOpacity={0.6} />
+        <line x1={b.x} y1={b.y} x2={b2.x} y2={b2.y} stroke={stroke} strokeWidth={1} strokeDasharray="3 3" strokeOpacity={0.6} />
+      </g>
+    )
+  }
+
   if (drawing.type === 'fib' && pts.length >= 2) {
     const y1 = pts[0].y
     const y2 = pts[1].y
@@ -967,6 +1168,99 @@ function DrawingShape({ drawing, toXY, selected, width }) {
           )
         })}
         <line x1={pts[0].x} y1={pts[0].y} x2={pts[1].x} y2={pts[1].y} stroke={stroke} strokeWidth={1} strokeDasharray="4 3" strokeOpacity={0.5} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'fibext' && pts.length >= 2) {
+    const p0 = drawing.points[0]
+    const p1 = drawing.points[1]
+    const p2 = drawing.points[2] || drawing.points[drawing.points.length - 1]
+    const base = p1.price - p0.price
+    const xLeft = Math.min(...pts.map((p) => p.x))
+    const xRight = Math.max(...pts.map((p) => p.x), xLeft + 90)
+    return (
+      <g>
+        {pts.length >= 2 && (
+          <polyline
+            points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={1}
+            strokeDasharray="4 3"
+            strokeOpacity={0.55}
+          />
+        )}
+        {p2 && FIB_EXT_LEVELS.map((level) => {
+          const price = p2.price + base * level
+          const y = toXY({ time: p2.time, price })?.y
+          if (y == null) return null
+          return (
+            <g key={level}>
+              <line x1={xLeft} y1={y} x2={xRight} y2={y} stroke={stroke} strokeWidth={1.2} strokeOpacity={0.85} />
+              <text x={xRight + 4} y={y + 3} fontSize="10" fill={stroke} fontFamily="IBM Plex Mono, monospace">
+                {level.toFixed(3)}
+              </text>
+            </g>
+          )
+        })}
+      </g>
+    )
+  }
+
+  if (drawing.type === 'measure' && pts.length >= 2) {
+    const p0 = drawing.points[0]
+    const p1 = drawing.points[1]
+    const dPrice = p1.price - p0.price
+    const pct = p0.price ? (dPrice / p0.price) * 100 : 0
+    const bars = Math.max(1, Math.round(Math.abs(Number(p1.time) - Number(p0.time)) / 60))
+    const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+    const tone = dPrice >= 0 ? '#00a878' : '#e5484d'
+    return (
+      <g>
+        <line x1={pts[0].x} y1={pts[0].y} x2={pts[1].x} y2={pts[1].y} stroke={tone} strokeWidth={widthStroke} />
+        <circle cx={pts[0].x} cy={pts[0].y} r={3.5} fill={tone} />
+        <circle cx={pts[1].x} cy={pts[1].y} r={3.5} fill={tone} />
+        <rect x={mid.x - 54} y={mid.y - 28} width={108} height={36} rx={4} fill="#0b1b33" opacity={0.92} />
+        <text x={mid.x} y={mid.y - 12} textAnchor="middle" fontSize="10" fill="#fff" fontFamily="IBM Plex Mono, monospace">
+          {dPrice >= 0 ? '+' : ''}{dPrice.toFixed(2)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)
+        </text>
+        <text x={mid.x} y={mid.y + 4} textAnchor="middle" fontSize="9" fill="#94a3b8" fontFamily="IBM Plex Mono, monospace">
+          ~{bars} bars
+        </text>
+      </g>
+    )
+  }
+
+  if (drawing.type === 'brush' && pts.length >= 2) {
+    return (
+      <polyline
+        points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={selected ? 2.6 : 2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    )
+  }
+
+  if (drawing.type === 'text' && pts[0]) {
+    return (
+      <g>
+        <rect
+          x={pts[0].x - 4}
+          y={pts[0].y - 14}
+          width={Math.min(220, 12 + (drawing.text || 'Note').length * 6.2)}
+          height={20}
+          rx={3}
+          fill="#fff"
+          stroke={stroke}
+          strokeWidth={selected ? 1.6 : 1}
+        />
+        <text x={pts[0].x} y={pts[0].y} fontSize="11" fill={stroke} fontFamily="IBM Plex Sans, sans-serif" fontWeight="700">
+          {drawing.text || 'Note'}
+        </text>
       </g>
     )
   }
