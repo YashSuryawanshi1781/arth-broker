@@ -117,7 +117,7 @@ export function AppShell() {
     <div className="flex min-h-full flex-col">
       <ApiStatusBanner />
       <header className="app-header">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5">
           <button
             type="button"
             className="nav-icon-btn"
@@ -188,7 +188,7 @@ export function AppShell() {
         </div>
 
         <div className="ticker-bar">
-          <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 py-1.5 font-mono text-xs">
+          <div className="mx-auto flex max-w-7xl items-center gap-5 overflow-x-auto px-4 py-1.5 font-mono text-xs">
             <span className="flex shrink-0 items-center gap-1.5 font-sans text-[10px] font-bold tracking-[0.1em]">
               <span className={`live-dot ${connected && marketStatus?.source === 'yahoo' ? '' : 'bg-down'}`} />
               {!connected
@@ -230,7 +230,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-8">
         <Outlet />
       </main>
 

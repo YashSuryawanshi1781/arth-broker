@@ -264,7 +264,7 @@ export function StockPage() {
     : '/app/explore'
 
   return (
-    <Screen theme="stock" className="space-y-4">
+    <Screen theme="stock" className="stock-workspace space-y-3">
       <BreadcrumbBar
         fallback={sectorHref}
         items={[
@@ -274,14 +274,57 @@ export function StockPage() {
         ]}
       />
 
+      <div className="stock-quote-bar">
+        <div className="stock-quote-bar-id">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand text-sm font-extrabold text-white">
+            {live.symbol.slice(0, 2)}
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h1>{live.symbol}</h1>
+              <span className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold text-muted">NSE</span>
+              <Link
+                to={sectorHref}
+                className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-muted hover:text-page-accent"
+              >
+                {live.sector}
+              </Link>
+            </div>
+            <p>{live.name}</p>
+          </div>
+        </div>
+
+        <div className="stock-quote-bar-price">
+          <span className="ltp">₹{formatINR(live.price)}</span>
+          <span className={`inline-flex items-center gap-1 text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
+            {up ? <IconTrendingUp size={14} /> : <IconTrendingDown size={14} />}
+            {up ? '+' : ''}{formatINR(live.change)} ({up ? '+' : ''}{live.changePct}%)
+          </span>
+          <span className="live-dot" />
+          <span className="text-[10px] font-bold text-accent uppercase">
+            {marketStatus?.source === 'yahoo' ? 'Live' : marketStatus?.source === 'yahoo-stale' ? 'Stale' : 'Demo'}
+          </span>
+        </div>
+
+        <div className="stock-quote-bar-actions">
+          <WatchlistButton
+            symbol={live.symbol}
+            watched={watchlist.has(live.symbol)}
+            busy={watchlist.busy === live.symbol}
+            onToggle={watchlist.toggle}
+          />
+          <PriceAlertButton symbol={live.symbol} ltp={live.price} />
+        </div>
+      </div>
+
       {news.length > 0 && (
         <section className="card px-4 py-2.5">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="mb-1.5 flex items-center gap-2">
             <IconDocument size={14} />
             <span className="text-xs font-bold uppercase text-muted">News · demo feed</span>
           </div>
-          <div className="space-y-2">
-            {news.slice(0, 3).map((item) => (
+          <div className="space-y-1.5">
+            {news.slice(0, 2).map((item) => (
               <div key={item.id || item.title} className="text-xs">
                 <span className="font-bold text-ink">{item.title}</span>
                 {item.source && <span className="text-muted"> — {item.source}</span>}
@@ -291,55 +334,8 @@ export function StockPage() {
         </section>
       )}
 
-      {/* Instrument header */}
-      <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-          <div className="flex gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand text-base font-extrabold text-white">
-              {live.symbol.slice(0, 2)}
-            </span>
-            <div>
-              <div className="flex items-center flex-wrap gap-2">
-                <h1 className="font-mono text-2xl font-extrabold tracking-tight">{live.symbol}</h1>
-                <span className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold text-muted">NSE</span>
-                <Link
-                  to={sectorHref}
-                  className="rounded-lg bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-muted transition hover:bg-page-tint hover:text-page-accent"
-                >
-                  {live.sector}
-                </Link>
-              </div>
-              <p className="mt-2 text-sm text-muted">{live.name}</p>
-              <p className="mt-2 text-[11px] text-muted">{live.industry || live.sector}</p>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <div className="mb-2 flex items-center justify-end gap-2 flex-wrap">
-              <WatchlistButton
-                symbol={live.symbol}
-                watched={watchlist.has(live.symbol)}
-                busy={watchlist.busy === live.symbol}
-                onToggle={watchlist.toggle}
-              />
-              <PriceAlertButton symbol={live.symbol} ltp={live.price} />
-              <span className="live-dot" />
-              <span className="text-xs font-bold text-accent uppercase">
-                {marketStatus?.source === 'yahoo' ? 'Yahoo Finance' : marketStatus?.source === 'yahoo-stale' ? 'Yahoo stale' : 'Demo'}
-              </span>
-            </div>
-            <div className="font-mono text-3xl font-bold">₹{formatINR(live.price)}</div>
-            <div className={`flex items-center justify-end gap-1 text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
-              {up ? <IconTrendingUp size={15} /> : <IconTrendingDown size={15} />}
-              {up ? '+' : ''}{formatINR(live.change)} ({up ? '+' : ''}{live.changePct}%)
-            </div>
-            <div className="mt-2 text-[10px] text-muted">
-              Updated {new Date(live.lastUpdate || Date.now()).toLocaleTimeString('en-IN', { hour12: false })}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-4 lg:grid-cols-7 lg:divide-y-0">
+      <section className="card stock-instrument">
+        <div className="stock-instrument-stats">
           <Quote label="Open" value={`₹${formatINR(live.open)}`} />
           <Quote label="High" value={`₹${formatINR(live.high)}`} tone="up" />
           <Quote label="Low" value={`₹${formatINR(live.low)}`} tone="down" />
@@ -349,14 +345,14 @@ export function StockPage() {
           <Quote label="Ask" value={bestAsk ? `₹${formatINR(bestAsk)}` : '—'} tone="down" />
         </div>
 
-        <div className="grid gap-4 border-t border-line p-4 sm:grid-cols-2">
+        <div className="grid gap-3 border-t border-line p-3 sm:grid-cols-2">
           <RangeBar label="Day range" low={live.low} high={live.high} pct={dayRangePct} />
           <RangeBar label="52 week range" low={week52Low} high={week52High} pct={week52Pct} />
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <div className="space-y-4">
+      <div className="stock-layout">
+        <div className="space-y-3 min-w-0">
           <AdvancedChart symbol={live.symbol} live={live} />
 
           <div className="card overflow-hidden">
@@ -531,15 +527,14 @@ export function StockPage() {
           )}
         </div>
 
-        {/* Order ticket */}
-        <div className="space-y-4 xl:sticky xl:top-[7.5rem] xl:h-fit">
+        <div className="stock-ticket">
           {position && (
-            <section className="card p-4">
+            <section className="card p-3.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-extrabold tracking-tight">Your position</h3>
                 <span className="rounded-lg bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">HOLDING</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                 <PositionStat label="Quantity" value={position.qty} />
                 <PositionStat label="Avg price" value={`₹${formatINR(position.avgPrice)}`} />
                 <PositionStat label="Current value" value={`₹${formatINR(position.qty * live.price)}`} />
@@ -556,21 +551,21 @@ export function StockPage() {
             <div className="grid grid-cols-2">
               <button
                 type="button"
-                className={`py-3 text-sm font-extrabold tracking-wide transition ${side === 'buy' ? 'bg-up text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
+                className={`py-2.5 text-sm font-extrabold tracking-wide transition ${side === 'buy' ? 'bg-up text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
                 onClick={() => setSide('buy')}
               >
                 BUY
               </button>
               <button
                 type="button"
-                className={`py-3 text-sm font-extrabold tracking-wide transition ${side === 'sell' ? 'bg-down text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
+                className={`py-2.5 text-sm font-extrabold tracking-wide transition ${side === 'sell' ? 'bg-down text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
                 onClick={() => setSide('sell')}
               >
                 SELL
               </button>
             </div>
 
-            <div className="space-y-3.5 p-4">
+            <div className="space-y-3 p-3.5">
               <Segmented
                 label="Product"
                 options={[
@@ -788,9 +783,9 @@ export function StockPage() {
 function Quote({ label, value, tone }) {
   const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
   return (
-    <div className="px-4 py-2.5">
+    <div>
       <div className="text-[10px] font-bold text-muted uppercase">{label}</div>
-      <div className={`mt-2 font-mono text-sm font-bold ${color}`}>{value}</div>
+      <div className={`mt-1 font-mono text-[0.82rem] font-bold ${color}`}>{value}</div>
     </div>
   )
 }

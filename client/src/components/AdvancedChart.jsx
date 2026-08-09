@@ -93,7 +93,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [showTools, setShowTools] = useState(true)
+  const [showTools, setShowTools] = useState(false)
   const [drawTool, setDrawTool] = useState('pan')
   const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
   const [draft, setDraft] = useState(null)
@@ -679,8 +679,8 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       ref={shellRef}
       className={`card overflow-hidden chart-shell${fullscreen ? ' is-fullscreen' : ''}`}
     >
-      <div className="row flex-wrap gap-md border px-lg py-md" style={{ borderWidth: '0 0 1px' }}>
-        <div className="row gap-xs">
+      <div className="chart-toolbar">
+        <div className="chart-toolbar-group">
           {TIMEFRAMES.map((t) => (
             <button
               key={t.id}
@@ -693,9 +693,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
           ))}
         </div>
 
-        <span className="muted" style={{ width: 1, height: 18, background: 'var(--color-line)' }} />
+        <span className="chart-toolbar-sep" aria-hidden="true" />
 
-        <div className="row gap-xs">
+        <div className="chart-toolbar-group">
           {CHART_TYPES.map((t) => (
             <button
               key={t.id}
@@ -708,7 +708,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
           ))}
         </div>
 
-        <div className="row gap-xs ml-auto">
+        <div className="chart-toolbar-actions">
           <button
             type="button"
             className={`btn text-xs bold ${showTools ? 'btn-primary' : 'btn-ghost'}`}
@@ -724,7 +724,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
               onClick={() => setShowIndicators((v) => !v)}
             >
               Indicators
-              <span className="mono text-xs">{activeOverlays.length}</span>
+              {activeOverlays.length > 0 && (
+                <span className="mono text-xs">{activeOverlays.length}</span>
+              )}
             </button>
 
             {showIndicators && (
@@ -823,19 +825,23 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         </div>
       )}
 
-      <div className="row flex-wrap gap-md border px-lg py-md mono text-xs" style={{ borderWidth: '0 0 1px' }}>
-        <span className="text-xs bold ink">{symbol}</span>
+      <div className="chart-ohlc">
+        <span className="bold ink">{symbol}</span>
         <span className="muted">{tf.label}</span>
         <Ohlc label="O" value={display ? formatINR(display.open) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="H" value={display ? formatINR(display.high) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="L" value={display ? formatINR(display.low) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
-        <span className="ml-auto muted">
-          {drawTool === 'pan'
-            ? `${drawings.length} saved drawing${drawings.length === 1 ? '' : 's'}`
-            : `${DRAW_TOOLS.find((t) => t.id === drawTool)?.tip || ''}`}
-        </span>
+        {drawTool !== 'pan' ? (
+          <span className="ml-auto muted font-sans text-[11px] font-bold">
+            {DRAW_TOOLS.find((t) => t.id === drawTool)?.tip}
+          </span>
+        ) : drawings.length > 0 ? (
+          <span className="ml-auto muted font-sans text-[11px] font-bold">
+            {drawings.length} saved
+          </span>
+        ) : null}
       </div>
 
       <div className="relative">
@@ -873,12 +879,14 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       </div>
 
       <div className="row-between border px-lg py-md text-xs muted" style={{ borderWidth: '1px 0 0' }}>
-        <span>
-          Tools · draw on chart · auto-saves per symbol · Esc cancels · Del removes selection
+        <span className="truncate">
+          {showTools
+            ? 'Draw · auto-saves per symbol · Esc cancels · Del deletes selection'
+            : 'Hover for OHLC · Tools for drawings · Full for fullscreen'}
         </span>
-        <span className="row gap-sm">
+        <span className="row gap-sm shrink-0">
           <span className="live-dot" />
-          Streaming quotes
+          Live
         </span>
       </div>
     </div>
