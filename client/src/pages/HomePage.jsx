@@ -265,28 +265,39 @@ export function HomePage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <Screen theme="home" className="space-y-4">
+    <Screen theme="home" className="space-y-5">
       {/* Greeting row */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight">
+          <p className="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">Dashboard</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-[1.75rem]">
             {greeting}, {user?.name?.split(' ')[0] || 'Investor'}
           </h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span className="session-chip" data-tone={session.tone}>
               <span className="dot" />
               {session.label}
               <span className="sep">·</span>
               <span className="detail">{session.detail}</span>
             </span>
+            {!loadingSummary && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-bold text-ink shadow-sm">
+                Equity
+                <span className="font-mono">₹{formatINRShort(totals.equity)}</span>
+                <span className={dayUp ? 'text-up' : 'text-down'}>
+                  {dayUp ? '+' : ''}
+                  {(totals.invested ? (totals.dayPnl / totals.invested) * 100 : 0).toFixed(2)}%
+                </span>
+              </span>
+            )}
             <span className="text-xs">
-              {connected ? feedLabel(market.status?.source) : 'Feed offline — showing last known prices'}
-              {' · updated '}
+              {connected ? feedLabel(market.status?.source) : 'Feed offline — last known prices'}
+              {' · '}
               {updatedAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button type="button" className="btn btn-ghost text-sm" onClick={() => navigate('/app/funds')}>
             <IconPlus size={16} />
             Add money
@@ -302,10 +313,10 @@ export function HomePage() {
       {attention.length > 0 && (
         <section>
           <h2 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">Needs your attention</h2>
-          <div className="grid gap-3">
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
             {attention.map((a) => (
               <Link key={a.key} to={a.to} className={`action-tile theme-${a.theme}`}>
-                <span className="icon-chip icon-chip-3">
+                <span className="icon-chip icon-chip-md">
                   <a.icon size={17} />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -349,7 +360,7 @@ export function HomePage() {
                   </div>
                   <div className={`mt-0.5 flex items-center justify-between gap-2 text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                     <span>{up ? '+' : ''}{idx.changePct}% today</span>
-                    <span className="font-semibold text-muted">Chart · Options →</span>
+                    <span className="font-sans font-semibold text-muted">Chart · Options →</span>
                   </div>
                 </button>
               )
@@ -357,10 +368,10 @@ export function HomePage() {
 
         <div className="index-card" data-tone={breadth.advancing >= breadth.declining ? 'up' : 'down'}>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold text-muted uppercase">Market breadth</span>
-            <span className="text-[11px] font-bold text-muted">{breadth.total} stocks</span>
+            <span className="text-[11px] font-bold tracking-wide text-muted uppercase">Market breadth</span>
+            <span className="text-[11px] font-semibold text-muted">{breadth.total} stocks</span>
           </div>
-          <div className="mt-1.5 flex items-center gap-2 font-mono text-xl font-bold">
+          <div className="mt-1.5 flex items-baseline gap-1.5 font-mono text-xl font-bold">
             <span className="text-up">{breadth.advancing}</span>
             <span className="text-sm text-muted">/</span>
             <span className="text-down">{breadth.declining}</span>
@@ -374,19 +385,34 @@ export function HomePage() {
       </section>
 
       {/* Portfolio hero */}
-      <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-6 px-5 py-6 text-white md:grid-cols-[1.05fr_1fr] md:px-7">
-          <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Portfolio value</p>
+      <section className="card overflow-hidden shadow-sm">
+        <div className="hero-mesh relative grid gap-6 px-5 py-7 text-white md:grid-cols-[1.05fr_1fr] md:px-8 md:py-8">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-25"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }}
+          />
+          <div className="relative">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Portfolio value</p>
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#7dffc8] uppercase">
+                Live
+              </span>
+            </div>
             {loadingSummary ? (
               <>
-                <Skeleton className="mt-1.5" />
-                <Skeleton className="mt-3" />
+                <Skeleton className="mt-2.5 h-9 w-56 opacity-20" />
+                <Skeleton className="mt-3 h-7 w-72 opacity-20" />
               </>
             ) : (
               <>
-                <h2 className="mt-2 font-mono text-4xl font-bold">₹{formatINR(totals.equity)}</h2>
-                <div className="mt-3 flex items-center flex-wrap gap-2">
+                <h2 className="mt-2 font-mono text-4xl font-bold tracking-tight sm:text-[2.6rem]">
+                  ₹{formatINR(totals.equity)}
+                </h2>
+                <div className="mt-3.5 flex flex-wrap gap-2">
                   <Pill
                     label="Today"
                     value={`${dayUp ? '+' : ''}₹${formatINR(totals.dayPnl)}`}
@@ -399,20 +425,37 @@ export function HomePage() {
                   />
                 </div>
                 {hasHoldings && (
-                  <p className="mt-3 text-xs">
+                  <p className="mt-3 text-xs text-white/55">
                     {dayUp ? 'Up' : 'Down'} today, driven by{' '}
-                    <span className="font-bold">{topDriver(liveHoldings)}</span>
+                    <Link
+                      to={`/app/stocks/${topDriver(liveHoldings)}`}
+                      className="font-semibold text-white/85 underline decoration-white/25 underline-offset-2 hover:text-white"
+                    >
+                      {topDriver(liveHoldings)}
+                    </Link>
                   </p>
                 )}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button type="button" className="btn btn-primary text-xs" onClick={() => navigate('/app/explore')}>
+                    Invest more
+                  </button>
+                  <button
+                    type="button"
+                    className="btn border border-white/20 bg-white/10 text-xs text-white hover:bg-white/15"
+                    onClick={() => navigate('/app/investments')}
+                  >
+                    View portfolio
+                  </button>
+                </div>
               </>
             )}
           </div>
-          <div className="flex items-end">
+          <div className="relative flex items-end rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
             <Sparkline data={curve} loading={intraday.loading && loadingSummary} empty={!hasHoldings} />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 border-t border-line md:grid-cols-4">
+        <div className="grid grid-cols-2 border-t border-line md:grid-cols-4 md:divide-x md:divide-[var(--color-line)]">
           <Metric label="Invested" value={`₹${formatINR(totals.invested)}`} loading={loadingSummary} />
           <Metric label="Current value" value={`₹${formatINR(totals.current)}`} loading={loadingSummary} />
           <Metric
@@ -426,7 +469,7 @@ export function HomePage() {
       </section>
 
       {/* Quick actions */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { title: 'Stocks', sub: 'Buy & sell equity', to: '/app/explore', icon: IconCandles, theme: 'explore' },
           { title: 'Mutual funds', sub: 'SIP & lumpsum', to: '/app/mf', icon: IconCoins, theme: 'mf' },
@@ -444,13 +487,20 @@ export function HomePage() {
             icon: IconList,
             theme: 'orders',
           },
+          {
+            title: 'Learn',
+            sub: 'Lessons & challenges',
+            to: '/app/learn',
+            icon: IconSparkles,
+            theme: 'home',
+          },
         ].map((q) => (
           <Link
             key={q.to}
             to={q.to}
-            className={`card card-hover tile-accent theme-${q.theme} flex items-center gap-3 p-1.5`}
+            className={`card card-hover tile-accent theme-${q.theme} flex items-center gap-3 p-3.5`}
           >
-            <span className="icon-chip">
+            <span className="icon-chip icon-chip-md">
               <q.icon size={18} />
             </span>
             <span className="min-w-0">
@@ -465,7 +515,7 @@ export function HomePage() {
         <div className="space-y-4">
           {/* Holdings */}
           <section className="card overflow-hidden">
-            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <SectionTitle icon={IconBriefcase} theme="investments">Your holdings</SectionTitle>
               {hasHoldings && (
                 <Link to="/app/investments" className="text-sm font-bold text-accent">
@@ -506,14 +556,14 @@ export function HomePage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm font-bold">₹{formatINR(h.value)}</div>
+                        <div className="font-mono text-sm font-semibold">₹{formatINR(h.value)}</div>
                         <div className="text-xs text-muted">LTP ₹{formatINR(h.ltp)}</div>
                       </div>
                       <div className="text-right">
                         <div className={`font-mono text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}₹{formatINR(h.pnl)}
                         </div>
-                        <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
+                        <div className={`text-xs font-semibold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}{h.pnlPct.toFixed(2)}%
                         </div>
                       </div>
@@ -588,7 +638,7 @@ export function HomePage() {
 
           {/* Recent activity */}
           <section className="card overflow-hidden">
-            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <SectionTitle icon={IconClock} theme="orders">Recent activity</SectionTitle>
               <Link to="/app/orders" className="text-sm font-bold text-accent">History</Link>
             </div>
@@ -597,7 +647,7 @@ export function HomePage() {
             ) : (
               <div className="divide-y divide-line">
                 {orders.slice(0, 5).map((o) => (
-                  <div key={o.id} className="grid grid-cols-[1.4fr_1fr_1fr] items-center px-4 py-3 transition hover:bg-surface-2/70">
+                  <div key={o.id} className="grid grid-cols-[1.4fr_1fr_1fr] items-center px-4 py-2.5">
                     <div className="min-w-0">
                       <div className="text-sm font-bold">
                         <span className={o.side === 'buy' ? 'text-up' : 'text-down'}>
@@ -617,7 +667,13 @@ export function HomePage() {
                     </div>
                     <div className="text-right">
                       <span
-                        className={`inline-block rounded-full px-2 py-1 text-[11px] font-bold capitalize ${o.status === 'filled' ? 'bg-up-bg text-up' : o.status === 'cancelled' || o.status === 'rejected' ? 'bg-down-bg text-down' : 'bg-surface-2 text-muted'}`}
+                        className={`inline-block rounded-lg px-2 py-1 text-[11px] font-bold capitalize ${
+                          o.status === 'filled'
+                            ? 'bg-up-bg text-up'
+                            : o.status === 'cancelled' || o.status === 'rejected'
+                              ? 'bg-down-bg text-down'
+                              : 'bg-surface-2 text-muted'
+                        }`}
                       >
                         {o.status}
                       </span>
@@ -653,15 +709,15 @@ export function HomePage() {
                   <div className="min-w-0 flex-1 space-y-1.5">
                     {allocation.slice(0, 5).map((a) => (
                       <div key={a.sector} className="flex items-center gap-2 text-xs">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: a.color }} />
-                        <span className="min-w-0 flex-1 truncate font-bold">{a.sector}</span>
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: a.color }} />
+                        <span className="min-w-0 flex-1 truncate font-semibold">{a.sector}</span>
                         <span className="font-mono text-muted">{a.pct.toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {allocation[0]?.pct > 40 && (
-                  <p className="mt-3 rounded py-2.5 text-xs text-muted">
+                  <p className="mt-3 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
                     <span className="font-bold text-ink">{allocation[0].pct.toFixed(0)}%</span> of your equity sits in{' '}
                     {allocation[0].sector}. Spreading across sectors lowers concentration risk.
                   </p>
@@ -679,14 +735,14 @@ export function HomePage() {
               </Link>
             </div>
             {mfSummary.funds === 0 ? (
-              <div className="rounded bg-page-tint px-4 py-2.5 text-xs text-muted">
+              <div className="rounded-xl bg-page-tint px-3 py-3 text-xs text-muted">
                 Start a SIP from ₹100 a month and build wealth on autopilot.
               </div>
             ) : (
               <>
-                <div className="flex items-end gap-3">
+                <div className="flex items-end justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-bold text-muted uppercase">Current value</div>
+                    <div className="text-[10px] font-bold tracking-wide text-muted uppercase">Current value</div>
                     <div className="font-mono text-xl font-bold">₹{formatINR(mfSummary.current)}</div>
                   </div>
                   <div
@@ -698,7 +754,7 @@ export function HomePage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line text-center">
+                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
                   <MiniStat label="Invested" value={`₹${formatINRShort(mfSummary.invested)}`} />
                   <MiniStat label="Funds" value={String(mfSummary.funds)} />
                   <MiniStat
@@ -712,14 +768,14 @@ export function HomePage() {
 
           {/* Watchlist */}
           <section className="card overflow-hidden">
-            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <SectionTitle icon={IconStar} theme="explore">Watchlist</SectionTitle>
               <Link to="/app/explore" className="text-sm font-bold text-accent">Edit</Link>
             </div>
             {watchlist.ready === false ? (
               <SkeletonRows rows={4} />
             ) : (
-              <div className="">
+              <div className="divide-y divide-line">
                 {watchlist.symbols.slice(0, 8).map((sym) => {
                   const inst = market.instruments[sym]
                   if (!inst) {
@@ -740,7 +796,7 @@ export function HomePage() {
                   return (
                     <div
                       key={sym}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition hover:bg-surface-2/70"
+                      className="flex w-full items-center gap-2 px-3 py-2.5 transition hover:bg-surface-2/70"
                     >
                       <WatchlistButton
                         compact
@@ -751,7 +807,7 @@ export function HomePage() {
                       />
                       <button
                         type="button"
-                        className="flex items-center min-w-0 flex-1"
+                        className="flex min-w-0 flex-1 items-center justify-between text-left"
                         onClick={() => navigate(`/app/stocks/${sym}`)}
                       >
                         <div className="min-w-0">
@@ -759,7 +815,7 @@ export function HomePage() {
                           <div className="truncate text-xs text-muted">Vol {formatINRShort(inst.volume)}</div>
                         </div>
                         <div className="text-right">
-                          <div className="font-mono text-sm font-bold">₹{formatINR(inst.price)}</div>
+                          <div className="font-mono text-sm font-semibold">₹{formatINR(inst.price)}</div>
                           <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                             {up ? '+' : ''}{inst.changePct}%
                           </div>
@@ -793,7 +849,7 @@ export function HomePage() {
                 <SectionTitle icon={IconRocket} theme="ipo">IPOs open now</SectionTitle>
                 <Link to="/app/ipo" className="text-sm font-bold text-accent">See all</Link>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {ipos.slice(0, 2).map((ipo) => (
                   <Link
                     key={ipo.id}
@@ -806,7 +862,7 @@ export function HomePage() {
                         ₹{ipo.priceMin}–{ipo.priceMax} · Lot {ipo.lotSize}
                       </div>
                     </div>
-                    <span className="rounded px-4 py-2.5 text-xs font-bold text-up">
+                    <span className="rounded-lg bg-up-bg px-2 py-1 text-xs font-bold text-up">
                       GMP ₹{ipo.gmp}
                     </span>
                   </Link>
@@ -819,15 +875,22 @@ export function HomePage() {
       </div>
 
       {/* Sector heatmap */}
-      <section className="card p-4">
-        <div className="mb-3 flex items-center flex-wrap gap-2">
+      <section className="card p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <SectionTitle icon={IconGrid} theme="explore">Sector heatmap</SectionTitle>
-          <span className="text-xs text-muted">Average move across {instrumentList.length} stocks · tap to filter</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted">
+              Avg move · {instrumentList.length} stocks
+            </span>
+            <Link to="/app/heatmap" className="text-xs font-bold text-accent hover:underline">
+              Full heatmap →
+            </Link>
+          </div>
         </div>
         {sectorHeat.length === 0 ? (
           <div className="heat-grid">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-[4.4rem] rounded" />
+              <Skeleton key={i} className="h-[4.4rem] rounded-xl" />
             ))}
           </div>
         ) : (
@@ -846,7 +909,7 @@ export function HomePage() {
                     <span className={`block font-mono text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                       {up ? '+' : ''}{s.avg.toFixed(2)}%
                     </span>
-                    <span className="block text-[10px] font-bold text-muted">
+                    <span className="block text-[10px] font-semibold text-muted">
                       {s.advancing}/{s.count} up
                     </span>
                   </span>
@@ -918,8 +981,8 @@ function SectionTitle({ icon: Icon, theme, children }) {
 function MiniStat({ label, value }) {
   return (
     <div>
-      <div className="text-[10px] font-bold text-muted uppercase">{label}</div>
-      <div className="mt-2 font-mono text-sm font-bold">{value}</div>
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
+      <div className="mt-0.5 font-mono text-sm font-bold">{value}</div>
     </div>
   )
 }
@@ -935,14 +998,14 @@ function Pill({ label, value, tone }) {
 }
 
 function Metric({ label, value, tone, accent, loading }) {
-  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : accent ? 'text-accent' : ''
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : accent ? 'text-accent' : 'text-ink'
   return (
-    <div className="border-b border-line px-4 py-3 last:border-b-0 md:border-b-0">
+    <div className="border-b border-line px-4 py-3.5 last:border-b-0 md:border-b-0">
       <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
       {loading ? (
         <Skeleton className="mt-1.5 h-3.5 w-24" />
       ) : (
-        <div className={`mt-1 font-mono text-sm font-bold ${color}`}>{value}</div>
+        <div className={`mt-1.5 font-mono text-[0.95rem] font-bold tracking-tight ${color}`}>{value}</div>
       )}
     </div>
   )
