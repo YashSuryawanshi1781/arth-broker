@@ -157,7 +157,7 @@ export function AccountPage() {
           <span className="grid shrink-0 rounded text-md extrabold text-mint">
             {initials}
           </span>
-          <div className="min-">
+          <div className="min-w-0">
             <div className="truncate extrabold">{user?.name || 'Investor'}</div>
             <div className="truncate text-sm muted">{user?.email}</div>
           </div>
@@ -277,7 +277,7 @@ export function AccountPage() {
       </section>
 
       <section className="card p-xl">
-        <div className="mb-lg row wrap gap-md">
+        <div className="mb-lg row flex-wrap gap-md">
           <div>
             <h2 className="row gap-sm text-xl bold">
               <span className="icon-chip icon-chip-md">
@@ -308,8 +308,8 @@ export function AccountPage() {
               <span className={`grid shrink-0 rounded ${ session.current ? ' ' : ' text-muted' }`}>
                 <IconShield size={17} />
               </span>
-              <div className="min- grow">
-                <div className="row wrap gap-sm">
+              <div className="min-w-0 grow">
+                <div className="row flex-wrap gap-sm">
                   <span className="truncate text-sm bold">{session.device}</span>
                   {session.current && (
                     <span className="rounded px-lg text-[9px] extrabold up uppercase">
@@ -317,7 +317,7 @@ export function AccountPage() {
                     </span>
                   )}
                 </div>
-                <div className="mt-sm row wrap gap-x-3 gap-y-1 text-[11px] muted">
+                <div className="mt-sm row flex-wrap gap-x-3 gap-y-1 text-[11px] muted">
                   <span className="row gap-xs">
                     <IconClock size={11} />
                     Active {relativeTime(session.lastSeenAt)}
@@ -327,7 +327,7 @@ export function AccountPage() {
               </div>
               <button
                 type="button"
-                className="grid shrink-0 rounded muted disabled:"
+                className="grid shrink-0 rounded muted"
                 onClick={() => closeSession(session)}
                 disabled={sessionsBusy}
                 aria-label={`Sign out ${session.device}`}
@@ -344,7 +344,7 @@ export function AccountPage() {
 
         <button
           type="button"
-          className="mt-md row gap-sm text-xs bold down disabled:"
+          className="mt-md row gap-sm text-xs bold down"
           onClick={closeAllSessions}
           disabled={sessionsBusy}
         >
@@ -402,7 +402,7 @@ export function AccountPage() {
               >
                 <IconBell size={15} />
               </span>
-              <div className="min-">
+              <div className="min-w-0">
                 <div className="bold">{n.title}</div>
                 <div className="text-sm muted">{n.body}</div>
                 <div className="mt-sm text-[11px] muted">{new Date(n.createdAt).toLocaleString('en-IN')}</div>
@@ -443,7 +443,7 @@ function DetailRow({ icon: Icon, label, value }) {
     <div className="row gap-sm">
       <Icon size={15} className="shrink-0 muted" />
       <span className="muted">{label}:</span>
-      <span className="min- truncate bold">{value || '—'}</span>
+      <span className="min-w-0 truncate bold">{value || '—'}</span>
     </div>
   )
 }

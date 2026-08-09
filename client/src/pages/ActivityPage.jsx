@@ -30,7 +30,7 @@ export function ActivityPage() {
       <div className="stack gap-sm">
         {events.map((e) => (
           <div key={e.id} className="card stack gap-xs px-lg py-md">
-            <div className="row wrap gap-sm">
+            <div className="row flex-wrap gap-sm">
               <Chip size="small" label={e.kind} />
               <span className="bold">{e.title}</span>
               <span className="ml-auto text-xs muted">

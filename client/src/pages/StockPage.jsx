@@ -293,13 +293,13 @@ export function StockPage() {
 
       {/* Instrument header */}
       <section className="card overflow-hidden">
-        <div className="row wrap gap-lg p-lg">
+        <div className="row flex-wrap gap-lg p-lg">
           <div className="row gap-md">
             <span className="grid shrink-0 rounded text-md extrabold">
               {live.symbol.slice(0, 2)}
             </span>
             <div>
-              <div className="row wrap gap-sm">
+              <div className="row flex-wrap gap-sm">
                 <h1 className="mono text-2xl extrabold">{live.symbol}</h1>
                 <span className="rounded border text-[10px] bold muted">NSE</span>
                 <Link
@@ -315,7 +315,7 @@ export function StockPage() {
           </div>
 
           <div className="right">
-            <div className="mb-sm row-end gap-sm wrap">
+            <div className="mb-sm row-end gap-sm flex-wrap">
               <WatchlistButton
                 symbol={live.symbol}
                 watched={watchlist.has(live.symbol)}
@@ -329,7 +329,7 @@ export function StockPage() {
               </span>
             </div>
             <div className="mono text-3xl bold">₹{formatINR(live.price)}</div>
-            <div className={`row-end gap-xs text-sm bold ${up ? '' : ''}`}>
+            <div className={`row-end gap-xs text-sm bold ${up ? 'text-up' : 'text-down'}`}>
               {up ? <IconTrendingUp size={15} /> : <IconTrendingDown size={15} />}
               {up ? '+' : ''}{formatINR(live.change)} ({up ? '+' : ''}{live.changePct}%)
             </div>
@@ -355,7 +355,7 @@ export function StockPage() {
         </div>
       </section>
 
-      <div className="grid gap-lg ]">
+      <div className="grid gap-lg">
         <div className="stack gap-md">
           <AdvancedChart symbol={live.symbol} live={live} />
 
@@ -371,7 +371,7 @@ export function StockPage() {
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`row gap-sm border-b-2 px-lg .5 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
+                  className={`row gap-sm border-b-2 px-lg h-3 w-24 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -514,7 +514,7 @@ export function StockPage() {
                       className="row w-full px-lg py-md"
                       onClick={() => navigate(`/app/stocks/${p.symbol}`)}
                     >
-                      <div className="min-">
+                      <div className="min-w-0">
                         <div className="mono text-sm bold">{p.symbol}</div>
                         <div className="truncate text-xs muted">{p.name}</div>
                       </div>
@@ -533,7 +533,7 @@ export function StockPage() {
         </div>
 
         {/* Order ticket */}
-        <div className="stack gap-md ]">
+        <div className="stack gap-md">
           {position && (
             <section className="card p-lg">
               <div className="row-between">
@@ -571,7 +571,7 @@ export function StockPage() {
               </button>
             </div>
 
-            <div className="stack gap-md.5 p-lg">
+            <div className="stack gap-1.5 p-lg">
               <Segmented
                 label="Product"
                 options={[
@@ -736,7 +736,7 @@ export function StockPage() {
               <button
                 type="button"
                 disabled={!canSubmit}
-                className={`btn w-full py-md ${side === 'buy' ? 'btn-up' : 'btn-down'} disabled:`}
+                className={`btn w-full py-md ${side === 'buy' ? 'btn-up' : 'btn-down'}`}
                 onClick={placeOrder}
               >
                 {busy ? 'Placing…' : `${side === 'buy' ? 'BUY' : 'SELL'} ${qty} ${live.symbol}`}
@@ -754,9 +754,9 @@ export function StockPage() {
       {/* Mobile sticky trade CTA — industry pattern so the ticket isn't buried under the chart */}
       <div className="trade-dock">
         <div className="page row gap-md px-lg py-md">
-          <div className="min- grow">
+          <div className="min-w-0 grow">
             <div className="mono text-sm extrabold">₹{formatINR(live.price)}</div>
-            <div className={`text-[11px] bold ${up ? '' : ''}`}>
+            <div className={`text-[11px] bold ${up ? 'text-up' : 'text-down'}`}>
               {up ? '+' : ''}{live.changePct}%
             </div>
           </div>
@@ -800,17 +800,17 @@ function RangeBar({ label, low, high, pct }) {
   const clamped = Math.min(100, Math.max(0, pct))
   return (
     <div>
-      <div className="mb-sm.5 row-between text-[10px] bold muted uppercase">
+      <div className="mb-1.5 row-between text-[10px] bold muted uppercase">
         <span>{label}</span>
       </div>
-      <div className="relative .5 rounded">
+      <div className="relative h-3 w-24 rounded">
         <div className="h-full rounded bg-gradient-" style={{ width: '100%' }} />
         <div
           className="absolute /2 -translate-x-1 -translate-y-1 rounded border-2 border-white bg-ink shadow"
           style={{ left: `${clamped}%` }}
         />
       </div>
-      <div className="mt-sm.5 row mono text-[11px] muted">
+      <div className="mt-1.5 row mono text-[11px] muted">
         <span>₹{formatINR(low)}</span>
         <span>₹{formatINR(high)}</span>
       </div>

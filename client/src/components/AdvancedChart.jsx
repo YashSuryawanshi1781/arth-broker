@@ -407,7 +407,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="row wrap gap-md border px-lg py-md" style={{ borderWidth: '0 0 1px' }}>
+      <div className="row flex-wrap gap-md border px-lg py-md" style={{ borderWidth: '0 0 1px' }}>
         <div className="row gap-xs">
           {TIMEFRAMES.map((t) => (
             <button
@@ -484,7 +484,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         </div>
       </div>
 
-      <div className="row wrap gap-md border px-lg py-md mono text-xs" style={{ borderWidth: '0 0 1px' }}>
+      <div className="row flex-wrap gap-md border px-lg py-md mono text-xs" style={{ borderWidth: '0 0 1px' }}>
         <span className="text-xs bold ink">{symbol}</span>
         <span className="muted">{tf.label}</span>
         <Ohlc label="O" value={display ? formatINR(display.open) : '—'} tone={up ? 'up' : 'down'} />
@@ -493,7 +493,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
         {activeOverlays.length > 0 && (
-          <span className="ml-auto row wrap gap-sm text-xs">
+          <span className="ml-auto row flex-wrap gap-sm text-xs">
             {activeOverlays.map((ind) => (
               <span key={ind.id} className="row gap-xs muted">
                 <span className="rounded shrink-0" style={{ width: 8, height: 8, background: ind.color }} />

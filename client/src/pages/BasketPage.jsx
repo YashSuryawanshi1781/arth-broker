@@ -154,7 +154,7 @@ export function BasketPage() {
         ))}
       </div>
 
-      <div className="row wrap gap-sm">
+      <div className="row flex-wrap gap-sm">
         <Button variant="outlined" onClick={() => setLegs((p) => [...p, emptyLeg()].slice(0, 8))} disabled={legs.length >= 8}>
           Add leg
         </Button>

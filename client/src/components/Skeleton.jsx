@@ -7,13 +7,13 @@ export function SkeletonRows({ rows = 4, className = '' }) {
     <div className={`${className}`}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="row-between gap-md px-lg py-md">
-          <div className="min- grow stack gap-md.5">
-            <Skeleton className=".5" />
-            <Skeleton className=".5" />
+          <div className="min-w-0 grow stack gap-1.5">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-24" />
           </div>
-          <div className="stack gap-md.5 right">
-            <Skeleton className="ml-auto .5" />
-            <Skeleton className="ml-auto .5" />
+          <div className="stack gap-1.5 right">
+            <Skeleton className="ml-auto h-3 w-16" />
+            <Skeleton className="ml-auto h-3 w-16" />
           </div>
         </div>
       ))}

@@ -156,7 +156,7 @@ export function MfFundPage() {
 
       {/* Fund header */}
       <section className="card overflow-hidden">
-        <div className="row wrap gap-lg p-xl">
+        <div className="row flex-wrap gap-lg p-xl">
           <div className="row gap-lg">
             <FundLogo name={fund.amcShort} size="lg" />
             <div>
@@ -164,7 +164,7 @@ export function MfFundPage() {
               <p className="mt-sm text-sm muted">
                 {fund.plan} · {fund.option} · {fund.amc}
               </p>
-              <div className="mt-sm row wrap gap-sm text-[11px]">
+              <div className="mt-sm row flex-wrap gap-sm text-[11px]">
                 <span className="rounded px-lg bold muted">{fund.category}</span>
                 <Link
                   to={categoryHref}
@@ -197,11 +197,11 @@ export function MfFundPage() {
         </div>
       </section>
 
-      <div className="grid gap-lg ]">
+      <div className="grid gap-lg">
         <div className="stack gap-md">
           {/* NAV chart */}
           <section className="card p-lg">
-            <div className="mb-md row wrap gap-sm">
+            <div className="mb-md row flex-wrap gap-sm">
               <h3 className="extrabold">NAV performance</h3>
               <div className="row">
                 {RANGES.map(([id, label]) => (
@@ -233,7 +233,7 @@ export function MfFundPage() {
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`row gap-sm border-b-2 px-lg .5 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
+                  className={`row gap-sm border-b-2 px-lg h-3 w-24 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -335,13 +335,13 @@ export function MfFundPage() {
 
                   <div>
                     <h4 className="mb-md text-sm bold">Sector breakdown</h4>
-                    <div className="row wrap gap-lg">
+                    <div className="row flex-wrap gap-lg">
                       <Donut segments={sectorSegments} size="h-28 w-28" />
-                      <div className="w-[200px] grow stack gap-md.5">
+                      <div className="w-[200px] grow stack gap-1.5">
                         {sectorSegments.map((s) => (
                           <div key={s.label} className="row gap-sm text-xs">
-                            <span className=".5 shrink-0 rounded" style={{ background: s.color }} />
-                            <span className="min- grow truncate">{s.label}</span>
+                            <span className="h-3 w-24 shrink-0 rounded" style={{ background: s.color }} />
+                            <span className="min-w-0 grow truncate">{s.label}</span>
                             <span className="mono bold">{s.pct}%</span>
                           </div>
                         ))}
@@ -354,12 +354,12 @@ export function MfFundPage() {
                     <div className="">
                       {fund.topHoldings.map((h) => (
                         <div key={h.name} className="row-between py-md">
-                          <div className="min-">
+                          <div className="min-w-0">
                             <div className="truncate text-sm bold">{h.name}</div>
                             <div className="text-[11px] muted">{h.sector}</div>
                           </div>
                           <div className="row gap-md">
-                            <div className=".5 overflow-hidden rounded">
+                            <div className="h-3 w-24 overflow-hidden rounded">
                               <div className="h-full rounded bg-accent" style={{ width: `${(h.pct / 12) * 100}%` }} />
                             </div>
                             <span className="right mono text-sm bold">{h.pct}%</span>
@@ -510,9 +510,9 @@ export function MfFundPage() {
                     className="row w-full px-lg py-md"
                     onClick={() => navigate(`/app/mf/${p.id}`)}
                   >
-                    <div className="row min- gap-md">
+                    <div className="row min-w-0 gap-md">
                       <FundLogo name={p.amcShort} />
-                      <div className="min-">
+                      <div className="min-w-0">
                         <div className="truncate text-sm bold">{p.name}</div>
                         <div className="text-[11px] muted">
                           {p.subCategory} · Expense {p.expenseRatio}%
@@ -569,7 +569,7 @@ export function MfFundPage() {
               </button>
             </div>
 
-            <div className="stack gap-md.5 p-lg">
+            <div className="stack gap-1.5 p-lg">
               <div>
                 <label className="label" htmlFor="mf-amount">
                   {mode === 'sip' ? 'Monthly amount' : 'Investment amount'}
@@ -640,7 +640,7 @@ export function MfFundPage() {
               <button
                 type="button"
                 disabled={busy}
-                className="btn btn-primary w-full py-md disabled:"
+                className="btn btn-primary w-full py-md"
                 onClick={invest}
               >
                 {busy ? 'Processing…' : mode === 'sip' ? 'Start SIP' : 'Invest now'}
@@ -702,7 +702,7 @@ function FundCalculator({ fund }) {
         </p>
       </div>
 
-      <div className="row wrap gap-sm">
+      <div className="row flex-wrap gap-sm">
         {basisOptions.map((option) => (
           <button
             key={option.id}
@@ -718,7 +718,7 @@ function FundCalculator({ fund }) {
         ))}
       </div>
 
-      <div className="grid gap-lg ]">
+      <div className="grid gap-lg">
         <div className="stack gap-md">
           <div className="row gap-xs rounded p-1">
             {[['sip', 'Monthly SIP'], ['lumpsum', 'One-time']].map(([id, label]) => (
@@ -810,7 +810,7 @@ function FundCalculator({ fund }) {
         />
       </div>
 
-      <div className="row wrap gap-sm">
+      <div className="row flex-wrap gap-sm">
         <Link to={`/app/mf/calculator?fund=${fund.id}`} className="btn btn-ghost text-sm">
           <IconCalculator size={15} />
           Advanced calculator

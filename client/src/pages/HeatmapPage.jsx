@@ -77,7 +77,7 @@ export function HeatmapPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="row-between wrap gap-sm border-b border px-lg py-md">
+        <div className="row-between flex-wrap gap-sm border-b border px-lg py-md">
           <div>
             <h3 className="extrabold">{sector || 'All sectors'}</h3>
             <p className="text-xs muted">{stocks.length} stocks · tap a tile to filter</p>
@@ -100,7 +100,7 @@ export function HeatmapPage() {
                 className="row w-full px-lg py-md"
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <div className="min-">
+                <div className="min-w-0">
                   <div className="mono text-sm bold">{s.symbol}</div>
                   <div className="truncate text-xs muted">{s.name}</div>
                 </div>

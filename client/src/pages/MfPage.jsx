@@ -211,7 +211,7 @@ export function MfPage() {
 
       {/* Portfolio summary */}
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-lg px-lg py-md ]">
+        <div className="hero-mesh grid gap-lg px-lg py-md">
           <div>
             <p className="text-[11px] bold tracking-[0.16em] uppercase">Mutual fund portfolio</p>
             <div className="mt-sm mono text-3xl bold">₹{formatINR(portfolio.current)}</div>
@@ -249,7 +249,7 @@ export function MfPage() {
       {tab === 'explore' && (
         <>
           <div className="card stack gap-md p-lg">
-            <div className="row wrap gap-sm">
+            <div className="row flex-wrap gap-sm">
               <div className="field-wrap w-[220px] grow">
                 <IconExplore size={18} className="field-icon" />
                 <input
@@ -306,9 +306,9 @@ export function MfPage() {
                 onClick={() => navigate(`/app/mf/${f.id}`)}
                 className="grid w-full grid-cols-[2.2fr_repeat(5,1fr)] border-b border px-lg py-md last:border-0"
               >
-                <div className="row min- gap-md">
+                <div className="row min-w-0 gap-md">
                   <FundLogo name={f.amcShort} />
-                  <div className="min-">
+                  <div className="min-w-0">
                     <div className="truncate text-sm bold">{f.name}</div>
                     <div className="mt-sm row gap-sm text-[11px]">
                       <span className="muted">{f.subCategory}</span>
@@ -335,7 +335,7 @@ export function MfPage() {
           </section>
 
           {/* Cards on mobile */}
-          <div className="grid gap-md lg-hide">
+          <div className="grid gap-md lg:hidden">
             {funds.map((f) => (
               <button
                 key={f.id}
@@ -344,9 +344,9 @@ export function MfPage() {
                 onClick={() => navigate(`/app/mf/${f.id}`)}
               >
                 <div className="row-start gap-md">
-                  <div className="row min- gap-md">
+                  <div className="row min-w-0 gap-md">
                     <FundLogo name={f.amcShort} />
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="truncate bold">{f.name}</div>
                       <div className="mt-sm text-xs muted">{f.subCategory} · {f.plan} {f.option}</div>
                       <div className="mt-sm row gap-sm text-[11px]">
@@ -372,7 +372,7 @@ export function MfPage() {
       )}
 
       {tab === 'portfolio' && (
-        <div className="grid gap-lg ]">
+        <div className="grid gap-lg">
           <section className="card overflow-hidden">
             <div className="border-b border px-lg py-md">
               <h3 className="row gap-sm extrabold">
@@ -395,11 +395,11 @@ export function MfPage() {
                     <div className="row-start gap-md">
                       <button
                         type="button"
-                        className="row min- gap-md"
+                        className="row min-w-0 gap-md"
                         onClick={() => navigate(`/app/mf/${h.fundId}`)}
                       >
                         <FundLogo name={h.amcShort} />
-                        <div className="min-">
+                        <div className="min-w-0">
                           <div className="truncate text-sm bold">{h.name}</div>
                           <div className="text-xs muted">{h.subCategory} · Held {h.holdingDays}d</div>
                         </div>
@@ -451,11 +451,11 @@ export function MfPage() {
             ) : (
               <div className="row gap-lg">
                 <Donut segments={allocation} />
-                <div className="min- grow stack gap-md.5">
+                <div className="min-w-0 grow stack gap-1.5">
                   {allocation.map((a) => (
                     <div key={a.label} className="row gap-sm text-xs">
-                      <span className=".5 shrink-0 rounded" style={{ background: a.color }} />
-                      <span className="min- grow truncate bold">{a.label}</span>
+                      <span className="h-3 w-24 shrink-0 rounded" style={{ background: a.color }} />
+                      <span className="min-w-0 grow truncate bold">{a.label}</span>
                       <span className="mono muted">{a.pct.toFixed(1)}%</span>
                     </div>
                   ))}
@@ -489,9 +489,9 @@ export function MfPage() {
           ) : sips.map((sip) => (
             <div key={sip.id} className="card p-lg">
               <div className="row-start gap-md">
-                <div className="row min- gap-md">
+                <div className="row min-w-0 gap-md">
                   <FundLogo name={sip.amcShort} />
-                  <div className="min-">
+                  <div className="min-w-0">
                     <div className="truncate bold">{sip.name}</div>
                     <div className="text-xs muted">{sip.subCategory}</div>
                   </div>
@@ -531,7 +531,7 @@ export function MfPage() {
                   </button>
                 </div>
               ) : (
-                <div className="mt-md row wrap gap-sm">
+                <div className="mt-md row flex-wrap gap-sm">
                   {sip.status !== 'cancelled' && (
                     <button
                       type="button"
@@ -580,7 +580,7 @@ export function MfPage() {
             />
           ) : transactions.map((t) => (
             <div key={t.id} className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border px-lg py-md last:border-0">
-              <div className="min-">
+              <div className="min-w-0">
                 <div className="truncate text-sm bold">{t.name}</div>
                 <div className="text-xs">
                   <span className={t.type === 'purchase' ? 'font-bold up' : 'font-bold down'}>
@@ -671,7 +671,7 @@ export function MfPage() {
 
 function HeroMetric({ label, value }) {
   return (
-    <div className="rounded border p-sm.5">
+    <div className="rounded border p-1.5">
       <div className="text-[9px] bold uppercase">{label}</div>
       <div className="mt-sm mono text-sm bold">{value}</div>
     </div>

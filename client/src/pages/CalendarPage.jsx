@@ -39,11 +39,11 @@ export function CalendarPage() {
 
       <div className="stack gap-sm">
         {sorted.map((a, i) => (
-          <div key={`${a.symbol}-${a.date}-${i}`} className="card row wrap gap-md px-lg py-md">
+          <div key={`${a.symbol}-${a.date}-${i}`} className="card row flex-wrap gap-md px-lg py-md">
             <div className="mono bold" style={{ minWidth: 96 }}>{a.date}</div>
             <Chip size="small" label={a.type} color={TYPE_TONE[a.type] || 'default'} />
             <Link to={`/app/stocks/${a.symbol}`} className="mono bold">{a.symbol}</Link>
-            <div className="min- flex-1">{a.title}</div>
+            <div className="min-w-0 flex-1">{a.title}</div>
             {a.amount != null && <span className="mono muted">₹{a.amount}</span>}
             {a.ratio && <span className="mono muted">{a.ratio}</span>}
           </div>

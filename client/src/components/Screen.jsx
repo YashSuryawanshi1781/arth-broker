@@ -10,8 +10,8 @@ export function Screen({ theme = 'home', className = '', children }) {
 
 export function PageHeader({ icon: Icon, eyebrow, title, subtitle, actions }) {
   return (
-    <div className="page-header mb-5 row wrap gap-lg">
-      <div className="row gap-md.5">
+    <div className="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-3.5">
         {Icon ? (
           <span className="icon-chip icon-chip-lg">
             <Icon size={22} />
@@ -19,13 +19,13 @@ export function PageHeader({ icon: Icon, eyebrow, title, subtitle, actions }) {
         ) : null}
         <div>
           {eyebrow ? (
-            <div className="text-[10px] bold tracking-[0.12em] text-page-accent uppercase">{eyebrow}</div>
+            <div className="text-[10px] font-bold tracking-[0.12em] text-page-accent uppercase">{eyebrow}</div>
           ) : null}
-          <h1 className="text-xl extrabold">{title}</h1>
-          {subtitle ? <p className="mt-sm text-sm muted">{subtitle}</p> : null}
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{title}</h1>
+          {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
         </div>
       </div>
-      {actions ? <div className="row wrap gap-sm">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   )
 }
@@ -40,18 +40,18 @@ export function IconChip({ icon: Icon, size = 18, tone = 'accent', className = '
 
 export function EmptyState({ art: Art, accent, title, message, action, compact = false }) {
   return (
-    <div className={`stack center ${compact ? 'py-6' : 'py-10'}`}>
+    <div className={`flex flex-col items-center justify-center text-center ${compact ? 'py-6' : 'py-10'}`}>
       {Art ? (
         <Art
           accent={accent}
           width={compact ? 150 : 200}
           height={compact ? 112 : 150}
-          className="mb-sm"
+          className="mb-1 opacity-95"
         />
       ) : null}
-      <p className="text-sm extrabold">{title}</p>
-      {message ? <p className="mt-sm text-xs leading-relaxed muted">{message}</p> : null}
-      {action ? <div className="mt-lg">{action}</div> : null}
+      <p className="text-sm font-extrabold">{title}</p>
+      {message ? <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted">{message}</p> : null}
+      {action ? <div className="mt-4">{action}</div> : null}
     </div>
   )
 }

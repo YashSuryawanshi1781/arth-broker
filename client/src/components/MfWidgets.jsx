@@ -98,7 +98,7 @@ export function NavChart({ data, height = 220 }) {
       <div className="mb-sm row">
         <div>
           <span className="mono text-2xl bold">₹{last.nav.toFixed(2)}</span>
-          <span className={`ml-2 text-sm bold ${up ? '' : ''}`}>
+          <span className={`ml-2 text-sm bold ${up ? 'text-up' : 'text-down'}`}>
             {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
           </span>
         </div>

@@ -115,13 +115,13 @@ export function IndexPage() {
       />
 
       <section className="card overflow-hidden">
-        <div className="row wrap gap-lg p-lg">
+        <div className="row flex-wrap gap-lg p-lg">
           <div className="row gap-md">
             <span className="grid shrink-0 rounded text-xs extrabold">
               {indexKey.slice(0, 3)}
             </span>
             <div>
-              <div className="row wrap gap-sm">
+              <div className="row flex-wrap gap-sm">
                 <h1 className="text-2xl extrabold">{live.name}</h1>
                 <span className="rounded border text-[10px] bold muted">
                   {live.exchange || 'NSE'}
@@ -135,7 +135,7 @@ export function IndexPage() {
           </div>
 
           <div className="right">
-            <div className="mb-sm row-end gap-sm wrap">
+            <div className="mb-sm row-end gap-sm flex-wrap">
               <PriceAlertButton symbol={indexKey} ltp={live.value} />
               <span className="live-dot" />
               <span className="text-xs bold accent uppercase">
@@ -145,7 +145,7 @@ export function IndexPage() {
             <div className="mono text-3xl bold">
               {Number(live.value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </div>
-            <div className={`row-end gap-xs text-sm bold ${up ? '' : ''}`}>
+            <div className={`row-end gap-xs text-sm bold ${up ? 'text-up' : 'text-down'}`}>
               {up ? <IconTrendingUp size={15} /> : <IconTrendingDown size={15} />}
               {up ? '+' : ''}{formatINR(live.change || 0)} ({up ? '+' : ''}{live.changePct}%)
             </div>
@@ -165,7 +165,7 @@ export function IndexPage() {
           <RangeBar label="Day range" low={live.low} high={live.high} value={live.value} pct={dayRangePct} />
         </div>
 
-        <div className="row wrap gap-sm border-t border /40 px-lg py-md">
+        <div className="row flex-wrap gap-sm border-t border /40 px-lg py-md">
           <button type="button" className="btn btn-primary text-sm" onClick={() => setTab('chart')}>
             <IconCandles size={16} />
             Open chart
@@ -197,7 +197,7 @@ export function IndexPage() {
       </nav>
 
       {tab === 'overview' && (
-        <div className="grid gap-lg ]">
+        <div className="grid gap-lg">
           <section className="card p-lg">
             <h3 className="mb-sm extrabold">About this index</h3>
             <p className="text-sm leading-relaxed muted">
@@ -237,13 +237,13 @@ export function IndexPage() {
                     className="row w-full px-lg py-md"
                     onClick={() => navigate(`/app/stocks/${m.symbol}`)}
                   >
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="mono text-sm bold">{m.symbol}</div>
                       <div className="truncate text-xs muted">{m.name}</div>
                     </div>
                     <div className="right">
                       <div className="mono text-sm bold">₹{formatINR(m.price)}</div>
-                      <div className={`text-xs bold ${mUp ? '' : ''}`}>
+                      <div className={`text-xs bold ${mUp ? 'text-up' : 'text-down'}`}>
                         {mUp ? '+' : ''}{m.changePct}%
                       </div>
                     </div>
@@ -286,12 +286,12 @@ function OptionChainPanel({ chain, error, spot }) {
 
   return (
     <section className="card overflow-hidden">
-      <div className="row wrap gap-sm border-b border px-lg py-md">
+      <div className="row flex-wrap gap-sm border-b border px-lg py-md">
         <div>
           <h3 className="extrabold">Option chain · {chain.name}</h3>
           <p className="text-xs muted">{chain.note}</p>
         </div>
-        <div className="row wrap gap-sm text-xs bold">
+        <div className="row flex-wrap gap-sm text-xs bold">
           <span className="rounded py-md up">PCR {chain.pcr}</span>
           <span className="rounded py-md muted">Max pain {chain.maxPain ?? '—'}</span>
           <span className="rounded py-md muted">Expiry {chain.expiry}</span>
@@ -384,13 +384,13 @@ function Stat({ label, value }) {
 function RangeBar({ label, low, high, value, pct }) {
   return (
     <div>
-      <div className="mb-sm.5 row-between text-[11px] bold muted">
+      <div className="mb-1.5 row-between text-[11px] bold muted">
         <span>{label}</span>
         <span className="mono">
           {fmt(low)} — {fmt(high)}
         </span>
       </div>
-      <div className="relative .5 rounded">
+      <div className="relative h-3 w-24 rounded">
         <div
           className="absolute /2 -translate-y-1 rounded border-2 border-white shadow"
           style={{ left: `calc(${Math.min(100, Math.max(0, pct))}% - 6px)` }}

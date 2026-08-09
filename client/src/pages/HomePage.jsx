@@ -267,12 +267,12 @@ export function HomePage() {
   return (
     <Screen theme="home" className="stack gap-md">
       {/* Greeting row */}
-      <div className="row wrap items-end gap-md">
-        <div className="min-">
+      <div className="row flex-wrap items-end gap-md">
+        <div className="min-w-0">
           <h1 className="text-2xl extrabold">
             {greeting}, {user?.name?.split(' ')[0] || 'Investor'}
           </h1>
-          <div className="mt-sm.5 row wrap gap-sm text-sm muted">
+          <div className="mt-1.5 row flex-wrap gap-sm text-sm muted">
             <span className="session-chip" data-tone={session.tone}>
               <span className="dot" />
               {session.label}
@@ -304,11 +304,11 @@ export function HomePage() {
           <h2 className="mb-sm text-[11px] bold tracking-[0.14em] muted uppercase">Needs your attention</h2>
           <div className="grid gap-md">
             {attention.map((a) => (
-              <Link key={a.key} to={a.to} className={`action-tile theme- ${a.theme}`}>
+              <Link key={a.key} to={a.to} className={`action-tile theme-${a.theme}`}>
                 <span className="icon-chip icon-chip-md">
                   <a.icon size={17} />
                 </span>
-                <span className="min- grow">
+                <span className="min-w-0 grow">
                   <span className="block truncate text-sm bold ink">{a.title}</span>
                   <span className="block truncate text-xs muted">{a.hint}</span>
                 </span>
@@ -344,10 +344,10 @@ export function HomePage() {
                       <IconTrendingDown size={15} className="down" />
                     )}
                   </div>
-                  <div className="mt-sm.5 mono text-xl bold">
+                  <div className="mt-1.5 mono text-xl bold">
                     {Number(idx.value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </div>
-                  <div className={`mt-sm row-between gap-sm text-xs bold ${up ? '' : ''}`}>
+                  <div className={`mt-sm row-between gap-sm text-xs bold ${up ? 'text-up' : 'text-down'}`}>
                     <span>{up ? '+' : ''}{idx.changePct}% today</span>
                     <span className="bold muted">Chart · Options →</span>
                   </div>
@@ -360,7 +360,7 @@ export function HomePage() {
             <span className="text-[11px] bold muted uppercase">Market breadth</span>
             <span className="text-[11px] bold muted">{breadth.total} stocks</span>
           </div>
-          <div className="mt-sm.5 row gap-sm mono text-xl bold">
+          <div className="mt-1.5 row gap-sm mono text-xl bold">
             <span className="up">{breadth.advancing}</span>
             <span className="text-sm muted">/</span>
             <span className="down">{breadth.declining}</span>
@@ -375,18 +375,18 @@ export function HomePage() {
 
       {/* Portfolio hero */}
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-xl px-lg page-pad ]">
+        <div className="hero-mesh grid gap-xl px-lg page-pad">
           <div>
             <p className="text-[11px] bold tracking-[0.16em] uppercase">Portfolio value</p>
             {loadingSummary ? (
               <>
-                <Skeleton className="mt-sm.5" />
+                <Skeleton className="mt-1.5" />
                 <Skeleton className="mt-md" />
               </>
             ) : (
               <>
                 <h2 className="mt-sm mono text-4xl bold">₹{formatINR(totals.equity)}</h2>
-                <div className="mt-md row wrap gap-sm">
+                <div className="mt-md row flex-wrap gap-sm">
                   <Pill
                     label="Today"
                     value={`${dayUp ? '+' : ''}₹${formatINR(totals.dayPnl)}`}
@@ -448,12 +448,12 @@ export function HomePage() {
           <Link
             key={q.to}
             to={q.to}
-            className={`card card-hover tile-accent theme- ${q.theme} row gap-md p-md.5`}
+            className={`card card-hover tile-accent theme-${q.theme} row gap-md p-1.5`}
           >
             <span className="icon-chip">
               <q.icon size={18} />
             </span>
-            <span className="min-">
+            <span className="min-w-0">
               <span className="block truncate text-sm bold ink">{q.title}</span>
               <span className="block truncate text-xs muted">{q.sub}</span>
             </span>
@@ -461,7 +461,7 @@ export function HomePage() {
         ))}
       </section>
 
-      <div className="grid gap-lg ]">
+      <div className="grid gap-lg">
         <div className="stack gap-md">
           {/* Holdings */}
           <section className="card overflow-hidden">
@@ -499,7 +499,7 @@ export function HomePage() {
                       className="grid w-full grid-cols-[1.4fr_1fr_1fr] px-lg py-md"
                       onClick={() => navigate(`/app/stocks/${h.symbol}`)}
                     >
-                      <div className="min-">
+                      <div className="min-w-0">
                         <div className="mono text-sm bold">{h.symbol}</div>
                         <div className="truncate text-xs muted">
                           {h.qty} qty · avg ₹{formatINR(h.avgPrice)}
@@ -510,10 +510,10 @@ export function HomePage() {
                         <div className="text-xs muted">LTP ₹{formatINR(h.ltp)}</div>
                       </div>
                       <div className="right">
-                        <div className={`mono text-sm bold ${up ? '' : ''}`}>
+                        <div className={`mono text-sm bold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}₹{formatINR(h.pnl)}
                         </div>
-                        <div className={`text-xs bold ${up ? '' : ''}`}>
+                        <div className={`text-xs bold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}{h.pnlPct.toFixed(2)}%
                         </div>
                       </div>
@@ -526,7 +526,7 @@ export function HomePage() {
 
           {/* Market movers */}
           <section className="card overflow-hidden">
-            <div className="row wrap gap-sm border-b border px-lg py-md">
+            <div className="row flex-wrap gap-sm border-b border px-lg py-md">
               <SectionTitle icon={IconTrendingUp} theme="explore">Market movers</SectionTitle>
               <div className="row gap-xs rounded p-1">
                 {[
@@ -556,12 +556,12 @@ export function HomePage() {
                     className="grid w-full grid-cols-[1.6fr_1fr_0.9fr] px-lg py-md"
                     onClick={() => navigate(`/app/stocks/${m.symbol}`)}
                   >
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="mono text-sm bold">{m.symbol}</div>
                       <div className="truncate text-xs muted">{m.name}</div>
-                      <div className="mt-sm.5 w-full overflow-hidden rounded">
+                      <div className="mt-1.5 w-full overflow-hidden rounded">
                         <div
-                          className={`h-full rounded ${up ? 'bg-up' : ''}`}
+                          className={`h-full rounded ${up ? 'bg-up' : 'bg-down'}`}
                           style={{ width: `${(Math.abs(m.changePct) / maxMove) * 100}%` }}
                         />
                       </div>
@@ -594,7 +594,7 @@ export function HomePage() {
               <div className="">
                 {orders.slice(0, 5).map((o) => (
                   <div key={o.id} className="grid grid-cols-[1.4fr_1fr_1fr] px-lg py-md">
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="text-sm bold">
                         <span className={o.side === 'buy' ? 'up' : 'down'}>
                           {o.side.toUpperCase()}
@@ -646,11 +646,11 @@ export function HomePage() {
               <>
                 <div className="row gap-lg">
                   <Donut segments={allocation} />
-                  <div className="min- grow stack gap-md.5">
+                  <div className="min-w-0 grow stack gap-1.5">
                     {allocation.slice(0, 5).map((a) => (
                       <div key={a.sector} className="row gap-sm text-xs">
-                        <span className=".5 shrink-0 rounded" style={{ background: a.color }} />
-                        <span className="min- grow truncate bold">{a.sector}</span>
+                        <span className="h-3 w-24 shrink-0 rounded" style={{ background: a.color }} />
+                        <span className="min-w-0 grow truncate bold">{a.sector}</span>
                         <span className="mono muted">{a.pct.toFixed(1)}%</span>
                       </div>
                     ))}
@@ -747,16 +747,16 @@ export function HomePage() {
                       />
                       <button
                         type="button"
-                        className="row min- grow"
+                        className="row min-w-0 grow"
                         onClick={() => navigate(`/app/stocks/${sym}`)}
                       >
-                        <div className="min-">
+                        <div className="min-w-0">
                           <div className="mono text-sm bold">{inst.symbol}</div>
                           <div className="truncate text-xs muted">Vol {formatINRShort(inst.volume)}</div>
                         </div>
                         <div className="right">
                           <div className="mono text-sm bold">₹{formatINR(inst.price)}</div>
-                          <div className={`text-xs bold ${up ? '' : ''}`}>
+                          <div className={`text-xs bold ${up ? 'text-up' : 'text-down'}`}>
                             {up ? '+' : ''}{inst.changePct}%
                           </div>
                         </div>
@@ -796,7 +796,7 @@ export function HomePage() {
                     to="/app/ipo"
                     className="row-between rounded border px-lg py-md"
                   >
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="truncate text-sm bold">{ipo.name}</div>
                       <div className="text-xs muted">
                         ₹{ipo.priceMin}–{ipo.priceMax} · Lot {ipo.lotSize}
@@ -816,7 +816,7 @@ export function HomePage() {
 
       {/* Sector heatmap */}
       <section className="card p-lg">
-        <div className="mb-md row wrap gap-sm">
+        <div className="mb-md row flex-wrap gap-sm">
           <SectionTitle icon={IconGrid} theme="explore">Sector heatmap</SectionTitle>
           <span className="text-xs muted">Average move across {instrumentList.length} stocks · tap to filter</span>
         </div>
@@ -839,7 +839,7 @@ export function HomePage() {
                 >
                   <span className="truncate text-xs bold ink">{s.sector}</span>
                   <span>
-                    <span className={`block mono text-sm bold ${up ? '' : ''}`}>
+                    <span className={`block mono text-sm bold ${up ? 'text-up' : 'text-down'}`}>
                       {up ? '+' : ''}{s.avg.toFixed(2)}%
                     </span>
                     <span className="block text-[10px] bold muted">
@@ -936,7 +936,7 @@ function Metric({ label, value, tone, accent, loading }) {
     <div className="border-b border px-lg py-md">
       <div className="text-[10px] bold muted uppercase">{label}</div>
       {loading ? (
-        <Skeleton className="mt-sm.5 .5" />
+        <Skeleton className="mt-1.5 h-3 w-24" />
       ) : (
         <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
       )}

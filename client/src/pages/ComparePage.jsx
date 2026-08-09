@@ -80,7 +80,7 @@ export function ComparePage() {
         subtitle="Compare 2–4 symbols on price, momentum and range"
       />
 
-      <div className="card row wrap gap-md p-lg">
+      <div className="card row flex-wrap gap-md p-lg">
         <TextField
           size="small"
           label="Symbols (comma separated)"

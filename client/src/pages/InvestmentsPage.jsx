@@ -117,13 +117,13 @@ export function InvestmentsPage() {
       </section>
 
       {dividends && (
-        <section className="card row wrap gap-lg px-lg py-md">
+        <section className="card row flex-wrap gap-lg px-lg py-md">
           <div>
             <div className="text-[10px] bold muted uppercase">Projected dividends</div>
             <div className="mono text-xl bold">₹{formatINR(dividends.totalProjected || 0)}</div>
             <div className="text-xs muted">~{dividends.portfolioYieldPct || 0}% portfolio yield (demo)</div>
           </div>
-          <div className="row wrap gap-sm flex-1">
+          <div className="row flex-wrap gap-sm flex-1">
             {(dividends.dividends || []).slice(0, 6).map((d) => (
               <span key={d.symbol} className="rounded border px-lg py-md text-xs">
                 <span className="mono bold">{d.symbol}</span>
@@ -136,7 +136,7 @@ export function InvestmentsPage() {
       )}
 
       <section className="card overflow-hidden">
-        <div className="row-between wrap gap-sm border-b border px-lg py-md">
+        <div className="row-between flex-wrap gap-sm border-b border px-lg py-md">
           <div>
             <h3 className="extrabold">Intraday positions (MIS)</h3>
             <p className="text-xs muted">Auto square-off near 15:20 IST · paper only</p>
@@ -195,7 +195,7 @@ export function InvestmentsPage() {
           <h3 className="text-sm extrabold">Goals</h3>
         </div>
         <form
-          className="row wrap gap-sm"
+          className="row flex-wrap gap-sm"
           onSubmit={async (e) => {
             e.preventDefault()
             try {
@@ -431,7 +431,7 @@ function SipActions({ id, status, onDone }) {
 function HeroMetric({ label, value, tone }) {
   const color = tone === 'up' ? 'text-[#7dffc8]' : tone === 'down' ? 'text-[#ff9d9d]' : ''
   return (
-    <div className="rounded border p-sm.5">
+    <div className="rounded border p-1.5">
       <div className="text-[9px] bold uppercase">{label}</div>
       <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
     </div>
@@ -440,7 +440,7 @@ function HeroMetric({ label, value, tone }) {
 
 function Section({ title, meta, icon: Icon, theme, children }) {
   return (
-    <section className={`card overflow-hidden ${theme ? `theme-${theme}` : ''}`}>
+    <section className={`card overflow-hidden ${theme ?`theme-${theme}` : ''}`}>
       <div className="row-between gap-md border-b border px-lg py-md">
         <h2 className="row gap-sm extrabold">
           {Icon ? (

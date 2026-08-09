@@ -32,12 +32,12 @@ export function LandingPage() {
               backgroundSize: '28px 28px',
             }}
           />
-          <div className="relative grid gap-10 ]">
+          <div className="relative grid gap-10">
             <div>
               <p className="mb-md text-xs bold tracking-[0.18em] text-[#7dffc8] uppercase">
                 India&apos;s paper brokerage
               </p>
-              <h1 className="text-4xl extrabold ]">
+              <h1 className="text-4xl extrabold">
                 Learn the markets
                 <br />
                 without risking <span className="text-[#7dffc8]">a rupee</span>
@@ -46,7 +46,7 @@ export function LandingPage() {
                 Arth is a paper-trading brokerage — live NSE prices, real order flow, SIPs and
                 IPOs, with none of the downside.
               </p>
-              <div className="mt-7 row wrap gap-md">
+              <div className="mt-7 row flex-wrap gap-md">
                 <Link to="/register" className="btn btn-primary">Start investing</Link>
                 <Link to="/login" className="btn border">
                   Demo login
@@ -72,7 +72,7 @@ export function LandingPage() {
                 ].map(({ title, sub, Icon }) => (
                   <div key={title} className="row gap-md rounded px-lg py-md">
                     <Icon size={18} className="shrink-0 text-[#7dffc8]" />
-                    <div className="min-">
+                    <div className="min-w-0">
                       <div className="truncate bold">{title}</div>
                       <div className="truncate text-xs">{sub}</div>
                     </div>
@@ -105,7 +105,7 @@ export function LandingPage() {
             theme: 'mf',
           },
         ].map(({ title, body, Icon, theme }) => (
-          <div key={title} className={`card tile-accent theme- ${theme} p-xl`}>
+          <div key={title} className={`card tile-accent theme-${theme} p-xl`}>
             <span className="icon-chip icon-chip-lg mb-md">
               <Icon size={22} />
             </span>

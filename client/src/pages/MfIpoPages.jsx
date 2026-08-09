@@ -70,11 +70,11 @@ export function IpoPage() {
         {ipos.map((ipo) => (
           <div key={ipo.id} className="card p-lg">
             <div className="row-start gap-md">
-              <div className="row min- gap-md">
+              <div className="row min-w-0 gap-md">
                 <span className="icon-chip">
                   <IconRocket size={18} />
                 </span>
-                <div className="min-">
+                <div className="min-w-0">
                   <div className="truncate bold">{ipo.name}</div>
                   <div className="text-xs muted">
                     ₹{ipo.priceMin}–{ipo.priceMax} · Lot {ipo.lotSize}
@@ -86,7 +86,7 @@ export function IpoPage() {
                 {ipo.status}
               </span>
             </div>
-            <div className="mt-md row wrap gap-md text-xs muted">
+            <div className="mt-md row flex-wrap gap-md text-xs muted">
               <span className="row gap-xs">
                 <IconClock size={14} />
                 {ipo.openDate} → {ipo.closeDate}

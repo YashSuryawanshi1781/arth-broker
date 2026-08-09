@@ -62,7 +62,7 @@ export function FundsPage() {
         title="Money & ledger"
         subtitle="Add or withdraw demo capital and review every movement"
       />
-      <div className="grid gap-lg ]">
+      <div className="grid gap-lg">
         <div className="card tile-accent h-fit p-xl">
           <p className="row gap-sm text-xs bold muted uppercase">
             <IconWallet size={15} className="text-page-accent" />
@@ -92,7 +92,7 @@ export function FundsPage() {
               <label className="label">Amount</label>
               <input className="field" type="number" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
-            <div className="row wrap gap-sm">
+            <div className="row flex-wrap gap-sm">
               {quickAmounts.map((amt) => (
                 <button
                   key={amt}
@@ -132,7 +132,7 @@ export function FundsPage() {
                   >
                     {credit ? <IconArrowDownLeft size={16} /> : <IconArrowUpRight size={16} />}
                   </span>
-                  <div className="min- grow">
+                  <div className="min-w-0 grow">
                     <div className="truncate bold">{l.note}</div>
                     <div className="text-xs muted">{new Date(l.createdAt).toLocaleString('en-IN')}</div>
                   </div>

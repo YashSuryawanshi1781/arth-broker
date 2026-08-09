@@ -80,7 +80,7 @@ export function ExplorePage() {
   })
 
   return (
-    <Screen theme="explore" className="explore-shell stack">
+    <Screen theme="explore" className="explore-shell flex flex-col">
       <PageHeader
         icon={IconExplore}
         eyebrow="Markets"
@@ -91,14 +91,14 @@ export function ExplorePage() {
             : `Showing ${sector} stocks · tap ★ to watch`
         }
         actions={
-          <span className="hidden gap-sm rounded border px-lg text-xs bold muted sm-show">
+          <span className="hidden items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-xs font-bold text-muted sm:flex">
             {filtered.length} instruments
             {watchlist.symbols.length > 0 ? ` · ${watchlist.symbols.length} watched` : ''}
           </span>
         }
       />
-      <div className="mb-md row wrap gap-sm">
-        <div className="field-wrap grow">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <div className="field-wrap max-w-md flex-1">
           <IconExplore size={18} className="field-icon" />
           <input
             className="field field-has-icon"
@@ -110,7 +110,7 @@ export function ExplorePage() {
         <div className="field-wrap">
           <IconFilter size={16} className="field-icon" />
           <select
-            className="field field-has-icon ]"
+            className="field field-has-icon max-w-[200px]"
             value={sector}
             onChange={(e) => setSector(e.target.value)}
           >
@@ -122,7 +122,7 @@ export function ExplorePage() {
         {watchlist.lists?.length > 0 && (
           <div className="field-wrap">
             <select
-              className="field"
+              className="field max-w-[160px]"
               value={watchlist.listId || ''}
               onChange={(e) => watchlist.selectList(e.target.value)}
               title="Active watchlist"
@@ -171,14 +171,14 @@ export function ExplorePage() {
           </button>
         )}
       </div>
-      <div className="card min- grow overflow-hidden">
-        <div className="hidden grid-cols-[2rem_1.4fr_1fr_0.8fr] border-b border px-lg py-md text-[11px] bold muted uppercase">
+      <div className="card min-h-0 flex-1 overflow-hidden">
+        <div className="hidden grid-cols-[2rem_1.4fr_1fr_0.8fr] border-b border-line px-4 py-2 text-[11px] font-bold tracking-wide text-muted uppercase sm:grid">
           <span />
           <span>Instrument</span>
-          <span className="right">LTP</span>
-          <span className="right">Change</span>
+          <span className="text-right">LTP</span>
+          <span className="text-right">Change</span>
         </div>
-        <div ref={parentRef} className="h-full overflow-auto )]">
+        <div ref={parentRef} className="h-full overflow-auto sm:h-[calc(100%-36px)]">
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
             {virtualizer.getVirtualItems().map((item) => {
               const sym = filtered[item.index]
@@ -190,7 +190,7 @@ export function ExplorePage() {
                   key={sym}
                   role="button"
                   tabIndex={0}
-                  className="absolute grid w-full pointer grid-cols-[2rem_1fr_auto] gap-sm border-b border px-lg ]"
+                  className="absolute top-0 left-0 grid w-full cursor-pointer grid-cols-[2rem_1fr_auto] items-center gap-2 border-b border-line px-4 text-left transition hover:bg-surface-2/70 sm:grid-cols-[2rem_1.4fr_1fr_0.8fr]"
                   style={{ height: item.size, transform: `translateY(${item.start}px)` }}
                   onClick={() => navigate(`/app/stocks/${sym}`)}
                   onKeyDown={(e) => {
@@ -204,13 +204,13 @@ export function ExplorePage() {
                     busy={watchlist.busy === sym}
                     onToggle={watchlist.toggle}
                   />
-                  <div className="min-">
-                    <div className="mono text-sm bold">{row.symbol}</div>
-                    <div className="truncate text-xs muted">{row.name} · {row.sector}</div>
-                    <div className="mt-sm mono text-xs bold sm-hide">₹{formatINR(row.price)}</div>
+                  <div className="min-w-0">
+                    <div className="font-mono text-sm font-bold">{row.symbol}</div>
+                    <div className="truncate text-xs text-muted">{row.name} · {row.sector}</div>
+                    <div className="mt-0.5 font-mono text-xs font-semibold sm:hidden">₹{formatINR(row.price)}</div>
                   </div>
-                  <div className="hidden right mono text-sm bold">₹{formatINR(row.price)}</div>
-                  <div className={`row-end gap-xs right text-sm bold ${up ? '' : ''}`}>
+                  <div className="hidden text-right font-mono text-sm font-semibold sm:block">₹{formatINR(row.price)}</div>
+                  <div className={`flex items-center justify-end gap-1 text-right text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                     {up ? <IconTrendingUp size={14} /> : <IconTrendingDown size={14} />}
                     {up ? '+' : ''}{row.changePct}%
                   </div>
@@ -219,7 +219,7 @@ export function ExplorePage() {
             })}
           </div>
           {bootstrapping ? (
-            <div className="grid py-md text-sm muted">
+            <div className="grid place-items-center py-16 text-sm text-muted">
               {connected ? 'Loading market universe…' : 'Connecting to market feed…'}
             </div>
           ) : filtered.length === 0 ? (

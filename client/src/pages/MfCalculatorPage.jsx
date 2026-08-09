@@ -109,7 +109,7 @@ export function MfCalculatorPage() {
       </nav>
 
       <section className="card overflow-hidden">
-        <div className="grid ]">
+        <div className="grid">
           <div className="stack gap-md p-xl">
             {mode === 'goal' ? (
               <Range
@@ -223,7 +223,7 @@ export function MfCalculatorPage() {
       </section>
 
       <section className="card p-lg">
-        <div className="mb-md row wrap gap-sm">
+        <div className="mb-md row flex-wrap gap-sm">
           <h3 className="extrabold">Growth projection</h3>
           <span className="text-xs muted">
             {rate}% p.a. compounded monthly over {years} {years === 1 ? 'year' : 'years'}
@@ -280,9 +280,9 @@ function ReturnBasisBar({ fund, rate, onRate }) {
 
   return (
     <section className="card p-lg">
-      <div className="row wrap gap-md">
+      <div className="row flex-wrap gap-md">
         <FundLogo name={fund.amcShort} />
-        <div className="min- grow">
+        <div className="min-w-0 grow">
           <Link to={`/app/mf/${fund.id}`} className="block truncate bold">
             {fund.name}
           </Link>
@@ -296,7 +296,7 @@ function ReturnBasisBar({ fund, rate, onRate }) {
         <div className="mb-sm text-[10px] bold muted uppercase">
           Project using this fund&apos;s returns
         </div>
-        <div className="row wrap gap-sm">
+        <div className="row flex-wrap gap-sm">
           {options.map(([label, value]) => {
             const active = Math.abs(rate - value) < 0.05
             return (
@@ -331,7 +331,7 @@ function MiniFact({ label, value, tone }) {
 function Range({ label, display, min, max, step, value, onChange }) {
   return (
     <div>
-      <div className="mb-sm row wrap gap-sm">
+      <div className="mb-sm row flex-wrap gap-sm">
         <span className="text-sm bold">{label}</span>
         <span className="rounded py-md mono text-sm bold up">{display}</span>
       </div>

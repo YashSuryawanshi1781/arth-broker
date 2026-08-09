@@ -135,7 +135,7 @@ function LegendCell({ color, label, value, share, colors }) {
       style={{ background: colors.track }}
     >
       <div className="row gap-sm">
-        <span className=".5 shrink-0 rounded" style={{ background: color }} />
+        <span className="h-3 w-24 shrink-0 rounded" style={{ background: color }} />
         <span className="text-[10px] bold uppercase" style={{ color: colors.muted }}>
           {label}
         </span>
@@ -300,8 +300,8 @@ export function GrowthChart({ schedule, height = 280, variant = 'light' }) {
         )}
       </svg>
 
-      <div className="mt-sm row wrap gap-sm text-[11px]">
-        <div className="row wrap gap-md">
+      <div className="mt-sm row flex-wrap gap-sm text-[11px]">
+        <div className="row flex-wrap gap-md">
           <LegendKey color={colors.gain} label="Total value" colors={colors} />
           <LegendKey color={colors.invested} label="Invested" colors={colors} dashed />
         </div>
@@ -322,7 +322,7 @@ function LegendKey({ color, label, colors, dashed = false }) {
   return (
     <span className="row gap-sm" style={{ color: colors.muted }}>
       <span
-        className="inline-block .5 rounded"
+        className="inline-block h-3 w-24 rounded"
         style={{
           background: dashed
             ? `repeating-linear-gradient(90deg, ${color} 0 5px, transparent 5px 9px)`

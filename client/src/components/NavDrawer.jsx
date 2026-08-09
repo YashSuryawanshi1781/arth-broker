@@ -51,7 +51,7 @@ export function NavDrawer({ open, onClose }) {
 
           <div className="mt-5 row gap-md">
             <span className="drawer-avatar">{initials}</span>
-            <div className="min- grow">
+            <div className="min-w-0 grow">
               <div className="truncate text-sm extrabold">{user?.name || 'Investor'}</div>
               <div className="truncate text-[11px]">{user?.email}</div>
             </div>
@@ -73,7 +73,7 @@ export function NavDrawer({ open, onClose }) {
           </div>
         </div>
 
-        <nav className="min- grow overflow-y-auto">
+        <nav className="min-w-0 grow overflow-y-auto">
           {!user?.kycComplete && (
             <>
               <div className="drawer-section-label">Get started</div>
@@ -99,7 +99,7 @@ export function NavDrawer({ open, onClose }) {
             <IconLogout size={17} />
             Log out
           </button>
-          <p className="mt-sm.5 center text-[10px] muted">
+          <p className="mt-1.5 center text-[10px] muted">
             Paper-trading demo · no real money involved
           </p>
         </div>
@@ -120,7 +120,7 @@ function DrawerLink({ item }) {
       <span className="icon-chip icon-chip-md">
         <Icon size={17} />
       </span>
-      <span className="min- grow">
+      <span className="min-w-0 grow">
         <span className="block truncate">{item.label}</span>
         {item.hint ? <span className="block truncate text-[11px] bold muted">{item.hint}</span> : null}
       </span>

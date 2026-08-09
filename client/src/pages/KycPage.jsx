@@ -176,7 +176,7 @@ export function KycPage() {
 
   return (
     <Screen theme="kyc" className="screen px-lg page-pad">
-      <div className="page grid gap-lg ]">
+      <div className="page grid gap-lg">
         {/* Trust rail */}
         <aside className="kyc-rail hidden p-xl">
           <BrandLockup size="sm" tone="light" />
@@ -184,7 +184,7 @@ export function KycPage() {
           <h2 className="mt-xl text-xl extrabold">
             Activate your investing account
           </h2>
-          <p className="mt-sm.5 text-sm">
+          <p className="mt-1.5 text-sm">
             Five quick steps. Takes about two minutes.
           </p>
 
@@ -214,12 +214,12 @@ export function KycPage() {
             })}
           </div>
 
-          <div className="mt-sm rounded border p-md.5">
+          <div className="mt-sm rounded border p-1.5">
             <div className="row gap-sm text-xs bold text-[#7dffc8]">
               <IconLock size={14} />
               Your data stays on this device
             </div>
-            <p className="mt-sm.5 text-[11px] leading-relaxed">
+            <p className="mt-1.5 text-[11px] leading-relaxed">
               Arth is a simulated brokerage built for learning. No documents are sent to any
               regulator and no real money is involved.
             </p>
@@ -228,7 +228,7 @@ export function KycPage() {
 
         {/* Form column */}
         <div className="stack gap-md">
-          <div className="row-between gap-md lg-hide">
+          <div className="row-between gap-md lg:hidden">
             <BrandLockup size="sm" />
             <button type="button" className="btn btn-ghost text-xs" onClick={() => navigate('/app')}>
               Skip for now
@@ -246,7 +246,7 @@ export function KycPage() {
                 </span>
                 <button
                   type="button"
-                  className="text-xs bold muted lg-hide"
+                  className="text-xs bold muted lg:hidden"
                   onClick={() => navigate('/app')}
                 >
                   Skip
@@ -261,7 +261,7 @@ export function KycPage() {
               <span className="icon-chip icon-chip-lg">
                 <ActiveIcon size={21} />
               </span>
-              <div className="min-">
+              <div className="min-w-0">
                 <h1 className="text-lg extrabold">{active.title}</h1>
                 <p className="mt-sm text-sm muted">{active.subtitle}</p>
               </div>
@@ -329,7 +329,7 @@ export function KycPage() {
                   />
 
                   <div>
-                    <div className="mb-sm row wrap gap-sm">
+                    <div className="mb-sm row flex-wrap gap-sm">
                       <span className="label mb-0">One-time password</span>
                       <button
                         type="button"
@@ -402,7 +402,7 @@ export function KycPage() {
                   </div>
 
                   <label
-                    className={`row pointer gap-md rounded border p-md.5 text-sm ${ form.accepted ? 'border-accent bg-page-tint' : 'border-line hover:border-accent' }`}
+                    className={`row pointer gap-md rounded border p-1.5 text-sm ${ form.accepted ? 'border-accent bg-page-tint' : 'border-line hover:border-accent' }`}
                   >
                     <input
                       type="checkbox"
@@ -442,7 +442,7 @@ export function KycPage() {
                 )}
                 <button
                   type="button"
-                  className="btn btn-primary grow py-md disabled:"
+                  className="btn btn-primary grow py-md"
                   onClick={submit}
                   disabled={!stepReady || busy}
                 >
@@ -513,7 +513,7 @@ function Field({
           </span>
         )}
       </div>
-      {hint && <p className="mt-sm.5 text-xs muted">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs muted">{hint}</p>}
     </div>
   )
 }
@@ -566,7 +566,7 @@ function Perk({ icon: Icon, title, body }) {
       <span className="icon-chip icon-chip-sm">
         <Icon size={14} />
       </span>
-      <div className="mt-sm.5 text-sm extrabold">{title}</div>
+      <div className="mt-1.5 text-sm extrabold">{title}</div>
       <div className="text-[11px] leading-snug muted">{body}</div>
     </div>
   )

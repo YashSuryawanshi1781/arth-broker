@@ -114,10 +114,10 @@ export function AppShell() {
   }, [])
 
   return (
-    <div className="stack full">
+    <div className="flex min-h-full flex-col">
       <ApiStatusBanner />
       <header className="app-header">
-        <div className="page row gap-md px-lg" style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
           <button
             type="button"
             className="nav-icon-btn"
@@ -131,7 +131,7 @@ export function AppShell() {
             <BrandLockup size="sm" tone="light" />
           </Link>
 
-          <nav className="nav-rail page hidden lg-show" style={{ display: undefined }}>
+          <nav className="nav-rail mx-auto hidden lg:flex">
             {PRIMARY_NAV.map((l) => (
               <NavLink
                 key={l.to}
@@ -147,7 +147,7 @@ export function AppShell() {
             ))}
           </nav>
 
-          <div className="ml-auto row shrink-0 gap-sm">
+          <div className="ml-auto flex shrink-0 items-center gap-2 lg:ml-0">
             <button
               type="button"
               className="nav-search"
@@ -168,13 +168,13 @@ export function AppShell() {
               {unread > 0 && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
             </button>
 
-            <Link to="/app/funds" className="wallet-chip hidden sm-show">
-              <IconWallet size={17} />
-              <span className="right">
-                <span className="block text-xs bold uppercase muted" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <Link to="/app/funds" className="wallet-chip hidden sm:flex">
+              <IconWallet size={17} className="text-[#7dffc8]" />
+              <span className="text-right leading-none">
+                <span className="block text-[9px] font-bold tracking-[0.12em] text-white/50 uppercase">
                   Wallet
                 </span>
-                <span className="mt-sm block mono text-sm bold" style={{ color: '#7dffc8' }}>
+                <span className="mt-0.5 block font-mono text-[13px] font-bold text-[#7dffc8]">
                   ₹{formatINR(user?.cash)}
                 </span>
               </span>
@@ -188,9 +188,9 @@ export function AppShell() {
         </div>
 
         <div className="ticker-bar">
-          <div className="page row gap-lg overflow-auto px-lg mono text-xs" style={{ paddingTop: 6, paddingBottom: 6 }}>
-            <span className="row shrink-0 gap-sm text-xs bold uppercase">
-              <span className={`live-dot ${connected && marketStatus?.source === 'yahoo' ? '' : ''}`} />
+          <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 py-1.5 font-mono text-xs">
+            <span className="flex shrink-0 items-center gap-1.5 font-sans text-[10px] font-bold tracking-[0.1em]">
+              <span className={`live-dot ${connected && marketStatus?.source === 'yahoo' ? '' : 'bg-down'}`} />
               {!connected
                 ? 'OFFLINE'
                 : marketStatus?.source === 'yahoo'
@@ -203,13 +203,13 @@ export function AppShell() {
               <button
                 key={key}
                 type="button"
-                className="pointer"
+                className="whitespace-nowrap transition hover:text-white"
                 style={{ background: 'none', border: 0, color: 'inherit' }}
                 onClick={() => navigate(`/app/indices/${key}`)}
               >
-                <span style={{ opacity: 0.55 }}>{idx.name}</span>{' '}
-                <span className="bold">{Number(idx.value).toLocaleString('en-IN')}</span>{' '}
-                <span style={{ color: idx.changePct >= 0 ? '#7dffc8' : '#ff8f8f' }}>
+                <span className="text-white/55">{idx.name}</span>{' '}
+                <span className="font-semibold">{Number(idx.value).toLocaleString('en-IN')}</span>{' '}
+                <span className={idx.changePct >= 0 ? 'text-[#7dffc8]' : 'text-[#ff8f8f]'}>
                   {idx.changePct >= 0 ? '+' : ''}
                   {idx.changePct}%
                 </span>
@@ -218,8 +218,8 @@ export function AppShell() {
             {!user?.kycComplete && (
               <button
                 type="button"
-                className="ml-auto row shrink-0 gap-sm pointer bold text-xs"
-                style={{ background: 'rgba(255,255,255,0.1)', border: 0, color: '#7dffc8', borderRadius: 8, padding: '4px 10px' }}
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 font-sans text-[11px] font-bold whitespace-nowrap text-[#7dffc8] transition hover:bg-white/20"
+                style={{ border: 0 }}
                 onClick={() => navigate('/kyc')}
               >
                 <IconShield size={13} />
@@ -230,7 +230,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="page w-full grow px-lg page-pad">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-10">
         <Outlet />
       </main>
 

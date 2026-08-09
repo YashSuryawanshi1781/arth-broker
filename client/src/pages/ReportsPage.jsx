@@ -396,7 +396,7 @@ export function ReportsPage() {
               key={id}
               type="button"
               onClick={() => switchReport(id)}
-              className={`row shrink-0 gap-sm rounded px-lg py-md text-xs bold ${ type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover: hover:text-ink' }`}
+              className={`row shrink-0 gap-sm rounded px-lg py-md text-xs bold ${ type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:text-ink' }`}
             >
               <Icon size={15} />
               {item.label}
@@ -412,7 +412,7 @@ export function ReportsPage() {
       </section>
 
       <section className="card p-md">
-        <div className="row wrap items-end gap-sm">
+        <div className="row flex-wrap items-end gap-sm">
           <label className="w-[210px] grow">
             <span className="mb-sm block text-[10px] bold muted uppercase">Search</span>
             <span className="field-wrap block">
@@ -448,7 +448,7 @@ export function ReportsPage() {
           ) : null}
         </div>
 
-        <div className="mt-md row wrap gap-sm border-t border">
+        <div className="mt-md row flex-wrap gap-sm border-t border">
           <IconFilter size={14} className="mr-1 muted" />
           {[
             ['today', 'Today'],
@@ -477,7 +477,7 @@ export function ReportsPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="row wrap gap-sm border-b border px-lg py-md">
+        <div className="row flex-wrap gap-sm border-b border px-lg py-md">
           <div>
             <h2 className="extrabold">{config.label}</h2>
             <p className="text-xs muted">{config.description}</p>
@@ -586,7 +586,7 @@ export function ReportsPage() {
 function SummaryCard({ label, value, format }) {
   const output = format(value ?? 0)
   return (
-    <div className="card min- p-md">
+    <div className="card min-w-0 p-md">
       <div className="text-[10px] bold muted uppercase">{label}</div>
       <div className="mt-sm truncate mono text-lg bold">{output}</div>
     </div>
@@ -621,7 +621,7 @@ function Pagination({ pagination, update }) {
   const end = Math.min(total, page * pageSize)
   const pages = pageWindow(page, totalPages)
   return (
-    <div className="row wrap gap-md border-t border px-lg py-md">
+    <div className="row flex-wrap gap-md border-t border px-lg py-md">
       <div className="row gap-sm text-xs muted">
         <span>Showing {start}–{end} of {total}</span>
         <select className="rounded border px-lg py-md bold" value={pageSize} onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}>
@@ -647,7 +647,7 @@ function PageButton({ label, disabled, active, onClick }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`grid min- rounded border text-xs bold disabled: ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:' }`}
+      className={`grid min-w-0 rounded border text-xs bold ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:' }`}
     >
       {label}
     </button>
