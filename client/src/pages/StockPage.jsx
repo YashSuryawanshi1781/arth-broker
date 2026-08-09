@@ -264,7 +264,7 @@ export function StockPage() {
     : '/app/explore'
 
   return (
-    <Screen theme="stock" className="stock-workspace space-y-3">
+    <Screen theme="stock" className="stock-workspace">
       <BreadcrumbBar
         fallback={sectorHref}
         items={[
@@ -274,108 +274,89 @@ export function StockPage() {
         ]}
       />
 
-      <div className="stock-quote-bar">
-        <div className="stock-quote-bar-id">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand text-sm font-extrabold text-white">
-            {live.symbol.slice(0, 2)}
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+      {/* Groww-style product header: identity + LTP first */}
+      <header className="stock-product-head">
+        <div className="stock-product-id">
+          <div>
+            <div className="stock-product-title-row">
               <h1>{live.symbol}</h1>
-              <span className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold text-muted">NSE</span>
-              <Link
-                to={sectorHref}
-                className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-muted hover:text-page-accent"
-              >
-                {live.sector}
-              </Link>
+              <span className="stock-chip">NSE</span>
+              <Link to={sectorHref} className="stock-chip stock-chip-link">{live.sector}</Link>
             </div>
-            <p>{live.name}</p>
+            <p className="stock-product-name">{live.name}</p>
+          </div>
+          <div className="stock-product-actions">
+            <WatchlistButton
+              symbol={live.symbol}
+              watched={watchlist.has(live.symbol)}
+              busy={watchlist.busy === live.symbol}
+              onToggle={watchlist.toggle}
+            />
+            <PriceAlertButton symbol={live.symbol} ltp={live.price} />
           </div>
         </div>
 
-        <div className="stock-quote-bar-price">
-          <span className="ltp">₹{formatINR(live.price)}</span>
-          <span className={`inline-flex items-center gap-1 text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
-            {up ? <IconTrendingUp size={14} /> : <IconTrendingDown size={14} />}
+        <div className="stock-product-ltp">
+          <div className="stock-ltp-value">₹{formatINR(live.price)}</div>
+          <div className={`stock-ltp-change ${up ? 'is-up' : 'is-down'}`}>
+            {up ? <IconTrendingUp size={15} /> : <IconTrendingDown size={15} />}
             {up ? '+' : ''}{formatINR(live.change)} ({up ? '+' : ''}{live.changePct}%)
-          </span>
-          <span className="live-dot" />
-          <span className="text-[10px] font-bold text-accent uppercase">
-            {marketStatus?.source === 'yahoo' ? 'Live' : marketStatus?.source === 'yahoo-stale' ? 'Stale' : 'Demo'}
-          </span>
-        </div>
-
-        <div className="stock-quote-bar-actions">
-          <WatchlistButton
-            symbol={live.symbol}
-            watched={watchlist.has(live.symbol)}
-            busy={watchlist.busy === live.symbol}
-            onToggle={watchlist.toggle}
-          />
-          <PriceAlertButton symbol={live.symbol} ltp={live.price} />
-        </div>
-      </div>
-
-      {news.length > 0 && (
-        <section className="card px-4 py-2.5">
-          <div className="mb-1.5 flex items-center gap-2">
-            <IconDocument size={14} />
-            <span className="text-xs font-bold uppercase text-muted">News · demo feed</span>
+            <span className="stock-live-tag">
+              <span className="live-dot" />
+              {marketStatus?.source === 'yahoo' ? 'Live' : marketStatus?.source === 'yahoo-stale' ? 'Delayed' : 'Demo'}
+            </span>
           </div>
-          <div className="space-y-1.5">
-            {news.slice(0, 2).map((item) => (
-              <div key={item.id || item.title} className="text-xs">
-                <span className="font-bold text-ink">{item.title}</span>
-                {item.source && <span className="text-muted"> — {item.source}</span>}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="card stock-instrument">
-        <div className="stock-instrument-stats">
-          <Quote label="Open" value={`₹${formatINR(live.open)}`} />
-          <Quote label="High" value={`₹${formatINR(live.high)}`} tone="up" />
-          <Quote label="Low" value={`₹${formatINR(live.low)}`} tone="down" />
-          <Quote label="Prev close" value={`₹${formatINR(live.prevClose)}`} />
-          <Quote label="Volume" value={formatINRShort(live.volume)} />
-          <Quote label="Bid" value={bestBid ? `₹${formatINR(bestBid)}` : '—'} tone="up" />
-          <Quote label="Ask" value={bestAsk ? `₹${formatINR(bestAsk)}` : '—'} tone="down" />
         </div>
 
-        <div className="grid gap-3 border-t border-line p-3 sm:grid-cols-2">
-          <RangeBar label="Day range" low={live.low} high={live.high} pct={dayRangePct} />
-          <RangeBar label="52 week range" low={week52Low} high={week52High} pct={week52Pct} />
+        <div className="stock-range-row">
+          <RangeBar label="Day" low={live.low} high={live.high} pct={dayRangePct} />
+          <RangeBar label="52W" low={week52Low} high={week52High} pct={week52Pct} />
         </div>
-      </section>
+      </header>
 
       <div className="stock-layout">
-        <div className="space-y-3 min-w-0">
+        <div className="stock-main min-w-0">
           <AdvancedChart symbol={live.symbol} live={live} />
 
-          <div className="card overflow-hidden">
-            <div className="flex gap-1 overflow-x-auto border-b border-line px-2 pt-2">
+          <div className="stock-stats-strip">
+            <Quote label="Open" value={`₹${formatINR(live.open)}`} />
+            <Quote label="High" value={`₹${formatINR(live.high)}`} tone="up" />
+            <Quote label="Low" value={`₹${formatINR(live.low)}`} tone="down" />
+            <Quote label="Prev" value={`₹${formatINR(live.prevClose)}`} />
+            <Quote label="Vol" value={formatINRShort(live.volume)} />
+            <Quote label="Bid" value={bestBid ? `₹${formatINR(bestBid)}` : '—'} tone="up" />
+            <Quote label="Ask" value={bestAsk ? `₹${formatINR(bestAsk)}` : '—'} tone="down" />
+          </div>
+
+          {news.length > 0 && (
+            <div className="stock-news-line">
+              <IconDocument size={13} />
+              <span>{news[0].title}</span>
+              {news[0].source && <em>{news[0].source}</em>}
+            </div>
+          )}
+
+          <div className="card stock-tabs overflow-hidden">
+            <div className="stock-tablist">
               {[
                 ['overview', 'Overview', IconCandles],
                 ['fundamentals', 'Fundamentals', IconPieChart],
-                ['depth', 'Market depth', IconList],
-                ['about', 'About company', IconDocument],
+                ['depth', 'Depth', IconList],
+                ['about', 'About', IconDocument],
               ].map(([id, label, Icon]) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pt-1 pb-2.5 text-sm font-bold transition ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
+                  className={`stock-tab${tab === id ? ' is-active' : ''}`}
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                   {label}
                 </button>
               ))}
             </div>
 
-            <div className="p-4">
+            <div className="p-3.5">
               {tab === 'overview' && (
                 <div className="space-y-4">
                   <div className="grid gap-x-6 gap-y-0 sm:grid-cols-2">

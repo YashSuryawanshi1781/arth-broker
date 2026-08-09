@@ -103,13 +103,23 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [showTools, setShowTools] = useState(isPage)
+  const [showTools, setShowTools] = useState(false)
   const [drawTool, setDrawTool] = useState('pan')
   const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
   const [draft, setDraft] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [drawVersion, setDrawVersion] = useState(0)
-  const [chartHeight, setChartHeight] = useState(isPage ? 560 : 380)
+  const [chartHeight, setChartHeight] = useState(isPage ? Math.max(420, window.innerHeight - 160) : 360)
+
+  function computeChartHeight() {
+    if (!isPage) return 360
+    const header = 52
+    const toolbar = 42
+    const tools = showTools ? 40 : 0
+    const ohlc = 30
+    const osc = showOsc ? 128 : 0
+    return Math.max(380, window.innerHeight - header - toolbar - tools - ohlc - osc - 4)
+  }
 
   const tf = useMemo(() => TIMEFRAMES.find((t) => t.id === timeframe) || TIMEFRAMES[1], [timeframe])
   const activeOsc = primaryOscillator(indicators)
@@ -143,26 +153,25 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   }, [symbol])
 
   function resizeChart() {
-    const shell = shellRef.current
     const container = containerRef.current
     const chart = chartRef.current
     if (!container || !chart) return
 
-    let height = 380
-    if (isPage && shell) {
-      const toolbar = showTools ? 168 : 118
-      const osc = showOsc ? 156 : 0
-      height = Math.max(420, shell.clientHeight - toolbar - osc)
-    }
+    const width = Math.max(container.clientWidth || 0, 1)
+    if (width < 40) return
+
+    const height = computeChartHeight()
     setChartHeight(height)
-    chart.applyOptions({
-      width: container.clientWidth,
-      height,
-    })
+    chart.applyOptions({ width, height })
+    try {
+      mainSeriesRef.current?.priceScale().applyOptions({ autoScale: true })
+    } catch {
+      /* ignore */
+    }
     if (oscContainerRef.current && oscChartRef.current) {
       oscChartRef.current.applyOptions({
-        width: oscContainerRef.current.clientWidth,
-        height: isPage ? 140 : 120,
+        width: oscContainerRef.current.clientWidth || width,
+        height: 120,
       })
     }
     setDrawVersion((v) => v + 1)
@@ -186,12 +195,12 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     setLoading(true)
     intervalRef.current = tf.interval
 
-    const height = isPage && shellRef.current
-      ? Math.max(420, shellRef.current.clientHeight - (showOsc ? 320 : 168))
-      : 380
+    const width = Math.max(containerRef.current.clientWidth || window.innerWidth - 32, 320)
+    const height = computeChartHeight()
     setChartHeight(height)
 
     const chart = createChart(containerRef.current, {
+      autoSize: false,
       layout: {
         background: { type: ColorType.Solid, color: '#ffffff' },
         textColor: '#5b6b7c',
@@ -199,17 +208,20 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: '#eef2f6' },
-        horzLines: { color: '#eef2f6' },
+        vertLines: { color: '#f0f3f7' },
+        horzLines: { color: '#f0f3f7' },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: { color: '#94a3b8', labelBackgroundColor: '#0b1b33' },
         horzLine: { color: '#94a3b8', labelBackgroundColor: '#0b1b33' },
       },
-      rightPriceScale: { borderColor: '#dce3eb', scaleMargins: { top: 0.08, bottom: indicators.volume ? 0.22 : 0.08 } },
-      timeScale: { borderColor: '#dce3eb', timeVisible: tf.interval < 86400, secondsVisible: false },
-      width: containerRef.current.clientWidth || 700,
+      rightPriceScale: {
+        borderColor: '#e8eef4',
+        scaleMargins: { top: 0.08, bottom: indicators.volume ? 0.2 : 0.06 },
+      },
+      timeScale: { borderColor: '#e8eef4', timeVisible: tf.interval < 86400, secondsVisible: false },
+      width,
       height,
       handleScroll: true,
       handleScale: true,
@@ -274,7 +286,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         rightPriceScale: { borderColor: '#dce3eb' },
         timeScale: { borderColor: '#dce3eb', visible: false },
         width: oscContainerRef.current.clientWidth || 700,
-        height: isPage ? 140 : 120,
+        height: 120,
       })
       const oscSeries = oscChart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 2 })
       oscChartRef.current = oscChart
@@ -284,9 +296,18 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
       })
     }
 
-    const ro = new ResizeObserver(() => resizeChart())
+    const onWinResize = () => {
+      resizeChart()
+      try {
+        chart.timeScale().fitContent()
+        mainSeriesRef.current?.priceScale().applyOptions({ autoScale: true })
+      } catch {
+        /* ignore */
+      }
+    }
+    const ro = new ResizeObserver(() => onWinResize())
     ro.observe(containerRef.current)
-    if (shellRef.current) ro.observe(shellRef.current)
+    window.addEventListener('resize', onWinResize)
 
     let cancelled = false
     api(`${candlesPath || `/market/${symbol}/candles`}?interval=${tf.interval}&count=${tf.count}`)
@@ -295,7 +316,13 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         const candles = res.candles || []
         candlesRef.current = candles
         applySeriesData(candles, chartType, indicators)
+        resizeChart()
         chart.timeScale().fitContent()
+        try {
+          mainSeriesRef.current.priceScale().applyOptions({ autoScale: true })
+        } catch {
+          /* ignore */
+        }
         setHover(candles[candles.length - 1] || null)
         setLoading(false)
         setDrawVersion((v) => v + 1)
@@ -308,6 +335,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     return () => {
       cancelled = true
       ro.disconnect()
+      window.removeEventListener('resize', onWinResize)
       chart.remove()
       oscChart?.remove()
       chartRef.current = null
@@ -318,7 +346,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
       overlayRefs.current = {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, timeframe, chartType, candlesPath])
+  }, [symbol, timeframe, chartType, candlesPath, isPage])
 
   useEffect(() => {
     if (!candlesRef.current.length || !mainSeriesRef.current) return
@@ -333,8 +361,15 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   }, [showOsc, activeOsc])
 
   useEffect(() => {
-    if (!isPage) return
-    requestAnimationFrame(() => resizeChart())
+    requestAnimationFrame(() => {
+      resizeChart()
+      try {
+        chartRef.current?.timeScale().fitContent()
+        mainSeriesRef.current?.priceScale().applyOptions({ autoScale: true })
+      } catch {
+        /* ignore */
+      }
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPage, showTools, showOsc])
 
@@ -682,28 +717,26 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
       className={`card overflow-hidden chart-shell${isPage ? ' is-page' : ''}`}
     >
       <div className="chart-toolbar">
-        <div className="chart-toolbar-group">
+        <div className="chart-tf">
           {TIMEFRAMES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTimeframe(t.id)}
-              className={`btn btn-ghost text-xs bold ${timeframe === t.id ? 'ink' : 'muted'}`}
+              className={`chart-tf-btn${timeframe === t.id ? ' is-active' : ''}`}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <span className="chart-toolbar-sep" aria-hidden="true" />
-
-        <div className="chart-toolbar-group">
+        <div className="chart-tf chart-tf-type">
           {CHART_TYPES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setChartType(t.id)}
-              className={`btn btn-ghost text-xs bold ${chartType === t.id ? 'ink' : 'muted'}`}
+              className={`chart-tf-btn${chartType === t.id ? ' is-active' : ''}`}
             >
               {t.label}
             </button>
@@ -713,7 +746,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         <div className="chart-toolbar-actions">
           <button
             type="button"
-            className={`btn text-xs bold ${showTools ? 'btn-primary' : 'btn-ghost'}`}
+            className={`chart-action-btn${showTools ? ' is-active' : ''}`}
             onClick={() => setShowTools((v) => !v)}
           >
             Tools
@@ -722,13 +755,10 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
           <div className="relative">
             <button
               type="button"
-              className={`btn text-xs bold row gap-sm ${showIndicators ? 'btn-primary' : 'btn-ghost'}`}
+              className={`chart-action-btn${showIndicators ? ' is-active' : ''}`}
               onClick={() => setShowIndicators((v) => !v)}
             >
-              Indicators
-              {activeOverlays.length > 0 && (
-                <span className="mono text-xs">{activeOverlays.length}</span>
-              )}
+              Indicators{activeOverlays.length > 0 ? ` · ${activeOverlays.length}` : ''}
             </button>
 
             {showIndicators && (
@@ -771,11 +801,11 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
           {!isPage && (
             <button
               type="button"
-              className="btn btn-ghost text-xs bold row gap-sm"
+              className="chart-action-btn"
               onClick={openFullChartTab}
               title="Open full chart in a new tab"
             >
-              <IconMaximize size={15} />
+              <IconMaximize size={14} />
               Full
             </button>
           )}
@@ -784,13 +814,13 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
 
       {showTools && (
         <div className="chart-tools-bar">
-          <div className="row flex-wrap gap-xs">
+          <div className="chart-tools-pills">
             {DRAW_TOOLS.map((tool) => (
               <button
                 key={tool.id}
                 type="button"
                 title={tool.tip}
-                className={`btn text-xs bold ${drawTool === tool.id ? 'btn-primary' : 'btn-ghost'}`}
+                className={`chart-pill${drawTool === tool.id ? ' is-active' : ''}`}
                 onClick={() => {
                   setDrawTool(tool.id)
                   setDraft(null)
@@ -801,29 +831,18 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
               </button>
             ))}
           </div>
-          <div className="row flex-wrap gap-xs">
-            <button type="button" className="btn btn-ghost text-xs bold" onClick={undoDrawing} disabled={!drawings.length}>
-              Undo
+          <div className="chart-tools-pills">
+            <button type="button" className="chart-pill" onClick={undoDrawing} disabled={!drawings.length}>Undo</button>
+            <button type="button" className="chart-pill" onClick={deleteSelected} disabled={!selectedId} title="Delete selected">
+              <IconTrash size={13} />
             </button>
+            <button type="button" className="chart-pill" onClick={clearAllDrawings} disabled={!drawings.length}>Clear</button>
             <button
               type="button"
-              className="btn btn-ghost text-xs bold row gap-sm"
-              onClick={deleteSelected}
-              disabled={!selectedId}
-              title="Delete selected"
-            >
-              <IconTrash size={14} />
-              Delete
-            </button>
-            <button type="button" className="btn btn-ghost text-xs bold" onClick={clearAllDrawings} disabled={!drawings.length}>
-              Clear
-            </button>
-            <button
-              type="button"
-              className="btn btn-dark text-xs bold"
+              className="chart-pill is-save"
               onClick={() => persistDrawings(drawings, { toast: true })}
             >
-              Save drawings
+              Save
             </button>
           </div>
         </div>
@@ -837,24 +856,18 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         <Ohlc label="L" value={display ? formatINR(display.low) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
-        {drawTool !== 'pan' ? (
-          <span className="ml-auto muted font-sans text-[11px] font-bold">
-            {DRAW_TOOLS.find((t) => t.id === drawTool)?.tip}
-          </span>
-        ) : drawings.length > 0 ? (
-          <span className="ml-auto muted font-sans text-[11px] font-bold">
-            {drawings.length} saved
-          </span>
-        ) : null}
+        {drawings.length > 0 && (
+          <span className="ml-auto muted font-sans text-[11px] font-bold">{drawings.length} saved</span>
+        )}
       </div>
 
-      <div className="relative">
+      <div className="relative chart-canvas-wrap">
         {loading && (
           <div className="absolute row-center w-full text-sm bold muted" style={{ inset: 0, zIndex: 2 }}>
             Loading chart…
           </div>
         )}
-        <div ref={containerRef} className="w-full" style={{ height: chartHeight }} />
+        <div ref={containerRef} className="w-full chart-canvas" style={{ height: chartHeight }} />
         <svg
           className={`chart-draw-layer${drawTool !== 'pan' ? ' is-drawing' : ''}`}
           style={{ height: chartHeight }}
@@ -873,25 +886,13 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         </svg>
         <div className={showOsc ? 'border' : 'hidden'} style={showOsc ? { borderWidth: '1px 0 0' } : undefined}>
           {showOsc && (
-            <div className="row-between px-lg py-md text-xs bold muted uppercase">
+            <div className="row-between px-lg py-sm text-[10px] bold muted uppercase">
               <span>{activeOscDef?.label || 'Oscillator'}</span>
               <span>{oscHint(activeOsc)}</span>
             </div>
           )}
           <div ref={oscContainerRef} className="w-full" />
         </div>
-      </div>
-
-      <div className="row-between border px-lg py-md text-xs muted" style={{ borderWidth: '1px 0 0' }}>
-        <span className="truncate">
-          {showTools
-            ? 'Draw · auto-saves per symbol · Esc cancels · Del deletes selection'
-            : 'Hover for OHLC · Tools for drawings · Full for fullscreen'}
-        </span>
-        <span className="row gap-sm shrink-0">
-          <span className="live-dot" />
-          Live
-        </span>
       </div>
     </div>
   )
