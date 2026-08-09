@@ -37,6 +37,7 @@ import { CalendarPage } from './pages/CalendarPage'
 import { ActivityPage } from './pages/ActivityPage'
 import { AdminPage } from './pages/AdminPage'
 import { HeatmapPage } from './pages/HeatmapPage'
+import { IndexChartPage, StockChartPage } from './pages/ChartPage'
 import { OnboardingTour } from './components/OnboardingTour'
 import { PinLock } from './components/PinLock'
 
@@ -84,6 +85,10 @@ export default function App() {
         <Route path="/reset" element={<PublicOnly><ResetPage /></PublicOnly>} />
 
         <Route path="/kyc" element={<ProtectedRoute><KycPage /></ProtectedRoute>} />
+
+        {/* Full chart workspace — opens in its own tab without AppShell chrome */}
+        <Route path="/app/chart/:symbol" element={<ProtectedRoute><StockChartPage /></ProtectedRoute>} />
+        <Route path="/app/chart/index/:key" element={<ProtectedRoute><IndexChartPage /></ProtectedRoute>} />
 
         <Route path="/app" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
           <Route index element={<HomePage />} />

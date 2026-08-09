@@ -40,7 +40,16 @@ import {
   pointsNeeded,
   saveDrawings,
 } from '../lib/chartDrawings.js'
-import { IconMaximize, IconMinimize, IconTrash } from './Icons'
+import { IconMaximize, IconTrash } from './Icons'
+
+export function chartPagePath({ symbol, candlesPath }) {
+  if (candlesPath && candlesPath.includes('/indices/')) {
+    const key = String(symbol || '').trim()
+    return key ? `/app/chart/index/${encodeURIComponent(key)}` : '/app'
+  }
+  const sym = String(symbol || '').toUpperCase()
+  return sym ? `/app/chart/${encodeURIComponent(sym)}` : '/app'
+}
 
 const TIMEFRAMES = [
   { id: '1m', label: '1m', interval: 60, count: 180 },
@@ -71,8 +80,9 @@ function oscHint(id) {
   return ''
 }
 
-export function AdvancedChart({ symbol, live, candlesPath }) {
+export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' }) {
   const dispatch = useAppDispatch()
+  const isPage = variant === 'page'
   const shellRef = useRef(null)
   const containerRef = useRef(null)
   const oscContainerRef = useRef(null)
@@ -93,14 +103,13 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [showTools, setShowTools] = useState(false)
+  const [showTools, setShowTools] = useState(isPage)
   const [drawTool, setDrawTool] = useState('pan')
   const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
   const [draft, setDraft] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
-  const [fullscreen, setFullscreen] = useState(false)
   const [drawVersion, setDrawVersion] = useState(0)
-  const [chartHeight, setChartHeight] = useState(380)
+  const [chartHeight, setChartHeight] = useState(isPage ? 560 : 380)
 
   const tf = useMemo(() => TIMEFRAMES.find((t) => t.id === timeframe) || TIMEFRAMES[1], [timeframe])
   const activeOsc = primaryOscillator(indicators)
@@ -133,28 +142,17 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     setDrawTool('pan')
   }, [symbol])
 
-  // Fullscreen + height sync
-  useEffect(() => {
-    const onFs = () => {
-      const active = document.fullscreenElement === shellRef.current
-      setFullscreen(active)
-      requestAnimationFrame(() => resizeChart(active))
-    }
-    document.addEventListener('fullscreenchange', onFs)
-    return () => document.removeEventListener('fullscreenchange', onFs)
-  }, [])
-
-  function resizeChart(isFs = fullscreen) {
+  function resizeChart() {
     const shell = shellRef.current
     const container = containerRef.current
     const chart = chartRef.current
     if (!container || !chart) return
 
     let height = 380
-    if (isFs && shell) {
-      const toolbar = 148
-      const osc = showOsc ? 150 : 0
-      height = Math.max(360, shell.clientHeight - toolbar - osc)
+    if (isPage && shell) {
+      const toolbar = showTools ? 168 : 118
+      const osc = showOsc ? 156 : 0
+      height = Math.max(420, shell.clientHeight - toolbar - osc)
     }
     setChartHeight(height)
     chart.applyOptions({
@@ -164,23 +162,21 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     if (oscContainerRef.current && oscChartRef.current) {
       oscChartRef.current.applyOptions({
         width: oscContainerRef.current.clientWidth,
-        height: isFs ? 140 : 120,
+        height: isPage ? 140 : 120,
       })
     }
     setDrawVersion((v) => v + 1)
   }
 
-  async function toggleFullscreen() {
-    const el = shellRef.current
-    if (!el) return
-    try {
-      if (document.fullscreenElement === el) {
-        await document.exitFullscreen()
-      } else {
-        await el.requestFullscreen()
-      }
-    } catch (err) {
-      dispatch(showToast({ type: 'error', title: 'Fullscreen failed', message: err.message }))
+  function openFullChartTab() {
+    const path = chartPagePath({ symbol, candlesPath })
+    const opened = window.open(path, '_blank', 'noopener,noreferrer')
+    if (!opened) {
+      dispatch(showToast({
+        type: 'warning',
+        title: 'Pop-up blocked',
+        message: 'Allow pop-ups to open the full chart in a new tab',
+      }))
     }
   }
 
@@ -190,8 +186,8 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     setLoading(true)
     intervalRef.current = tf.interval
 
-    const height = fullscreen && shellRef.current
-      ? Math.max(360, shellRef.current.clientHeight - (showOsc ? 298 : 148))
+    const height = isPage && shellRef.current
+      ? Math.max(420, shellRef.current.clientHeight - (showOsc ? 320 : 168))
       : 380
     setChartHeight(height)
 
@@ -278,7 +274,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         rightPriceScale: { borderColor: '#dce3eb' },
         timeScale: { borderColor: '#dce3eb', visible: false },
         width: oscContainerRef.current.clientWidth || 700,
-        height: fullscreen ? 140 : 120,
+        height: isPage ? 140 : 120,
       })
       const oscSeries = oscChart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 2 })
       oscChartRef.current = oscChart
@@ -288,7 +284,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       })
     }
 
-    const ro = new ResizeObserver(() => resizeChart(document.fullscreenElement === shellRef.current))
+    const ro = new ResizeObserver(() => resizeChart())
     ro.observe(containerRef.current)
     if (shellRef.current) ro.observe(shellRef.current)
 
@@ -335,6 +331,12 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     const width = oscContainerRef.current.clientWidth || containerRef.current?.clientWidth || 700
     oscChartRef.current.applyOptions({ width })
   }, [showOsc, activeOsc])
+
+  useEffect(() => {
+    if (!isPage) return
+    requestAnimationFrame(() => resizeChart())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPage, showTools, showOsc])
 
   // Disable chart pan while drawing / select tools are active
   useEffect(() => {
@@ -677,7 +679,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
   return (
     <div
       ref={shellRef}
-      className={`card overflow-hidden chart-shell${fullscreen ? ' is-fullscreen' : ''}`}
+      className={`card overflow-hidden chart-shell${isPage ? ' is-page' : ''}`}
     >
       <div className="chart-toolbar">
         <div className="chart-toolbar-group">
@@ -766,15 +768,17 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
             )}
           </div>
 
-          <button
-            type="button"
-            className="btn btn-ghost text-xs bold row gap-sm"
-            onClick={toggleFullscreen}
-            title={fullscreen ? 'Exit fullscreen' : 'Fullscreen chart'}
-          >
-            {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
-            {fullscreen ? 'Exit' : 'Full'}
-          </button>
+          {!isPage && (
+            <button
+              type="button"
+              className="btn btn-ghost text-xs bold row gap-sm"
+              onClick={openFullChartTab}
+              title="Open full chart in a new tab"
+            >
+              <IconMaximize size={15} />
+              Full
+            </button>
+          )}
         </div>
       </div>
 

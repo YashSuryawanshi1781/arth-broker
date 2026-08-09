@@ -2423,8 +2423,8 @@ html[data-theme="dark"] .trade-dock { background: rgb(18 28 46 / 0.94); }
   font-size: 0.92rem;
 }
 
-/* ---- Advanced chart: fullscreen + drawing tools ------------------------- */
-.chart-shell.is-fullscreen {
+/* ---- Advanced chart: page workspace + drawing tools --------------------- */
+.chart-shell.is-page {
   border-radius: 0;
   border: 0;
   background: var(--color-surface);
@@ -2432,8 +2432,83 @@ html[data-theme="dark"] .trade-dock { background: rgb(18 28 46 / 0.94); }
   flex-direction: column;
   min-height: 100%;
   height: 100%;
+  box-shadow: none;
 }
-.chart-shell.is-fullscreen .relative { flex: 1; }
+.chart-shell.is-page .relative { flex: 1; min-height: 0; }
+
+.chart-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-height: 100dvh;
+  background: var(--color-canvas);
+}
+
+.chart-page-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.chart-page-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.chart-page-divider {
+  width: 1px;
+  height: 1.6rem;
+  background: var(--color-line);
+  flex: none;
+}
+
+.chart-page-title {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.chart-page-sub {
+  margin-top: 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16rem;
+}
+
+.chart-page-bar-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.7rem;
+  margin-left: auto;
+}
+
+.chart-page-ltp {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.chart-page-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chart-page-body > .chart-shell { flex: 1; }
 
 .chart-tools-bar {
   display: flex;

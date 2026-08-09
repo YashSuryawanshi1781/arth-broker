@@ -14,9 +14,8 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { logout } from '../features/auth/authSlice'
-import { applyTicks, setConnected, setMarketStatus, setSnapshot } from '../features/market/marketSlice'
 import { formatINR, api } from '../lib/api'
-import { streamUrl } from '../lib/config'
+import { useMarketStream } from '../hooks/useMarketStream'
 import { useThemeMode } from '../theme/ThemeModeProvider'
 import { BrandLockup } from './Brand'
 import { NavDrawer, initialsOf } from './NavDrawer'
@@ -50,51 +49,7 @@ export function AppShell() {
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), [])
 
-  useEffect(() => {
-    let es
-    let retryTimer
-    let closed = false
-
-    const connect = () => {
-      if (closed) return
-      es = new EventSource(streamUrl('/api/market/stream'), { withCredentials: true })
-      es.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data)
-          if (data.type === 'snapshot') dispatch(setSnapshot(data))
-          if (data.type === 'ticks') dispatch(applyTicks(data))
-          if (data.type === 'status' && data.marketStatus) dispatch(setMarketStatus(data.marketStatus))
-        } catch {
-          /* ignore bad frames */
-        }
-      }
-      es.onopen = () => dispatch(setConnected(true))
-      es.onerror = () => {
-        dispatch(setConnected(false))
-        es.close()
-        retryTimer = setTimeout(connect, 2000)
-      }
-    }
-
-    api('/market/instruments')
-      .then((data) => {
-        if (data.instruments?.length) {
-          dispatch(setSnapshot({
-            instruments: data.instruments,
-            indices: data.indices || {},
-            marketStatus: data.marketStatus,
-          }))
-        }
-      })
-      .catch(() => {})
-
-    connect()
-    return () => {
-      closed = true
-      clearTimeout(retryTimer)
-      es?.close()
-    }
-  }, [dispatch])
+  useMarketStream()
 
   useEffect(() => {
     api('/notifications')
