@@ -30,6 +30,17 @@ import {
   loadIndicatorPrefs,
   saveIndicatorPrefs,
 } from '../lib/indicators.js'
+import {
+  DRAW_COLORS,
+  DRAW_TOOLS,
+  FIB_LEVELS,
+  clearDrawingsStorage,
+  loadDrawings,
+  newDrawingId,
+  pointsNeeded,
+  saveDrawings,
+} from '../lib/chartDrawings.js'
+import { IconMaximize, IconMinimize, IconTrash } from './Icons'
 
 const TIMEFRAMES = [
   { id: '1m', label: '1m', interval: 60, count: 180 },
@@ -62,6 +73,7 @@ function oscHint(id) {
 
 export function AdvancedChart({ symbol, live, candlesPath }) {
   const dispatch = useAppDispatch()
+  const shellRef = useRef(null)
   const containerRef = useRef(null)
   const oscContainerRef = useRef(null)
   const chartRef = useRef(null)
@@ -72,6 +84,8 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
   const oscSeriesRef = useRef(null)
   const candlesRef = useRef([])
   const intervalRef = useRef(60)
+  const drawingsRef = useRef([])
+  const draftRef = useRef(null)
 
   const [timeframe, setTimeframe] = useState('5m')
   const [chartType, setChartType] = useState('candle')
@@ -79,10 +93,29 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
+  const [showTools, setShowTools] = useState(true)
+  const [drawTool, setDrawTool] = useState('pan')
+  const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
+  const [draft, setDraft] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [drawVersion, setDrawVersion] = useState(0)
+  const [chartHeight, setChartHeight] = useState(380)
 
   const tf = useMemo(() => TIMEFRAMES.find((t) => t.id === timeframe) || TIMEFRAMES[1], [timeframe])
   const activeOsc = primaryOscillator(indicators)
   const showOsc = Boolean(activeOsc)
+
+  drawingsRef.current = drawings
+  draftRef.current = draft
+
+  const persistDrawings = (next, { toast = false } = {}) => {
+    setDrawings(next)
+    saveDrawings(symbol, next)
+    if (toast) {
+      dispatch(showToast({ type: 'success', title: 'Drawings saved', message: `${next.length} object(s) kept for ${symbol}` }))
+    }
+  }
 
   const toggleIndicator = (id) => {
     setIndicators((prev) => {
@@ -92,11 +125,75 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     })
   }
 
+  // Reload drawings when symbol changes
+  useEffect(() => {
+    setDrawings(loadDrawings(symbol))
+    setDraft(null)
+    setSelectedId(null)
+    setDrawTool('pan')
+  }, [symbol])
+
+  // Fullscreen + height sync
+  useEffect(() => {
+    const onFs = () => {
+      const active = document.fullscreenElement === shellRef.current
+      setFullscreen(active)
+      requestAnimationFrame(() => resizeChart(active))
+    }
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [])
+
+  function resizeChart(isFs = fullscreen) {
+    const shell = shellRef.current
+    const container = containerRef.current
+    const chart = chartRef.current
+    if (!container || !chart) return
+
+    let height = 380
+    if (isFs && shell) {
+      const toolbar = 148
+      const osc = showOsc ? 150 : 0
+      height = Math.max(360, shell.clientHeight - toolbar - osc)
+    }
+    setChartHeight(height)
+    chart.applyOptions({
+      width: container.clientWidth,
+      height,
+    })
+    if (oscContainerRef.current && oscChartRef.current) {
+      oscChartRef.current.applyOptions({
+        width: oscContainerRef.current.clientWidth,
+        height: isFs ? 140 : 120,
+      })
+    }
+    setDrawVersion((v) => v + 1)
+  }
+
+  async function toggleFullscreen() {
+    const el = shellRef.current
+    if (!el) return
+    try {
+      if (document.fullscreenElement === el) {
+        await document.exitFullscreen()
+      } else {
+        await el.requestFullscreen()
+      }
+    } catch (err) {
+      dispatch(showToast({ type: 'error', title: 'Fullscreen failed', message: err.message }))
+    }
+  }
+
   // Build / rebuild charts when symbol, timeframe, or chart type changes
   useEffect(() => {
     if (!containerRef.current || !symbol) return undefined
     setLoading(true)
     intervalRef.current = tf.interval
+
+    const height = fullscreen && shellRef.current
+      ? Math.max(360, shellRef.current.clientHeight - (showOsc ? 298 : 148))
+      : 380
+    setChartHeight(height)
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -117,7 +214,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       rightPriceScale: { borderColor: '#dce3eb', scaleMargins: { top: 0.08, bottom: indicators.volume ? 0.22 : 0.08 } },
       timeScale: { borderColor: '#dce3eb', timeVisible: tf.interval < 86400, secondsVisible: false },
       width: containerRef.current.clientWidth || 700,
-      height: 380,
+      height,
+      handleScroll: true,
+      handleScale: true,
     })
 
     let main
@@ -162,6 +261,10 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       if (candle) setHover(candle)
     })
 
+    const bumpDraw = () => setDrawVersion((v) => v + 1)
+    chart.timeScale().subscribeVisibleLogicalRangeChange(bumpDraw)
+    chart.subscribeCrosshairMove(bumpDraw)
+
     let oscChart
     if (oscContainerRef.current) {
       oscChart = createChart(oscContainerRef.current, {
@@ -175,7 +278,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         rightPriceScale: { borderColor: '#dce3eb' },
         timeScale: { borderColor: '#dce3eb', visible: false },
         width: oscContainerRef.current.clientWidth || 700,
-        height: 120,
+        height: fullscreen ? 140 : 120,
       })
       const oscSeries = oscChart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 2 })
       oscChartRef.current = oscChart
@@ -185,15 +288,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       })
     }
 
-    const ro = new ResizeObserver(() => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: containerRef.current.clientWidth })
-      }
-      if (oscContainerRef.current && oscChartRef.current) {
-        oscChartRef.current.applyOptions({ width: oscContainerRef.current.clientWidth })
-      }
-    })
+    const ro = new ResizeObserver(() => resizeChart(document.fullscreenElement === shellRef.current))
     ro.observe(containerRef.current)
+    if (shellRef.current) ro.observe(shellRef.current)
 
     let cancelled = false
     api(`${candlesPath || `/market/${symbol}/candles`}?interval=${tf.interval}&count=${tf.count}`)
@@ -205,6 +302,7 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         chart.timeScale().fitContent()
         setHover(candles[candles.length - 1] || null)
         setLoading(false)
+        setDrawVersion((v) => v + 1)
       })
       .catch((err) => {
         setLoading(false)
@@ -226,19 +324,50 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, timeframe, chartType, candlesPath])
 
-  // Re-apply overlays when indicator toggles change (without full reload)
   useEffect(() => {
     if (!candlesRef.current.length || !mainSeriesRef.current) return
     applySeriesData(candlesRef.current, chartType, indicators)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicators])
 
-  // Resize osc pane when it becomes visible (may have been created while hidden)
   useEffect(() => {
     if (!showOsc || !oscContainerRef.current || !oscChartRef.current) return
     const width = oscContainerRef.current.clientWidth || containerRef.current?.clientWidth || 700
     oscChartRef.current.applyOptions({ width })
   }, [showOsc, activeOsc])
+
+  // Disable chart pan while drawing / select tools are active
+  useEffect(() => {
+    const chart = chartRef.current
+    if (!chart) return
+    const interactive = drawTool !== 'pan'
+    chart.applyOptions({
+      handleScroll: !interactive,
+      handleScale: !interactive,
+      crosshair: {
+        mode: interactive ? CrosshairMode.Hidden : CrosshairMode.Normal,
+      },
+    })
+  }, [drawTool, symbol, timeframe, chartType])
+
+  // Keyboard: Escape cancels draft / exits tool; Delete removes selection
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setDraft(null)
+        setDrawTool('pan')
+        setSelectedId(null)
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && !e.target.closest('input, textarea')) {
+        e.preventDefault()
+        persistDrawings(drawingsRef.current.filter((d) => d.id !== selectedId))
+        setSelectedId(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, symbol])
 
   function clearOverlays() {
     const chart = chartRef.current
@@ -400,13 +529,156 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     }
   }, [live?.price, live?.lastUpdate, chartType, indicators.volume])
 
+  function eventToPoint(e) {
+    const chart = chartRef.current
+    const series = mainSeriesRef.current
+    const el = containerRef.current
+    if (!chart || !series || !el) return null
+    const rect = el.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const time = chart.timeScale().coordinateToTime(x)
+    const price = series.coordinateToPrice(y)
+    if (time == null || price == null || Number.isNaN(price)) return null
+    return { time, price: Number(price) }
+  }
+
+  function pointToXY(point) {
+    const chart = chartRef.current
+    const series = mainSeriesRef.current
+    if (!chart || !series || !point) return null
+    const x = chart.timeScale().timeToCoordinate(point.time)
+    const y = series.priceToCoordinate(point.price)
+    if (x == null || y == null) return null
+    return { x, y }
+  }
+
+  function onOverlayPointerDown(e) {
+    if (drawTool === 'pan') return
+
+    if (drawTool === 'select') {
+      const hit = hitTestDrawing(e)
+      setSelectedId(hit)
+      return
+    }
+
+    const point = eventToPoint(e)
+    if (!point) return
+    e.preventDefault()
+
+    const need = pointsNeeded(drawTool)
+    if (need === 1) {
+      const drawing = {
+        id: newDrawingId(),
+        type: drawTool,
+        points: [point],
+        color: DRAW_COLORS[drawTool] || '#2563eb',
+      }
+      persistDrawings([...drawingsRef.current, drawing])
+      setSelectedId(drawing.id)
+      setDraft(null)
+      return
+    }
+
+    if (!draft || draft.type !== drawTool) {
+      setDraft({ type: drawTool, points: [point], color: DRAW_COLORS[drawTool] || '#2563eb' })
+      return
+    }
+
+    const drawing = {
+      id: newDrawingId(),
+      type: drawTool,
+      points: [draft.points[0], point],
+      color: draft.color,
+    }
+    persistDrawings([...drawingsRef.current, drawing])
+    setSelectedId(drawing.id)
+    setDraft(null)
+  }
+
+  function onOverlayPointerMove(e) {
+    if (!draft) return
+    const point = eventToPoint(e)
+    if (!point) return
+    setDraft((prev) => (prev ? { ...prev, hover: point } : prev))
+  }
+
+  function hitTestDrawing(e) {
+    const point = eventToPoint(e)
+    if (!point) return null
+    const xy = pointToXY(point)
+    if (!xy) return null
+    let best = null
+    let bestDist = 14
+    for (const d of drawingsRef.current) {
+      const coords = d.points.map(pointToXY).filter(Boolean)
+      if (!coords.length) continue
+      if (d.type === 'hline') {
+        const y = coords[0].y
+        const dist = Math.abs(xy.y - y)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = d.id
+        }
+      } else if (d.type === 'rect' && coords.length >= 2) {
+        const minX = Math.min(coords[0].x, coords[1].x)
+        const maxX = Math.max(coords[0].x, coords[1].x)
+        const minY = Math.min(coords[0].y, coords[1].y)
+        const maxY = Math.max(coords[0].y, coords[1].y)
+        if (xy.x >= minX - 4 && xy.x <= maxX + 4 && xy.y >= minY - 4 && xy.y <= maxY + 4) {
+          const edge = Math.min(xy.x - minX, maxX - xy.x, xy.y - minY, maxY - xy.y)
+          if (edge < bestDist) {
+            bestDist = edge
+            best = d.id
+          }
+        }
+      } else if (coords.length >= 2) {
+        const dist = distToSegment(xy, coords[0], coords[1])
+        if (dist < bestDist) {
+          bestDist = dist
+          best = d.id
+        }
+      }
+    }
+    return best
+  }
+
+  function undoDrawing() {
+    if (!drawings.length) return
+    persistDrawings(drawings.slice(0, -1))
+    setSelectedId(null)
+  }
+
+  function clearAllDrawings() {
+    persistDrawings([])
+    clearDrawingsStorage(symbol)
+    setSelectedId(null)
+    setDraft(null)
+    dispatch(showToast({ type: 'success', title: 'Drawings cleared', message: `Removed saved drawings for ${symbol}` }))
+  }
+
+  function deleteSelected() {
+    if (!selectedId) return
+    persistDrawings(drawings.filter((d) => d.id !== selectedId))
+    setSelectedId(null)
+  }
+
   const display = hover || candlesRef.current[candlesRef.current.length - 1]
   const up = display ? display.close >= display.open : true
   const activeOverlays = [...OVERLAY_DEFS, ...OSCILLATOR_DEFS].filter((ind) => indicators[ind.id])
   const activeOscDef = OSCILLATOR_DEFS.find((d) => d.id === activeOsc)
+  const preview = draft
+    ? { ...draft, points: draft.hover ? [...draft.points, draft.hover] : draft.points }
+    : null
+
+  // touch drawVersion so SVG remaps after pan/zoom
+  void drawVersion
 
   return (
-    <div className="card overflow-hidden">
+    <div
+      ref={shellRef}
+      className={`card overflow-hidden chart-shell${fullscreen ? ' is-fullscreen' : ''}`}
+    >
       <div className="row flex-wrap gap-md border px-lg py-md" style={{ borderWidth: '0 0 1px' }}>
         <div className="row gap-xs">
           {TIMEFRAMES.map((t) => (
@@ -436,53 +708,120 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
           ))}
         </div>
 
-        <div className="relative ml-auto">
+        <div className="row gap-xs ml-auto">
           <button
             type="button"
-            className={`btn text-xs bold row gap-sm ${showIndicators ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setShowIndicators((v) => !v)}
+            className={`btn text-xs bold ${showTools ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => setShowTools((v) => !v)}
           >
-            Indicators
-            <span className="mono text-xs">{activeOverlays.length}</span>
+            Tools
           </button>
 
-          {showIndicators && (
-            <>
-              <button
-                type="button"
-                aria-label="Close indicators"
-                className="fixed"
-                style={{ inset: 0, zIndex: 50, cursor: 'default', background: 'transparent', border: 0 }}
-                onClick={() => setShowIndicators(false)}
-              />
-              <div className="menu-pop stack" style={{ maxHeight: 360, overflow: 'auto', padding: 0 }}>
-                <div className="px-lg py-md text-xs bold muted uppercase">Overlays</div>
-                {OVERLAY_DEFS.map((ind) => (
-                  <IndicatorToggle
-                    key={ind.id}
-                    color={ind.color}
-                    label={ind.label}
-                    active={indicators[ind.id]}
-                    onClick={() => toggleIndicator(ind.id)}
-                  />
-                ))}
-                <div className="px-lg py-md text-xs bold muted uppercase border" style={{ borderWidth: '1px 0' }}>
-                  Oscillators
+          <div className="relative">
+            <button
+              type="button"
+              className={`btn text-xs bold row gap-sm ${showIndicators ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setShowIndicators((v) => !v)}
+            >
+              Indicators
+              <span className="mono text-xs">{activeOverlays.length}</span>
+            </button>
+
+            {showIndicators && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Close indicators"
+                  className="fixed"
+                  style={{ inset: 0, zIndex: 50, cursor: 'default', background: 'transparent', border: 0 }}
+                  onClick={() => setShowIndicators(false)}
+                />
+                <div className="menu-pop stack" style={{ maxHeight: 360, overflow: 'auto', padding: 0 }}>
+                  <div className="px-lg py-md text-xs bold muted uppercase">Overlays</div>
+                  {OVERLAY_DEFS.map((ind) => (
+                    <IndicatorToggle
+                      key={ind.id}
+                      color={ind.color}
+                      label={ind.label}
+                      active={indicators[ind.id]}
+                      onClick={() => toggleIndicator(ind.id)}
+                    />
+                  ))}
+                  <div className="px-lg py-md text-xs bold muted uppercase border" style={{ borderWidth: '1px 0' }}>
+                    Oscillators
+                  </div>
+                  {OSCILLATOR_DEFS.map((ind) => (
+                    <IndicatorToggle
+                      key={ind.id}
+                      color={ind.color}
+                      label={ind.label}
+                      active={indicators[ind.id]}
+                      onClick={() => toggleIndicator(ind.id)}
+                    />
+                  ))}
                 </div>
-                {OSCILLATOR_DEFS.map((ind) => (
-                  <IndicatorToggle
-                    key={ind.id}
-                    color={ind.color}
-                    label={ind.label}
-                    active={indicators[ind.id]}
-                    onClick={() => toggleIndicator(ind.id)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-ghost text-xs bold row gap-sm"
+            onClick={toggleFullscreen}
+            title={fullscreen ? 'Exit fullscreen' : 'Fullscreen chart'}
+          >
+            {fullscreen ? <IconMinimize size={15} /> : <IconMaximize size={15} />}
+            {fullscreen ? 'Exit' : 'Full'}
+          </button>
         </div>
       </div>
+
+      {showTools && (
+        <div className="chart-tools-bar">
+          <div className="row flex-wrap gap-xs">
+            {DRAW_TOOLS.map((tool) => (
+              <button
+                key={tool.id}
+                type="button"
+                title={tool.tip}
+                className={`btn text-xs bold ${drawTool === tool.id ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => {
+                  setDrawTool(tool.id)
+                  setDraft(null)
+                  if (tool.id === 'pan') setSelectedId(null)
+                }}
+              >
+                {tool.label}
+              </button>
+            ))}
+          </div>
+          <div className="row flex-wrap gap-xs">
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={undoDrawing} disabled={!drawings.length}>
+              Undo
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost text-xs bold row gap-sm"
+              onClick={deleteSelected}
+              disabled={!selectedId}
+              title="Delete selected"
+            >
+              <IconTrash size={14} />
+              Delete
+            </button>
+            <button type="button" className="btn btn-ghost text-xs bold" onClick={clearAllDrawings} disabled={!drawings.length}>
+              Clear
+            </button>
+            <button
+              type="button"
+              className="btn btn-dark text-xs bold"
+              onClick={() => persistDrawings(drawings, { toast: true })}
+            >
+              Save drawings
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="row flex-wrap gap-md border px-lg py-md mono text-xs" style={{ borderWidth: '0 0 1px' }}>
         <span className="text-xs bold ink">{symbol}</span>
@@ -492,16 +831,11 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         <Ohlc label="L" value={display ? formatINR(display.low) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
-        {activeOverlays.length > 0 && (
-          <span className="ml-auto row flex-wrap gap-sm text-xs">
-            {activeOverlays.map((ind) => (
-              <span key={ind.id} className="row gap-xs muted">
-                <span className="rounded shrink-0" style={{ width: 8, height: 8, background: ind.color }} />
-                {ind.label}
-              </span>
-            ))}
-          </span>
-        )}
+        <span className="ml-auto muted">
+          {drawTool === 'pan'
+            ? `${drawings.length} saved drawing${drawings.length === 1 ? '' : 's'}`
+            : `${DRAW_TOOLS.find((t) => t.id === drawTool)?.tip || ''}`}
+        </span>
       </div>
 
       <div className="relative">
@@ -510,7 +844,23 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
             Loading chart…
           </div>
         )}
-        <div ref={containerRef} className="w-full" />
+        <div ref={containerRef} className="w-full" style={{ height: chartHeight }} />
+        <svg
+          className={`chart-draw-layer${drawTool !== 'pan' ? ' is-drawing' : ''}`}
+          style={{ height: chartHeight }}
+          onPointerDown={onOverlayPointerDown}
+          onPointerMove={onOverlayPointerMove}
+        >
+          {[...drawings, ...(preview ? [{ ...preview, id: 'draft' }] : [])].map((d) => (
+            <DrawingShape
+              key={d.id}
+              drawing={d}
+              toXY={pointToXY}
+              selected={d.id === selectedId}
+              width={containerRef.current?.clientWidth || 700}
+            />
+          ))}
+        </svg>
         <div className={showOsc ? 'border' : 'hidden'} style={showOsc ? { borderWidth: '1px 0 0' } : undefined}>
           {showOsc && (
             <div className="row-between px-lg py-md text-xs bold muted uppercase">
@@ -523,7 +873,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       </div>
 
       <div className="row-between border px-lg py-md text-xs muted" style={{ borderWidth: '1px 0 0' }}>
-        <span>Hover the chart for OHLC values</span>
+        <span>
+          Tools · draw on chart · auto-saves per symbol · Esc cancels · Del removes selection
+        </span>
         <span className="row gap-sm">
           <span className="live-dot" />
           Streaming quotes
@@ -531,6 +883,93 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       </div>
     </div>
   )
+}
+
+function DrawingShape({ drawing, toXY, selected, width }) {
+  const color = drawing.color || '#2563eb'
+  const stroke = selected ? '#0b1b33' : color
+  const widthStroke = selected ? 2.4 : 1.6
+  const pts = drawing.points.map(toXY).filter(Boolean)
+
+  if (drawing.type === 'hline' && pts[0]) {
+    return (
+      <g>
+        <line x1={0} y1={pts[0].y} x2={width} y2={pts[0].y} stroke={stroke} strokeWidth={widthStroke} strokeDasharray="6 4" />
+        <circle cx={24} cy={pts[0].y} r={3.5} fill={color} />
+      </g>
+    )
+  }
+
+  if ((drawing.type === 'trend' || drawing.type === 'ray') && pts.length >= 2) {
+    let x1 = pts[0].x
+    let y1 = pts[0].y
+    let x2 = pts[1].x
+    let y2 = pts[1].y
+    if (drawing.type === 'ray') {
+      const dx = x2 - x1
+      const dy = y2 - y1
+      if (Math.abs(dx) > 0.001) {
+        const t = (width + 40 - x1) / dx
+        x2 = x1 + dx * Math.max(t, 1)
+        y2 = y1 + dy * Math.max(t, 1)
+      }
+    }
+    return (
+      <g>
+        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth={widthStroke} />
+        <circle cx={pts[0].x} cy={pts[0].y} r={3.5} fill={color} />
+        <circle cx={pts[1].x} cy={pts[1].y} r={3.5} fill={color} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'rect' && pts.length >= 2) {
+    const x = Math.min(pts[0].x, pts[1].x)
+    const y = Math.min(pts[0].y, pts[1].y)
+    const w = Math.abs(pts[1].x - pts[0].x)
+    const h = Math.abs(pts[1].y - pts[0].y)
+    return (
+      <g>
+        <rect x={x} y={y} width={w} height={h} fill={`${color}22`} stroke={stroke} strokeWidth={widthStroke} />
+      </g>
+    )
+  }
+
+  if (drawing.type === 'fib' && pts.length >= 2) {
+    const y1 = pts[0].y
+    const y2 = pts[1].y
+    const xLeft = Math.min(pts[0].x, pts[1].x)
+    const xRight = Math.max(pts[0].x, pts[1].x, xLeft + 80)
+    return (
+      <g>
+        {FIB_LEVELS.map((level) => {
+          const y = y1 + (y2 - y1) * level
+          return (
+            <g key={level}>
+              <line x1={xLeft} y1={y} x2={xRight} y2={y} stroke={stroke} strokeWidth={1.2} strokeOpacity={0.85} />
+              <text x={xRight + 4} y={y + 3} fontSize="10" fill={stroke} fontFamily="IBM Plex Mono, monospace">
+                {level.toFixed(3)}
+              </text>
+            </g>
+          )
+        })}
+        <line x1={pts[0].x} y1={pts[0].y} x2={pts[1].x} y2={pts[1].y} stroke={stroke} strokeWidth={1} strokeDasharray="4 3" strokeOpacity={0.5} />
+      </g>
+    )
+  }
+
+  if (pts[0]) {
+    return <circle cx={pts[0].x} cy={pts[0].y} r={4} fill={color} />
+  }
+  return null
+}
+
+function distToSegment(p, a, b) {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  if (dx === 0 && dy === 0) return Math.hypot(p.x - a.x, p.y - a.y)
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)))
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
 }
 
 function IndicatorToggle({ color, label, active, onClick }) {
