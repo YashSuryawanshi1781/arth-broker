@@ -1449,7 +1449,11 @@ html[data-theme="dark"] .mover-tab.is-active {
   transition: background 0.12s ease;
 }
 .menu-item:hover { background: var(--color-surface-2); }
+.menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
 .menu-item-danger { color: var(--color-down); }
+.chart-tools-menu {
+  width: min(18.5rem, calc(100vw - 1.5rem));
+}
 .menu-kyc {
   display: inline-flex;
   align-items: center;

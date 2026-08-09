@@ -104,7 +104,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [showTools, setShowTools] = useState(true)
+  const [showTools, setShowTools] = useState(false)
   const [drawTool, setDrawTool] = useState('pan')
   const [drawings, setDrawings] = useState(() => loadDrawings(symbol))
   const [draft, setDraft] = useState(null)
@@ -116,11 +116,12 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
     if (!isPage) return 360
     const header = 52
     const toolbar = 42
-    const tools = showTools ? 72 : 0
     const ohlc = 30
     const osc = showOsc ? 128 : 0
-    return Math.max(380, window.innerHeight - header - toolbar - tools - ohlc - osc - 4)
+    return Math.max(380, window.innerHeight - header - toolbar - ohlc - osc - 4)
   }
+
+  const activeToolLabel = DRAW_TOOL_GROUPS.flatMap((g) => g.tools).find((t) => t.id === drawTool)?.label || 'Pan'
 
   const tf = useMemo(() => TIMEFRAMES.find((t) => t.id === timeframe) || TIMEFRAMES[1], [timeframe])
   const activeOsc = primaryOscillator(indicators)
@@ -372,7 +373,7 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPage, showTools, showOsc])
+  }, [isPage, showOsc])
 
   // Disable chart pan while drawing / select tools are active
   useEffect(() => {
@@ -840,19 +841,90 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         </div>
 
         <div className="chart-toolbar-actions">
-          <button
-            type="button"
-            className={`chart-action-btn${showTools ? ' is-active' : ''}`}
-            onClick={() => setShowTools((v) => !v)}
-          >
-            Tools
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className={`chart-action-btn${showTools || drawTool !== 'pan' ? ' is-active' : ''}`}
+              onClick={() => {
+                setShowTools((v) => !v)
+                setShowIndicators(false)
+              }}
+            >
+              Tools{drawTool !== 'pan' ? ` · ${activeToolLabel}` : ''}
+            </button>
+
+            {showTools && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Close tools"
+                  className="fixed"
+                  style={{ inset: 0, zIndex: 50, cursor: 'default', background: 'transparent', border: 0 }}
+                  onClick={() => setShowTools(false)}
+                />
+                <div className="menu-pop stack chart-tools-menu" style={{ maxHeight: 380, overflow: 'auto', padding: 0 }}>
+                  {DRAW_TOOL_GROUPS.map((group, gi) => (
+                    <div key={group.id}>
+                      <div
+                        className="px-lg py-md text-xs bold muted uppercase"
+                        style={gi > 0 ? { borderTop: '1px solid var(--color-line)' } : undefined}
+                      >
+                        {group.label}
+                      </div>
+                      {group.tools.map((tool) => (
+                        <ToolMenuItem
+                          key={tool.id}
+                          label={tool.label}
+                          tip={tool.tip}
+                          active={drawTool === tool.id}
+                          color={DRAW_COLORS[tool.id] || '#64748b'}
+                          onClick={() => {
+                            setDrawTool(tool.id)
+                            setDraft(null)
+                            if (tool.id === 'pan') setSelectedId(null)
+                            setShowTools(false)
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                  <div className="border" style={{ borderWidth: '1px 0 0' }}>
+                    <div className="px-lg py-md text-xs bold muted uppercase">Drawings</div>
+                    <button type="button" className="menu-item row w-full gap-md" onClick={undoDrawing} disabled={!drawings.length}>
+                      <span className="ink">Undo last</span>
+                    </button>
+                    <button type="button" className="menu-item row w-full gap-md" onClick={deleteSelected} disabled={!selectedId}>
+                      <span className="ink">Delete selected</span>
+                      <IconTrash size={14} className="ml-auto muted" />
+                    </button>
+                    <button type="button" className="menu-item row w-full gap-md" onClick={clearAllDrawings} disabled={!drawings.length}>
+                      <span className="ink">Clear all</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="menu-item row w-full gap-md"
+                      onClick={() => {
+                        persistDrawings(drawings, { toast: true })
+                        setShowTools(false)
+                      }}
+                      disabled={!drawings.length}
+                    >
+                      <span className="ink">Save drawings</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="relative">
             <button
               type="button"
               className={`chart-action-btn${showIndicators ? ' is-active' : ''}`}
-              onClick={() => setShowIndicators((v) => !v)}
+              onClick={() => {
+                setShowIndicators((v) => !v)
+                setShowTools(false)
+              }}
             >
               Indicators{activeOverlays.length > 0 ? ` · ${activeOverlays.length}` : ''}
             </button>
@@ -908,52 +980,6 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         </div>
       </div>
 
-      {showTools && (
-        <div className="chart-tools-bar">
-          <div className="chart-tools-groups">
-            {DRAW_TOOL_GROUPS.map((group) => (
-              <div key={group.id} className="chart-tools-group" data-label={group.label}>
-                {group.tools.map((tool) => (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    title={tool.tip}
-                    className={`chart-pill${drawTool === tool.id ? ' is-active' : ''}`}
-                    onClick={() => {
-                      setDrawTool(tool.id)
-                      setDraft(null)
-                      if (tool.id === 'pan') setSelectedId(null)
-                    }}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="chart-tools-pills">
-            <button type="button" className="chart-pill" onClick={undoDrawing} disabled={!drawings.length}>Undo</button>
-            <button type="button" className="chart-pill" onClick={deleteSelected} disabled={!selectedId} title="Delete selected">
-              <IconTrash size={13} />
-            </button>
-            <button type="button" className="chart-pill" onClick={clearAllDrawings} disabled={!drawings.length}>Clear</button>
-            <button
-              type="button"
-              className="chart-pill is-save"
-              onClick={() => persistDrawings(drawings, { toast: true })}
-            >
-              Save
-            </button>
-          </div>
-          {draft && !draft.brushing && (
-            <span className="chart-tools-hint">
-              {draft.points.length}/{pointsNeeded(draft.type)} clicks
-              {draft.type === 'triangle' || draft.type === 'channel' || draft.type === 'fibext' ? ' · Esc cancel' : ''}
-            </span>
-          )}
-        </div>
-      )}
-
       <div className="chart-ohlc">
         <span className="bold ink">{symbol}</span>
         <span className="muted">{tf.label}</span>
@@ -962,6 +988,13 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
         <Ohlc label="L" value={display ? formatINR(display.low) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
+        {drawTool !== 'pan' && (
+          <span className="muted font-sans text-[11px] font-bold">
+            Tool · {activeToolLabel}
+            {draft && !draft.brushing ? ` · ${draft.points.length}/${pointsNeeded(draft.type)}` : ''}
+            {' · Esc'}
+          </span>
+        )}
         {drawings.length > 0 && (
           <span className="ml-auto muted font-sans text-[11px] font-bold">{drawings.length} saved</span>
         )}
@@ -1300,6 +1333,34 @@ function IndicatorToggle({ color, label, active, onClick }) {
       </span>
       <span className={active ? 'ink' : 'muted'}>{label}</span>
       <span className="ml-auto rounded shrink-0" style={{ width: 8, height: 8, background: color, opacity: active ? 1 : 0.3 }} />
+    </button>
+  )
+}
+
+function ToolMenuItem({ color, label, tip, active, onClick }) {
+  return (
+    <button type="button" onClick={onClick} title={tip} className="menu-item row w-full gap-md">
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded border"
+        style={{
+          width: 18,
+          height: 18,
+          background: active ? color : 'transparent',
+          borderColor: active ? 'transparent' : 'var(--color-line)',
+          color: '#fff',
+        }}
+      >
+        {active && (
+          <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M2.5 6.5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+      <span className="min-w-0">
+        <span className={`block ${active ? 'ink' : 'muted'}`}>{label}</span>
+        <span className="block text-[10px] muted" style={{ fontWeight: 600 }}>{tip}</span>
+      </span>
+      <span className="ml-auto rounded shrink-0" style={{ width: 8, height: 8, background: color, opacity: active ? 1 : 0.35 }} />
     </button>
   )
 }
