@@ -15,6 +15,7 @@ import {
   IconLock,
   IconLogout,
   IconShield,
+  IconSparkles,
   IconUser,
   IconXCircle,
 } from '../components/Icons'
@@ -29,6 +30,9 @@ export function AccountPage() {
   const [sessionsBusy, setSessionsBusy] = useState(false)
   const [name, setName] = useState(user?.name || '')
   const [phone, setPhone] = useState(user?.phone || '')
+  const [nomineeName, setNomineeName] = useState(user?.nomineeName || '')
+  const [dpId, setDpId] = useState(user?.dpId || '')
+  const [pin, setPin] = useState('')
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '' })
 
   useEffect(() => {
@@ -50,9 +54,25 @@ export function AccountPage() {
   const saveProfile = async (e) => {
     e.preventDefault()
     try {
-      const data = await api('/auth/profile', { method: 'PATCH', body: { name, phone } })
+      const data = await api('/auth/profile', {
+        method: 'PATCH',
+        body: { name, phone, nomineeName, dpId },
+      })
       dispatch(setUser(data.user))
       dispatch(showToast({ title: 'Profile updated' }))
+    } catch (err) {
+      dispatch(showToast({ title: 'Failed', message: err.message }))
+    }
+  }
+
+  const savePin = async (e) => {
+    e.preventDefault()
+    try {
+      const data = await api('/auth/pin', { method: 'POST', body: { pin } })
+      dispatch(setUser(data.user))
+      localStorage.removeItem('arth_pin_ok')
+      setPin('')
+      dispatch(showToast({ type: 'success', title: 'PIN saved', message: 'You will be asked on next unlock.' }))
     } catch (err) {
       dispatch(showToast({ title: 'Failed', message: err.message }))
     }
@@ -177,7 +197,66 @@ export function AccountPage() {
             <label className="label">Phone</label>
             <input className="field" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
+          <div>
+            <label className="label">Nominee name</label>
+            <input className="field" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">DP ID</label>
+            <input className="field" value={dpId} onChange={(e) => setDpId(e.target.value)} placeholder="IN300xxx…" />
+          </div>
           <button className="btn btn-primary" type="submit">Save</button>
+        </form>
+
+        <div className="stack gap-md border-t border">
+          <h2 className="row gap-sm bold">
+            <IconSparkles size={16} className="text-page-accent" />
+            Learning mode
+          </h2>
+          <p className="text-xs muted">
+            Guided tips, challenges and soft risk warnings while you practice with paper money.
+          </p>
+          <label className="row gap-sm text-sm">
+            <input
+              type="checkbox"
+              checked={user?.learningMode !== false}
+              onChange={async (e) => {
+                try {
+                  const data = await api('/learn/mode', { method: 'PATCH', body: { enabled: e.target.checked } })
+                  dispatch(setUser(data.user))
+                  dispatch(showToast({
+                    type: 'success',
+                    title: e.target.checked ? 'Learning mode on' : 'Learning mode off',
+                  }))
+                } catch (err) {
+                  dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
+                }
+              }}
+            />
+            Show lessons, tour and sandbox warnings
+          </label>
+        </div>
+
+        <form onSubmit={savePin} className="stack gap-md border-t border">
+          <h2 className="row gap-sm bold">
+            <IconLock size={16} className="text-page-accent" />
+            App PIN
+          </h2>
+          <p className="text-xs muted">
+            {user?.hasPin ? 'PIN is set. Enter a new 4–6 digit PIN to replace it.' : 'Set a 4–6 digit PIN to lock the app on this device.'}
+          </p>
+          <div>
+            <label className="label">PIN</label>
+            <input
+              className="field"
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            />
+          </div>
+          <button className="btn btn-ghost" type="submit" disabled={pin.length < 4}>Save PIN</button>
         </form>
 
         <form onSubmit={changePassword} className="stack gap-md border-t border">

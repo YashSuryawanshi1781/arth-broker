@@ -51,6 +51,10 @@ export function publicUser(user) {
     bankAccount: user.bank_account ? `XXXX${String(user.bank_account).slice(-4)}` : null,
     bankIfsc: user.bank_ifsc,
     bankName: user.bank_name,
+    learningMode: user.learning_mode == null ? true : !!user.learning_mode,
+    nomineeName: user.nominee_name || null,
+    dpId: user.dp_id || null,
+    hasPin: !!user.pin_hash,
     createdAt: user.created_at,
   }
 }

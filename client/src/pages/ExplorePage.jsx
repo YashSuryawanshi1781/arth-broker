@@ -1,8 +1,9 @@
 import { useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useAppSelector } from '../app/hooks'
-import { formatINR } from '../lib/api'
+import { useAppDispatch, useAppSelector } from '../app/hooks'
+import { api, formatINR } from '../lib/api'
+import { showToast } from '../features/ui/uiSlice'
 import { EmptyState, PageHeader, Screen } from '../components/Screen'
 import { WatchlistButton } from '../components/WatchlistButton'
 import { EmptySearchArt } from '../components/Illustrations'
@@ -14,6 +15,7 @@ export function ExplorePage() {
   const symbols = useAppSelector((s) => s.market.symbols)
   const instruments = useAppSelector((s) => s.market.instruments)
   const connected = useAppSelector((s) => s.market.connected)
+  const dispatch = useAppDispatch()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const parentRef = useRef(null)
@@ -117,6 +119,57 @@ export function ExplorePage() {
             ))}
           </select>
         </div>
+        {watchlist.lists?.length > 0 && (
+          <div className="field-wrap">
+            <select
+              className="field"
+              value={watchlist.listId || ''}
+              onChange={(e) => watchlist.selectList(e.target.value)}
+              title="Active watchlist"
+            >
+              {watchlist.lists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.pinned ? '* ' : ''}{l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <button
+          type="button"
+          className="btn btn-ghost text-xs"
+          onClick={async () => {
+            const name = window.prompt('New watchlist name')
+            if (!name?.trim()) return
+            try {
+              const created = await api('/watchlists', { method: 'POST', body: { name: name.trim() } })
+              await watchlist.reload()
+              if (created.watchlist?.id) watchlist.selectList(created.watchlist.id)
+            } catch (err) {
+              dispatch(showToast({ type: 'error', title: 'Watchlist', message: err.message }))
+            }
+          }}
+        >
+          + List
+        </button>
+        {watchlist.listId && (
+          <button
+            type="button"
+            className="btn btn-ghost text-xs"
+            onClick={async () => {
+              const current = watchlist.lists.find((l) => l.id === watchlist.listId)
+              const name = window.prompt('Rename watchlist', current?.name || '')
+              if (!name?.trim()) return
+              try {
+                await watchlist.renameList(watchlist.listId, name.trim())
+              } catch (err) {
+                dispatch(showToast({ type: 'error', title: 'Rename failed', message: err.message }))
+              }
+            }}
+          >
+            Rename
+          </button>
+        )}
       </div>
       <div className="card min- grow overflow-hidden">
         <div className="hidden grid-cols-[2rem_1.4fr_1fr_0.8fr] border-b border px-lg py-md text-[11px] bold muted uppercase">

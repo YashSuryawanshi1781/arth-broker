@@ -11,6 +11,25 @@ import {
 import { api, formatINR } from '../lib/api'
 import { showToast } from '../features/ui/uiSlice'
 import { useAppDispatch } from '../app/hooks'
+import {
+  sma,
+  ema,
+  bollinger,
+  vwap,
+  rsi,
+  macd,
+  stochastic,
+  atr,
+  adx,
+  cci,
+  supertrend,
+  pivots,
+  ichimoku,
+  OVERLAY_DEFS,
+  OSCILLATOR_DEFS,
+  loadIndicatorPrefs,
+  saveIndicatorPrefs,
+} from '../lib/indicators.js'
 
 const TIMEFRAMES = [
   { id: '1m', label: '1m', interval: 60, count: 180 },
@@ -27,128 +46,50 @@ const CHART_TYPES = [
   { id: 'area', label: 'Area' },
 ]
 
-const INDICATOR_DEFS = [
-  { id: 'sma20', label: 'SMA 20', color: '#f59e0b' },
-  { id: 'sma50', label: 'SMA 50', color: '#6366f1' },
-  { id: 'ema20', label: 'EMA 20', color: '#06b6d4' },
-  { id: 'bb', label: 'Bollinger', color: '#94a3b8' },
-  { id: 'volume', label: 'Volume', color: '#00a878' },
-  { id: 'vwap', label: 'VWAP', color: '#ec4899' },
-]
+const OSC_PRIORITY = ['macd', 'rsi', 'stoch', 'atr', 'adx', 'cci']
 
-function sma(values, period) {
-  const out = []
-  let sum = 0
-  for (let i = 0; i < values.length; i += 1) {
-    sum += values[i].close
-    if (i >= period) sum -= values[i - period].close
-    if (i >= period - 1) out.push({ time: values[i].time, value: +(sum / period).toFixed(2) })
-  }
-  return out
+function primaryOscillator(inds) {
+  return OSC_PRIORITY.find((id) => inds[id]) || null
 }
 
-function ema(values, period) {
-  const out = []
-  const k = 2 / (period + 1)
-  let prev
-  for (let i = 0; i < values.length; i += 1) {
-    const price = values[i].close
-    prev = prev == null ? price : price * k + prev * (1 - k)
-    if (i >= period - 1) out.push({ time: values[i].time, value: +prev.toFixed(2) })
-  }
-  return out
-}
-
-function bollinger(values, period = 20, mult = 2) {
-  const mid = []
-  const upper = []
-  const lower = []
-  for (let i = period - 1; i < values.length; i += 1) {
-    const slice = values.slice(i - period + 1, i + 1).map((c) => c.close)
-    const mean = slice.reduce((a, b) => a + b, 0) / period
-    const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period
-    const sd = Math.sqrt(variance)
-    const t = values[i].time
-    mid.push({ time: t, value: +mean.toFixed(2) })
-    upper.push({ time: t, value: +(mean + mult * sd).toFixed(2) })
-    lower.push({ time: t, value: +(mean - mult * sd).toFixed(2) })
-  }
-  return { mid, upper, lower }
-}
-
-function vwap(values) {
-  let cumPV = 0
-  let cumV = 0
-  return values.map((c) => {
-    const typical = (c.high + c.low + c.close) / 3
-    cumPV += typical * c.volume
-    cumV += c.volume
-    return { time: c.time, value: +(cumPV / Math.max(cumV, 1)).toFixed(2) }
-  })
-}
-
-function rsi(values, period = 14) {
-  const out = []
-  let gains = 0
-  let losses = 0
-  for (let i = 1; i < values.length; i += 1) {
-    const diff = values[i].close - values[i - 1].close
-    const gain = Math.max(diff, 0)
-    const loss = Math.max(-diff, 0)
-    if (i <= period) {
-      gains += gain
-      losses += loss
-      if (i === period) {
-        let avgGain = gains / period
-        let avgLoss = losses / period
-        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss
-        out.push({ time: values[i].time, value: +(100 - 100 / (1 + rs)).toFixed(2) })
-        for (let j = i + 1; j < values.length; j += 1) {
-          const d = values[j].close - values[j - 1].close
-          avgGain = (avgGain * (period - 1) + Math.max(d, 0)) / period
-          avgLoss = (avgLoss * (period - 1) + Math.max(-d, 0)) / period
-          const r = avgLoss === 0 ? 100 : avgGain / avgLoss
-          out.push({ time: values[j].time, value: +(100 - 100 / (1 + r)).toFixed(2) })
-        }
-        break
-      }
-    }
-  }
-  return out
+function oscHint(id) {
+  if (id === 'rsi') return 'Overbought 70 · Oversold 30'
+  if (id === 'stoch') return '%K'
+  if (id === 'macd') return 'MACD line'
+  if (id === 'cci') return 'Zero line'
+  return ''
 }
 
 export function AdvancedChart({ symbol, live, candlesPath }) {
   const dispatch = useAppDispatch()
   const containerRef = useRef(null)
-  const rsiContainerRef = useRef(null)
+  const oscContainerRef = useRef(null)
   const chartRef = useRef(null)
-  const rsiChartRef = useRef(null)
+  const oscChartRef = useRef(null)
   const mainSeriesRef = useRef(null)
   const volumeSeriesRef = useRef(null)
   const overlayRefs = useRef({})
-  const rsiSeriesRef = useRef(null)
+  const oscSeriesRef = useRef(null)
   const candlesRef = useRef([])
   const intervalRef = useRef(60)
 
   const [timeframe, setTimeframe] = useState('5m')
   const [chartType, setChartType] = useState('candle')
-  const [indicators, setIndicators] = useState({
-    sma20: true,
-    sma50: false,
-    ema20: true,
-    bb: false,
-    volume: true,
-    vwap: false,
-    rsi: true,
-  })
+  const [indicators, setIndicators] = useState(() => loadIndicatorPrefs())
   const [hover, setHover] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showPanels, setShowPanels] = useState({ overlays: false, oscillators: true })
+  const [showIndicators, setShowIndicators] = useState(false)
 
   const tf = useMemo(() => TIMEFRAMES.find((t) => t.id === timeframe) || TIMEFRAMES[1], [timeframe])
+  const activeOsc = primaryOscillator(indicators)
+  const showOsc = Boolean(activeOsc)
 
   const toggleIndicator = (id) => {
-    setIndicators((prev) => ({ ...prev, [id]: !prev[id] }))
+    setIndicators((prev) => {
+      const next = { ...prev, [id]: !prev[id] }
+      saveIndicatorPrefs(next)
+      return next
+    })
   }
 
   // Build / rebuild charts when symbol, timeframe, or chart type changes
@@ -221,9 +162,9 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       if (candle) setHover(candle)
     })
 
-    let rsiChart
-    if (rsiContainerRef.current) {
-      rsiChart = createChart(rsiContainerRef.current, {
+    let oscChart
+    if (oscContainerRef.current) {
+      oscChart = createChart(oscContainerRef.current, {
         layout: {
           background: { type: ColorType.Solid, color: '#ffffff' },
           textColor: '#5b6b7c',
@@ -233,14 +174,14 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         grid: { vertLines: { color: '#eef2f6' }, horzLines: { color: '#eef2f6' } },
         rightPriceScale: { borderColor: '#dce3eb' },
         timeScale: { borderColor: '#dce3eb', visible: false },
-        width: rsiContainerRef.current.clientWidth || 700,
+        width: oscContainerRef.current.clientWidth || 700,
         height: 120,
       })
-      const rsiSeries = rsiChart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 2 })
-      rsiChartRef.current = rsiChart
-      rsiSeriesRef.current = rsiSeries
+      const oscSeries = oscChart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 2 })
+      oscChartRef.current = oscChart
+      oscSeriesRef.current = oscSeries
       chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-        if (range) rsiChart.timeScale().setVisibleLogicalRange(range)
+        if (range) oscChart.timeScale().setVisibleLogicalRange(range)
       })
     }
 
@@ -248,8 +189,8 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({ width: containerRef.current.clientWidth })
       }
-      if (rsiContainerRef.current && rsiChartRef.current) {
-        rsiChartRef.current.applyOptions({ width: rsiContainerRef.current.clientWidth })
+      if (oscContainerRef.current && oscChartRef.current) {
+        oscChartRef.current.applyOptions({ width: oscContainerRef.current.clientWidth })
       }
     })
     ro.observe(containerRef.current)
@@ -274,12 +215,12 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
       cancelled = true
       ro.disconnect()
       chart.remove()
-      rsiChart?.remove()
+      oscChart?.remove()
       chartRef.current = null
-      rsiChartRef.current = null
+      oscChartRef.current = null
       mainSeriesRef.current = null
       volumeSeriesRef.current = null
-      rsiSeriesRef.current = null
+      oscSeriesRef.current = null
       overlayRefs.current = {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -291,6 +232,13 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     applySeriesData(candlesRef.current, chartType, indicators)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicators])
+
+  // Resize osc pane when it becomes visible (may have been created while hidden)
+  useEffect(() => {
+    if (!showOsc || !oscContainerRef.current || !oscChartRef.current) return
+    const width = oscContainerRef.current.clientWidth || containerRef.current?.clientWidth || 700
+    oscChartRef.current.applyOptions({ width })
+  }, [showOsc, activeOsc])
 
   function clearOverlays() {
     const chart = chartRef.current
@@ -334,28 +282,62 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
     clearOverlays()
 
     const addLine = (id, data, color, lineWidth = 2) => {
-      if (!data.length) return
+      if (!data?.length) return
       const series = chart.addSeries(LineSeries, { color, lineWidth, lastValueVisible: false, priceLineVisible: false })
       series.setData(data)
       overlayRefs.current[id] = series
     }
 
-    if (inds.sma20) addLine('sma20', sma(candles, 20), '#f59e0b')
-    if (inds.sma50) addLine('sma50', sma(candles, 50), '#6366f1')
-    if (inds.ema20) addLine('ema20', ema(candles, 20), '#06b6d4')
-    if (inds.vwap) addLine('vwap', vwap(candles), '#ec4899')
+    const colorOf = (id, fallback) => OVERLAY_DEFS.find((d) => d.id === id)?.color || fallback
+
+    if (inds.sma20) addLine('sma20', sma(candles, 20), colorOf('sma20', '#f59e0b'))
+    if (inds.sma50) addLine('sma50', sma(candles, 50), colorOf('sma50', '#6366f1'))
+    if (inds.ema20) addLine('ema20', ema(candles, 20), colorOf('ema20', '#06b6d4'))
+    if (inds.ema50) addLine('ema50', ema(candles, 50), colorOf('ema50', '#0ea5e9'))
+    if (inds.ema200) addLine('ema200', ema(candles, 200), colorOf('ema200', '#7c3aed'))
+    if (inds.vwap) addLine('vwap', vwap(candles), colorOf('vwap', '#ec4899'))
     if (inds.bb) {
       const bb = bollinger(candles, 20, 2)
-      addLine('bbMid', bb.mid, '#94a3b8', 1)
-      addLine('bbUp', bb.upper, '#94a3b8', 1)
-      addLine('bbLow', bb.lower, '#94a3b8', 1)
+      const c = colorOf('bb', '#94a3b8')
+      addLine('bbMid', bb.mid, c, 1)
+      addLine('bbUp', bb.upper, c, 1)
+      addLine('bbLow', bb.lower, c, 1)
+    }
+    if (inds.supertrend) {
+      const st = supertrend(candles).map((p) => ({ time: p.time, value: p.value }))
+      addLine('supertrend', st, colorOf('supertrend', '#22c55e'))
+    }
+    if (inds.ichimoku) {
+      const ich = ichimoku(candles)
+      const baseColor = colorOf('ichimoku', '#a78bfa')
+      addLine('ichiConv', ich.conversion, baseColor, 1)
+      addLine('ichiBase', ich.base, '#6366f1', 1)
+      addLine('ichiSpanA', ich.spanA, '#22c55e', 1)
+      addLine('ichiSpanB', ich.spanB, '#ef4444', 1)
+    }
+    if (inds.pivots) {
+      const p = pivots(candles)
+      const c = colorOf('pivots', '#f97316')
+      addLine('pp', p.pp, c, 1)
+      addLine('r1', p.r1, '#ef4444', 1)
+      addLine('s1', p.s1, '#22c55e', 1)
     }
 
-    if (inds.rsi && rsiSeriesRef.current) {
-      rsiSeriesRef.current.setData(rsi(candles, 14))
-      rsiChartRef.current?.timeScale().fitContent()
-    } else if (rsiSeriesRef.current) {
-      rsiSeriesRef.current.setData([])
+    const oscId = primaryOscillator(inds)
+    if (oscId && oscSeriesRef.current) {
+      const def = OSCILLATOR_DEFS.find((d) => d.id === oscId)
+      let data = []
+      if (oscId === 'macd') data = macd(candles).macd
+      else if (oscId === 'rsi') data = rsi(candles, 14)
+      else if (oscId === 'stoch') data = stochastic(candles).k
+      else if (oscId === 'atr') data = atr(candles)
+      else if (oscId === 'adx') data = adx(candles)
+      else if (oscId === 'cci') data = cci(candles)
+      oscSeriesRef.current.applyOptions({ color: def?.color || '#8b5cf6' })
+      oscSeriesRef.current.setData(data)
+      oscChartRef.current?.timeScale().fitContent()
+    } else if (oscSeriesRef.current) {
+      oscSeriesRef.current.setData([])
     }
   }
 
@@ -420,34 +402,34 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
   const display = hover || candlesRef.current[candlesRef.current.length - 1]
   const up = display ? display.close >= display.open : true
-  const activeOverlays = [...INDICATOR_DEFS, { id: 'rsi', label: 'RSI 14', color: '#8b5cf6' }]
-    .filter((ind) => indicators[ind.id])
+  const activeOverlays = [...OVERLAY_DEFS, ...OSCILLATOR_DEFS].filter((ind) => indicators[ind.id])
+  const activeOscDef = OSCILLATOR_DEFS.find((d) => d.id === activeOsc)
 
   return (
     <div className="card overflow-hidden">
-      <div className="row wrap gap-x-4 gap-y-2 border-b border px-lg py-md">
-        <div className="row">
+      <div className="row wrap gap-md border px-lg py-md" style={{ borderWidth: '0 0 1px' }}>
+        <div className="row gap-xs">
           {TIMEFRAMES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTimeframe(t.id)}
-              className={`rounded py-md mono text-xs bold ${ timeframe === t.id ? ' text-ink' : 'text-muted hover:text-ink' }`}
+              className={`btn btn-ghost text-xs bold ${timeframe === t.id ? 'ink' : 'muted'}`}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <span className="w-px bg-line" />
+        <span className="muted" style={{ width: 1, height: 18, background: 'var(--color-line)' }} />
 
-        <div className="row">
+        <div className="row gap-xs">
           {CHART_TYPES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setChartType(t.id)}
-              className={`rounded py-md text-xs bold ${ chartType === t.id ? ' text-ink' : 'text-muted hover:text-ink' }`}
+              className={`btn btn-ghost text-xs bold ${chartType === t.id ? 'ink' : 'muted'}`}
             >
               {t.label}
             </button>
@@ -457,26 +439,25 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         <div className="relative ml-auto">
           <button
             type="button"
-            className={`row gap-sm rounded border py-md text-xs bold ${ showPanels.overlays ? 'border-accent text-accent' : 'border-line text-muted hover:' }`}
-            onClick={() => setShowPanels((p) => ({ ...p, overlays: !p.overlays }))}
+            className={`btn text-xs bold row gap-sm ${showIndicators ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => setShowIndicators((v) => !v)}
           >
             Indicators
-            <span className="rounded px-lg mono text-[10px]">{activeOverlays.length}</span>
+            <span className="mono text-xs">{activeOverlays.length}</span>
           </button>
 
-          {showPanels.overlays && (
+          {showIndicators && (
             <>
               <button
                 type="button"
                 aria-label="Close indicators"
-                className="fixed cursor-default"
-                onClick={() => setShowPanels((p) => ({ ...p, overlays: false }))}
+                className="fixed"
+                style={{ inset: 0, zIndex: 50, cursor: 'default', background: 'transparent', border: 0 }}
+                onClick={() => setShowIndicators(false)}
               />
-              <div className="absolute mt-sm.5 overflow-hidden rounded border )]">
-                <div className="border-b border px-lg py-md text-[10px] bold muted uppercase">
-                  Overlays
-                </div>
-                {INDICATOR_DEFS.map((ind) => (
+              <div className="menu-pop stack" style={{ maxHeight: 360, overflow: 'auto', padding: 0 }}>
+                <div className="px-lg py-md text-xs bold muted uppercase">Overlays</div>
+                {OVERLAY_DEFS.map((ind) => (
                   <IndicatorToggle
                     key={ind.id}
                     color={ind.color}
@@ -485,22 +466,25 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
                     onClick={() => toggleIndicator(ind.id)}
                   />
                 ))}
-                <div className="border-y border px-lg py-md text-[10px] bold muted uppercase">
+                <div className="px-lg py-md text-xs bold muted uppercase border" style={{ borderWidth: '1px 0' }}>
                   Oscillators
                 </div>
-                <IndicatorToggle
-                  color="#8b5cf6"
-                  label="RSI (14)"
-                  active={indicators.rsi}
-                  onClick={() => toggleIndicator('rsi')}
-                />
+                {OSCILLATOR_DEFS.map((ind) => (
+                  <IndicatorToggle
+                    key={ind.id}
+                    color={ind.color}
+                    label={ind.label}
+                    active={indicators[ind.id]}
+                    onClick={() => toggleIndicator(ind.id)}
+                  />
+                ))}
               </div>
             </>
           )}
         </div>
       </div>
 
-      <div className="row wrap gap-x-4 gap-y-1 border-b border px-lg py-md mono text-[11px]">
+      <div className="row wrap gap-md border px-lg py-md mono text-xs" style={{ borderWidth: '0 0 1px' }}>
         <span className="text-xs bold ink">{symbol}</span>
         <span className="muted">{tf.label}</span>
         <Ohlc label="O" value={display ? formatINR(display.open) : '—'} tone={up ? 'up' : 'down'} />
@@ -509,10 +493,10 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
         <Ohlc label="C" value={display ? formatINR(display.close) : '—'} tone={up ? 'up' : 'down'} />
         <Ohlc label="Vol" value={display ? display.volume.toLocaleString('en-IN') : '—'} />
         {activeOverlays.length > 0 && (
-          <span className="ml-auto row wrap gap-sm text-[10px]">
+          <span className="ml-auto row wrap gap-sm text-xs">
             {activeOverlays.map((ind) => (
               <span key={ind.id} className="row gap-xs muted">
-                <span className=".5 rounded" style={{ background: ind.color }} />
+                <span className="rounded shrink-0" style={{ width: 8, height: 8, background: ind.color }} />
                 {ind.label}
               </span>
             ))}
@@ -522,29 +506,27 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
       <div className="relative">
         {loading && (
-          <div className="absolute grid text-sm bold muted">
+          <div className="absolute row-center w-full text-sm bold muted" style={{ inset: 0, zIndex: 2 }}>
             Loading chart…
           </div>
         )}
         <div ref={containerRef} className="w-full" />
-        {indicators.rsi ? (
-          <div className="border-t border">
-            <div className="row-between px-lg py-md text-[10px] bold muted uppercase">
-              <span>RSI (14)</span>
-              <span>Overbought 70 · Oversold 30</span>
+        <div className={showOsc ? 'border' : 'hidden'} style={showOsc ? { borderWidth: '1px 0 0' } : undefined}>
+          {showOsc && (
+            <div className="row-between px-lg py-md text-xs bold muted uppercase">
+              <span>{activeOscDef?.label || 'Oscillator'}</span>
+              <span>{oscHint(activeOsc)}</span>
             </div>
-            <div ref={rsiContainerRef} className="w-full" />
-          </div>
-        ) : (
-          <div ref={rsiContainerRef} className="hidden" />
-        )}
+          )}
+          <div ref={oscContainerRef} className="w-full" />
+        </div>
       </div>
 
-      <div className="row-between border-t border px-lg text-[10px] muted">
+      <div className="row-between border px-lg py-md text-xs muted" style={{ borderWidth: '1px 0 0' }}>
         <span>Hover the chart for OHLC values</span>
         <span className="row gap-sm">
           <span className="live-dot" />
-            Streaming quotes
+          Streaming quotes
         </span>
       </div>
     </div>
@@ -553,32 +535,34 @@ export function AdvancedChart({ symbol, live, candlesPath }) {
 
 function IndicatorToggle({ color, label, active, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="row w-full gap-md px-lg py-md text-xs bold"
-    >
+    <button type="button" onClick={onClick} className="menu-item row w-full gap-md">
       <span
-        className={`grid shrink-0 rounded border ${ active ? 'border-transparent text-white' : 'border-line' }`}
-        style={active ? { background: color } : undefined}
+        className={`row-center shrink-0 rounded border ${active ? '' : ''}`}
+        style={{
+          width: 18,
+          height: 18,
+          background: active ? color : 'transparent',
+          borderColor: active ? 'transparent' : 'var(--color-line)',
+          color: '#fff',
+        }}
       >
         {active && (
-          <svg viewBox="0 0 12 12" className=".5" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M2.5 6.5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </span>
-      <span className={active ? 'text-ink' : 'text-muted'}>{label}</span>
-      <span className="ml-auto .5 rounded" style={{ background: color, opacity: active ? 1 : 0.3 }} />
+      <span className={active ? 'ink' : 'muted'}>{label}</span>
+      <span className="ml-auto rounded shrink-0" style={{ width: 8, height: 8, background: color, opacity: active ? 1 : 0.3 }} />
     </button>
   )
 }
 
 function Ohlc({ label, value, tone }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
+  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'ink'
   return (
     <span>
-      <span className="mr-1 muted">{label}</span>
+      <span className="muted" style={{ marginRight: 4 }}>{label}</span>
       <span className={`bold ${color}`}>{value}</span>
     </span>
   )

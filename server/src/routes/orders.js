@@ -4,7 +4,8 @@ import { db } from '../db.js'
 import { authRequired, addNotification } from '../auth.js'
 import { market } from '../market.js'
 import { buyDebit, roundMoney } from '../money.js'
-import { adjustCash, settleFilledOrder, writeLedger } from '../orderEngine.js'
+import { adjustCash, bookQty, settleFilledOrder, writeLedger } from '../orderEngine.js'
+import { logActivity } from '../activity.js'
 
 const router = Router()
 const PRODUCTS = new Set(['delivery', 'intraday'])
@@ -75,8 +76,6 @@ router.post('/preview', authRequired, (req, res) => {
   if (!(ref > 0)) return res.status(400).json({ error: 'Price required' })
   const notional = roundMoney(ref * quantity)
   const { charges, margin, debit } = buyDebit(notional, side, product)
-  const holding = db.prepare('SELECT qty FROM holdings WHERE user_id = ? AND symbol = ?')
-    .get(req.user.id, instrument.symbol)
   res.json({
     price: ref,
     notional,
@@ -84,7 +83,8 @@ router.post('/preview', authRequired, (req, res) => {
     charges,
     required: side === 'buy' ? debit : charges.total,
     cash: roundMoney(req.user.cash),
-    holdingsQty: holding?.qty || 0,
+    holdingsQty: bookQty(req.user.id, instrument.symbol, 'delivery'),
+    positionsQty: bookQty(req.user.id, instrument.symbol, 'intraday'),
   })
 })
 
@@ -115,11 +115,10 @@ router.post('/', authRequired, (req, res) => {
         return res.status(400).json({ error: 'Insufficient funds for limit order' })
       }
       reservedCash = debit
-    } else {
-      const holding = db.prepare('SELECT * FROM holdings WHERE user_id = ? AND symbol = ?').get(user.id, sym)
-      if (!holding || holding.qty < quantity) {
-        return res.status(400).json({ error: 'Insufficient holdings' })
-      }
+    } else if (bookQty(user.id, sym, product) < quantity) {
+      return res.status(400).json({
+        error: product === 'intraday' ? 'Insufficient intraday position' : 'Insufficient holdings',
+      })
     }
 
     // Immediate fill when the market is already through the limit.
@@ -152,6 +151,7 @@ router.post('/', authRequired, (req, res) => {
           return settled
         })()
         addNotification(user.id, 'Order filled', `${side.toUpperCase()} ${quantity} ${sym} @ ₹${roundMoney(result.notional / quantity)}`)
+        logActivity(user.id, 'order', `Filled ${side.toUpperCase()} ${sym}`, `${quantity} limit @ ₹${limitPrice}`, { orderId: id })
         return res.status(201).json({
           order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id)),
           cash: roundMoney(result.cash),
@@ -173,6 +173,7 @@ router.post('/', authRequired, (req, res) => {
       `).run(id, user.id, sym, side, quantity, limitPrice, product, reservedCash, now, now)
     })()
 
+    logActivity(user.id, 'order', `Placed ${side.toUpperCase()} ${sym}`, `Limit ${quantity} @ ₹${limitPrice}`, { orderId: id })
     return res.status(201).json({
       order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id)),
       cash: roundMoney(db.prepare('SELECT cash FROM users WHERE id = ?').get(user.id).cash),
@@ -187,9 +188,8 @@ router.post('/', authRequired, (req, res) => {
       if (side === 'buy') {
         const { debit } = buyDebit(notional, side, product)
         if (roundMoney(user.cash) + 0.009 < debit) throw new Error('Insufficient funds')
-      } else {
-        const holding = db.prepare('SELECT * FROM holdings WHERE user_id = ? AND symbol = ?').get(user.id, sym)
-        if (!holding || holding.qty < quantity) throw new Error('Insufficient holdings')
+      } else if (bookQty(user.id, sym, product) < quantity) {
+        throw new Error(product === 'intraday' ? 'Insufficient intraday position' : 'Insufficient holdings')
       }
 
       db.prepare(`
@@ -213,6 +213,7 @@ router.post('/', authRequired, (req, res) => {
     })()
 
     addNotification(user.id, 'Order filled', `${side === 'buy' ? 'Bought' : 'Sold'} ${quantity} ${sym} @ ₹${fillPrice}`)
+    logActivity(user.id, 'order', `Filled ${side.toUpperCase()} ${sym}`, `${quantity} @ ₹${fillPrice}`, { orderId: id })
     res.status(201).json({
       order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id)),
       cash: roundMoney(result.cash),
@@ -221,6 +222,57 @@ router.post('/', authRequired, (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message || 'Order failed' })
   }
+})
+
+router.patch('/:id', authRequired, (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id)
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+  if (order.status !== 'open' || order.type !== 'limit') {
+    return res.status(400).json({ error: 'Only open limit orders can be modified' })
+  }
+
+  const nextQty = req.body?.qty != null ? Number(req.body.qty) : order.qty
+  const nextPrice = req.body?.price != null ? Number(req.body.price) : order.price
+  if (!Number.isInteger(nextQty) || nextQty <= 0) return res.status(400).json({ error: 'Invalid quantity' })
+  if (!(nextPrice > 0)) return res.status(400).json({ error: 'Invalid price' })
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
+  let nextReserved = 0
+  if (order.side === 'buy') {
+    const { debit } = buyDebit(roundMoney(nextPrice * nextQty), order.side, order.product)
+    nextReserved = debit
+  } else if (bookQty(user.id, order.symbol, order.product) < nextQty) {
+    return res.status(400).json({
+      error: order.product === 'intraday' ? 'Insufficient intraday position' : 'Insufficient holdings',
+    })
+  }
+
+  const now = Date.now()
+  try {
+    db.transaction(() => {
+      if (order.reserved_cash > 0) {
+        adjustCash(user.id, order.reserved_cash)
+        writeLedger(user.id, 'credit', order.reserved_cash, `Unblock ${order.symbol} modify`, now)
+      }
+      if (nextReserved > 0) {
+        const cash = db.prepare('SELECT cash FROM users WHERE id = ?').get(user.id).cash
+        if (roundMoney(cash) + 0.009 < nextReserved) throw new Error('Insufficient funds for modified order')
+        adjustCash(user.id, -nextReserved)
+        writeLedger(user.id, 'debit', nextReserved, `Block ${order.symbol} limit`, now)
+      }
+      db.prepare(`
+        UPDATE orders SET qty = ?, price = ?, reserved_cash = ?, updated_at = ? WHERE id = ?
+      `).run(nextQty, nextPrice, nextReserved, now, order.id)
+    })()
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'Could not modify order' })
+  }
+
+  logActivity(user.id, 'order', `Modified ${order.symbol} limit`, `Qty ${nextQty} @ ₹${nextPrice}`, { orderId: order.id })
+  res.json({
+    order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(order.id)),
+    cash: roundMoney(db.prepare('SELECT cash FROM users WHERE id = ?').get(user.id).cash),
+  })
 })
 
 router.delete('/:id', authRequired, (req, res) => {
@@ -238,6 +290,8 @@ router.delete('/:id', authRequired, (req, res) => {
       UPDATE orders SET status = 'cancelled', reserved_cash = 0, updated_at = ? WHERE id = ?
     `).run(now, order.id)
   })()
+
+  logActivity(req.user.id, 'order', `Cancelled ${order.symbol}`, `${order.side} ${order.qty}`, { orderId: order.id })
 
   res.json({
     ok: true,

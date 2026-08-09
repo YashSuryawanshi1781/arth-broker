@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { addNotification, authRequired, publicUser } from '../auth.js'
+import { auditLog } from '../audit.js'
 import {
   clearSessionCookies,
   createSession,
@@ -50,9 +51,23 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body || {}
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
   const user = db.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').get(email.trim())
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' })
+  if (!user) {
+    auditLog('auth.login_failed', {
+      email: String(email).trim().toLowerCase(),
+      reason: 'unknown_user',
+      ip: req.ip || req.socket?.remoteAddress || null,
+    })
+    return res.status(401).json({ error: 'Invalid email or password' })
+  }
   const ok = await bcrypt.compare(password, user.password_hash)
-  if (!ok) return res.status(401).json({ error: 'Invalid email or password' })
+  if (!ok) {
+    auditLog('auth.login_failed', {
+      email: user.email,
+      reason: 'bad_password',
+      ip: req.ip || req.socket?.remoteAddress || null,
+    })
+    return res.status(401).json({ error: 'Invalid email or password' })
+  }
   createSession(user.id, req, res)
   res.json({ user: publicUser(user) })
 })
@@ -139,12 +154,40 @@ router.post('/reset', async (req, res) => {
 })
 
 router.patch('/profile', authRequired, (req, res) => {
-  const { name, phone } = req.body || {}
-  db.prepare('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?').run(
-    name?.trim() || null, phone?.trim() || null, req.user.id,
-  )
+  const { name, phone, nomineeName, dpId } = req.body || {}
+  if (name !== undefined) {
+    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(String(name || '').trim() || req.user.name, req.user.id)
+  }
+  if (phone !== undefined) {
+    db.prepare('UPDATE users SET phone = ? WHERE id = ?').run(String(phone || '').trim() || req.user.phone, req.user.id)
+  }
+  if (nomineeName !== undefined) {
+    db.prepare('UPDATE users SET nominee_name = ? WHERE id = ?').run(String(nomineeName || '').trim() || null, req.user.id)
+  }
+  if (dpId !== undefined) {
+    db.prepare('UPDATE users SET dp_id = ? WHERE id = ?').run(String(dpId || '').trim() || null, req.user.id)
+  }
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
   res.json({ user: publicUser(user) })
+})
+
+router.post('/pin', authRequired, async (req, res) => {
+  const pin = String(req.body?.pin || '')
+  if (!/^\d{4,6}$/.test(pin)) {
+    return res.status(400).json({ error: 'PIN must be 4–6 digits' })
+  }
+  const hash = await bcrypt.hash(pin, 10)
+  db.prepare('UPDATE users SET pin_hash = ? WHERE id = ?').run(hash, req.user.id)
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
+  res.json({ ok: true, user: publicUser(user) })
+})
+
+router.post('/pin/verify', authRequired, async (req, res) => {
+  const pin = String(req.body?.pin || '')
+  if (!req.user.pin_hash) return res.status(400).json({ error: 'No PIN set' })
+  const ok = await bcrypt.compare(pin, req.user.pin_hash)
+  if (!ok) return res.status(401).json({ error: 'Incorrect PIN' })
+  res.json({ ok: true })
 })
 
 router.post('/password', authRequired, async (req, res) => {

@@ -1,0 +1,17 @@
+{
+  "name": "Arth — Invest. Trade. Grow.",
+  "short_name": "Arth",
+  "description": "Paper trading terminal for Indian equities, MFs and IPOs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

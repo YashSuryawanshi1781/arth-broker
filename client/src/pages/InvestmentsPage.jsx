@@ -4,6 +4,7 @@ import { api, formatINR } from '../lib/api'
 import { useLiveMarket } from '../hooks/useLiveMarket'
 import { enrichHoldings, portfolioTotals } from '../lib/livePortfolio'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
+import { setUser } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
 import { EmptyState, PageHeader, Screen } from '../components/Screen'
 import { EmptyPortfolioArt, EmptySipArt, EmptyFundsArt } from '../components/Illustrations'
@@ -19,17 +20,26 @@ import { PAGE_THEMES } from '../lib/theme'
 
 export function InvestmentsPage() {
   const [holdings, setHoldings] = useState([])
+  const [positions, setPositions] = useState([])
   const [mf, setMf] = useState([])
   const [sips, setSips] = useState([])
   const [analytics, setAnalytics] = useState(null)
+  const [goals, setGoals] = useState([])
+  const [dividends, setDividends] = useState(null)
+  const [goalForm, setGoalForm] = useState({ name: '', targetAmount: '', monthlySip: '' })
+  const [squaring, setSquaring] = useState(false)
   const user = useAppSelector((s) => s.auth.user)
+  const dispatch = useAppDispatch()
   const market = useLiveMarket(500)
 
   const load = () => {
     api('/portfolio/holdings').then((d) => setHoldings(d.holdings || [])).catch(() => {})
+    api('/portfolio/positions').then((d) => setPositions(d.positions || [])).catch(() => {})
     api('/mf/holdings').then((d) => setMf(d.holdings || [])).catch(() => {})
     api('/mf/sips').then((d) => setSips(d.sips || [])).catch(() => {})
     api('/portfolio/analytics').then(setAnalytics).catch(() => {})
+    api('/goals').then((d) => setGoals(d.goals || [])).catch(() => {})
+    api('/portfolio/dividends').then(setDividends).catch(() => {})
   }
 
   useEffect(load, [])
@@ -104,6 +114,144 @@ export function InvestmentsPage() {
             <HeroMetric label="XIRR" value={analytics?.xirrPct != null ? `${analytics.xirrPct}%` : '—'} />
           </div>
         </div>
+      </section>
+
+      {dividends && (
+        <section className="card row wrap gap-lg px-lg py-md">
+          <div>
+            <div className="text-[10px] bold muted uppercase">Projected dividends</div>
+            <div className="mono text-xl bold">₹{formatINR(dividends.totalProjected || 0)}</div>
+            <div className="text-xs muted">~{dividends.portfolioYieldPct || 0}% portfolio yield (demo)</div>
+          </div>
+          <div className="row wrap gap-sm flex-1">
+            {(dividends.dividends || []).slice(0, 6).map((d) => (
+              <span key={d.symbol} className="rounded border px-lg py-md text-xs">
+                <span className="mono bold">{d.symbol}</span>
+                {' '}
+                <span className="muted">₹{formatINR(d.projectedAnnual)} · {d.yieldPct}%</span>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="card overflow-hidden">
+        <div className="row-between wrap gap-sm border-b border px-lg py-md">
+          <div>
+            <h3 className="extrabold">Intraday positions (MIS)</h3>
+            <p className="text-xs muted">Auto square-off near 15:20 IST · paper only</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost text-sm"
+            disabled={squaring || !positions.length}
+            onClick={async () => {
+              setSquaring(true)
+              try {
+                const data = await api('/portfolio/positions/square-off', { method: 'POST' })
+                if (data.user) dispatch(setUser(data.user))
+                dispatch(showToast({ type: 'success', title: 'Squared off', message: `${data.squared || 0} position(s)` }))
+                load()
+              } catch (err) {
+                dispatch(showToast({ type: 'error', title: 'Square-off failed', message: err.message }))
+              } finally {
+                setSquaring(false)
+              }
+            }}
+          >
+            {squaring ? 'Squaring…' : 'Square off all'}
+          </button>
+        </div>
+        {positions.length === 0 ? (
+          <p className="px-lg py-md text-sm muted">No open MIS positions.</p>
+        ) : (
+          positions.map((p) => {
+            const up = (p.pnl || 0) >= 0
+            return (
+              <Link
+                key={p.symbol}
+                to={`/app/stocks/${p.symbol}`}
+                className="row w-full border-b border px-lg py-md"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div>
+                  <div className="mono bold">{p.symbol}</div>
+                  <div className="text-xs muted">{p.qty} qty · avg ₹{formatINR(p.avgPrice)}</div>
+                </div>
+                <div className="right">
+                  <div className="mono bold">₹{formatINR(p.ltp)}</div>
+                  <div className={`text-xs bold ${up ? 'up' : 'down'}`}>
+                    {up ? '+' : ''}₹{formatINR(p.pnl)}
+                  </div>
+                </div>
+              </Link>
+            )
+          })
+        )}
+      </section>
+
+      <section className="card stack gap-md p-lg">
+        <div className="row-between">
+          <h3 className="text-sm extrabold">Goals</h3>
+        </div>
+        <form
+          className="row wrap gap-sm"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            try {
+              await api('/goals', {
+                method: 'POST',
+                body: {
+                  name: goalForm.name,
+                  targetAmount: Number(goalForm.targetAmount),
+                  monthlySip: goalForm.monthlySip ? Number(goalForm.monthlySip) : undefined,
+                },
+              })
+              setGoalForm({ name: '', targetAmount: '', monthlySip: '' })
+              dispatch(showToast({ type: 'success', title: 'Goal added' }))
+              load()
+            } catch (err) {
+              dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
+            }
+          }}
+        >
+          <input className="field" placeholder="Goal name" value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} required />
+          <input className="field" type="number" placeholder="Target ₹" value={goalForm.targetAmount} onChange={(e) => setGoalForm({ ...goalForm, targetAmount: e.target.value })} required />
+          <input className="field" type="number" placeholder="Monthly SIP" value={goalForm.monthlySip} onChange={(e) => setGoalForm({ ...goalForm, monthlySip: e.target.value })} />
+          <button className="btn btn-primary text-sm" type="submit">Add goal</button>
+        </form>
+        {goals.length === 0 ? (
+          <p className="text-sm muted">No goals yet — set a target to track SIPs against.</p>
+        ) : (
+          <div className="stack gap-sm">
+            {goals.map((g) => (
+              <div key={g.id} className="row-between rounded border px-lg py-md">
+                <div>
+                  <div className="bold">{g.name}</div>
+                  <div className="text-xs muted">
+                    Target ₹{formatINR(g.targetAmount)}
+                    {g.monthlySip ? ` · SIP ₹${formatINR(g.monthlySip)}` : ''}
+                    {g.targetDate ? ` · by ${new Date(g.targetDate).toLocaleDateString('en-IN')}` : ''}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs bold down"
+                  onClick={async () => {
+                    try {
+                      await api(`/goals/${g.id}`, { method: 'DELETE' })
+                      load()
+                    } catch (err) {
+                      dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
+                    }
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {analytics?.sectorExposure?.length > 0 && (

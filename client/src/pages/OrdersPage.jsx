@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  TextField,
+} from '@mui/material'
 import { api, formatINR } from '../lib/api'
 import { useAppDispatch } from '../app/hooks'
 import { showToast } from '../features/ui/uiSlice'
@@ -18,19 +27,37 @@ import { PAGE_THEMES } from '../lib/theme'
 
 export function OrdersPage() {
   const [orders, setOrders] = useState([])
+  const [conditional, setConditional] = useState([])
   const [summary, setSummary] = useState({ all: 0, open: 0, filled: 0, cancelled: 0 })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [modifyOrder, setModifyOrder] = useState(null)
+  const [modQty, setModQty] = useState('')
+  const [modPrice, setModPrice] = useState('')
+  const [gttOpen, setGttOpen] = useState(false)
+  const [gtt, setGtt] = useState({
+    symbol: '',
+    side: 'buy',
+    product: 'delivery',
+    qty: 1,
+    triggerType: 'above',
+    triggerPrice: '',
+    limitPrice: '',
+  })
   const dispatch = useAppDispatch()
   const market = useLiveMarket(500)
 
   const load = () => {
     const q = filter ? `?status=${filter}` : ''
     setLoading(true)
-    api(`/orders${q}`)
-      .then((d) => {
+    Promise.all([
+      api(`/orders${q}`),
+      api('/conditional'),
+    ])
+      .then(([d, c]) => {
         setOrders(d.orders || [])
         if (d.summary) setSummary(d.summary)
+        setConditional(c.orders || [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -63,6 +90,57 @@ export function OrdersPage() {
     }
   }
 
+  const openModify = (order) => {
+    setModifyOrder(order)
+    setModQty(String(order.qty))
+    setModPrice(String(order.price))
+  }
+
+  const saveModify = async () => {
+    if (!modifyOrder) return
+    try {
+      await api(`/orders/${modifyOrder.id}`, {
+        method: 'PATCH',
+        body: { qty: Number(modQty), price: Number(modPrice) },
+      })
+      dispatch(showToast({ type: 'success', title: 'Order updated' }))
+      setModifyOrder(null)
+      load()
+    } catch (err) {
+      dispatch(showToast({ type: 'error', title: 'Modify failed', message: err.message }))
+    }
+  }
+
+  const cancelGtt = async (id) => {
+    try {
+      await api(`/conditional/${id}`, { method: 'DELETE' })
+      dispatch(showToast({ title: 'Conditional order cancelled' }))
+      load()
+    } catch (err) {
+      dispatch(showToast({ title: 'Failed', message: err.message }))
+    }
+  }
+
+  const createGtt = async () => {
+    try {
+      await api('/conditional', {
+        method: 'POST',
+        body: {
+          ...gtt,
+          symbol: gtt.symbol.toUpperCase(),
+          qty: Number(gtt.qty),
+          triggerPrice: Number(gtt.triggerPrice),
+          limitPrice: gtt.limitPrice ? Number(gtt.limitPrice) : undefined,
+        },
+      })
+      dispatch(showToast({ type: 'success', title: 'Conditional order created' }))
+      setGttOpen(false)
+      load()
+    } catch (err) {
+      dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
+    }
+  }
+
   const feedLabel = !market.connected
     ? 'Feed offline'
     : market.status?.source === 'yahoo'
@@ -86,18 +164,21 @@ export function OrdersPage() {
           </>
         }
         actions={
-          <div className="field-wrap">
-            <IconFilter size={16} className="field-icon" />
-            <select
-              className="field field-has-icon ]"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="">All orders</option>
-              <option value="filled">Filled</option>
-              <option value="open">Open</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+          <div className="row gap-sm">
+            <Button size="small" variant="outlined" onClick={() => setGttOpen(true)}>New GTT</Button>
+            <div className="field-wrap">
+              <IconFilter size={16} className="field-icon" />
+              <select
+                className="field field-has-icon"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="">All orders</option>
+                <option value="filled">Filled</option>
+                <option value="open">Open</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
         }
       />
@@ -110,7 +191,7 @@ export function OrdersPage() {
       </div>
 
       <div className="card overflow-auto">
-        <table className="w-full w-[940px] text-sm">
+        <table className="w-full text-sm" style={{ minWidth: 940 }}>
           <thead>
             <tr className="text-[10px] bold muted uppercase">
               <th className="px-lg py-md">Time</th>
@@ -134,7 +215,7 @@ export function OrdersPage() {
                 <td>
                   <Link to={`/app/stocks/${o.symbol}`} className="mono bold">{o.symbol}</Link>
                 </td>
-                <td className={`mono bold ${o.side === 'buy' ? '' : ''}`}>{o.side.toUpperCase()}</td>
+                <td className="mono bold">{o.side.toUpperCase()}</td>
                 <td className="capitalize muted">{o.type} · {o.product}</td>
                 <td className="mono">{o.qty}</td>
                 <td className="right mono">₹{formatINR(o.referencePrice || 0)}</td>
@@ -154,14 +235,21 @@ export function OrdersPage() {
                 <td><StatusBadge status={o.status} /></td>
                 <td className="px-lg">
                   {o.status === 'open' && (
-                    <button
-                      type="button"
-                      className="row gap-xs text-xs bold down"
-                      onClick={() => cancel(o.id)}
-                    >
-                      <IconXCircle size={14} />
-                      Cancel
-                    </button>
+                    <div className="row gap-sm">
+                      {o.type === 'limit' && (
+                        <button type="button" className="text-xs bold accent" onClick={() => openModify(o)}>
+                          Modify
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="row gap-xs text-xs bold down"
+                        onClick={() => cancel(o.id)}
+                      >
+                        <IconXCircle size={14} />
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -185,6 +273,101 @@ export function OrdersPage() {
           />
         ) : null}
       </div>
+
+      <section className="card stack gap-md p-lg">
+        <div className="row-between">
+          <h2 className="bold">Conditional / GTT</h2>
+          <Button size="small" onClick={() => setGttOpen(true)}>Add</Button>
+        </div>
+        {conditional.length === 0 ? (
+          <p className="text-sm muted">No open GTT / SL / target orders.</p>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[10px] bold muted uppercase">
+                  <th className="px-lg py-md">Symbol</th>
+                  <th>Side</th>
+                  <th>Trigger</th>
+                  <th className="right">Qty</th>
+                  <th className="right">LTP</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {conditional.map((c) => (
+                  <tr key={c.id} className="border-t border">
+                    <td className="px-lg py-md mono bold">
+                      <Link to={`/app/stocks/${c.symbol}`}>{c.symbol}</Link>
+                    </td>
+                    <td>{c.side.toUpperCase()}</td>
+                    <td className="muted">{c.triggerType} ₹{formatINR(c.triggerPrice)}</td>
+                    <td className="right mono">{c.qty}</td>
+                    <td className="right mono">{c.ltp != null ? `₹${formatINR(c.ltp)}` : '—'}</td>
+                    <td><StatusBadge status={c.status} /></td>
+                    <td className="px-lg">
+                      {c.status === 'open' && (
+                        <button type="button" className="text-xs bold down" onClick={() => cancelGtt(c.id)}>
+                          Cancel
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <Dialog open={!!modifyOrder} onClose={() => setModifyOrder(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Modify limit order</DialogTitle>
+        <DialogContent className="stack gap-md" style={{ paddingTop: 8 }}>
+          <TextField
+            label="Quantity"
+            type="number"
+            size="small"
+            fullWidth
+            value={modQty}
+            onChange={(e) => setModQty(e.target.value)}
+          />
+          <TextField
+            label="Limit price"
+            type="number"
+            size="small"
+            fullWidth
+            value={modPrice}
+            onChange={(e) => setModPrice(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModifyOrder(null)}>Close</Button>
+          <Button variant="contained" onClick={saveModify}>Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={gttOpen} onClose={() => setGttOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>New conditional order</DialogTitle>
+        <DialogContent className="stack gap-md" style={{ paddingTop: 8 }}>
+          <TextField size="small" label="Symbol" value={gtt.symbol} onChange={(e) => setGtt({ ...gtt, symbol: e.target.value.toUpperCase() })} fullWidth />
+          <TextField select size="small" label="Side" value={gtt.side} onChange={(e) => setGtt({ ...gtt, side: e.target.value })} fullWidth>
+            <MenuItem value="buy">Buy</MenuItem>
+            <MenuItem value="sell">Sell</MenuItem>
+          </TextField>
+          <TextField select size="small" label="Trigger" value={gtt.triggerType} onChange={(e) => setGtt({ ...gtt, triggerType: e.target.value })} fullWidth>
+            <MenuItem value="above">Above</MenuItem>
+            <MenuItem value="below">Below</MenuItem>
+          </TextField>
+          <TextField size="small" label="Trigger price" type="number" value={gtt.triggerPrice} onChange={(e) => setGtt({ ...gtt, triggerPrice: e.target.value })} fullWidth />
+          <TextField size="small" label="Qty" type="number" value={gtt.qty} onChange={(e) => setGtt({ ...gtt, qty: e.target.value })} fullWidth />
+          <TextField size="small" label="Limit price (optional)" type="number" value={gtt.limitPrice} onChange={(e) => setGtt({ ...gtt, limitPrice: e.target.value })} fullWidth />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGttOpen(false)}>Close</Button>
+          <Button variant="contained" onClick={createGtt}>Create</Button>
+        </DialogActions>
+      </Dialog>
     </Screen>
   )
 }
@@ -206,7 +389,7 @@ function OrderMetric({ label, value, tone, icon: Icon }) {
           <Icon size={18} />
         </span>
       ) : null}
-      <div className="min-">
+      <div>
         <div className="text-[10px] bold muted uppercase">{label}</div>
         <div className={`mono text-xl bold ${color}`}>{value}</div>
       </div>
@@ -215,7 +398,7 @@ function OrderMetric({ label, value, tone, icon: Icon }) {
 }
 
 function StatusBadge({ status }) {
-  const tone = status === 'filled'
+  const tone = status === 'filled' || status === 'triggered'
     ? 'bg-up-bg up'
     : status === 'open'
       ? 'bg-[#fff6e8] text-gold'

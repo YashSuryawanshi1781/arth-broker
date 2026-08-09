@@ -300,6 +300,55 @@ export function ReportsPage() {
     }
   }
 
+  const exportExcel = async () => {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams()
+      Object.entries({ ...filters, page: 1, pageSize: 1000 }).forEach(([key, value]) => {
+        if (value !== '' && value !== 'all') params.set(key, String(value))
+      })
+      const result = await api(`/reports/${type}?${params}`)
+      const cols = config.columns
+      const rows = result.rows || []
+      const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+      const head = cols.map((c) => escape(c.label)).join(',')
+      const body = rows.map((row) => cols.map((c) => escape(plainReportCell(c, row))).join(',')).join('\n')
+      const blob = new Blob([`\uFEFF${head}\n${body}`], { type: 'application/vnd.ms-excel;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `arth-${type}-${isoDate(new Date())}.xls`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const exportPdf = () => {
+    const cols = config.columns
+    const rows = data.rows || []
+    const head = cols.map((c) => `<th style="text-align:${c.align || 'left'};padding:6px 8px;border-bottom:1px solid #ccc">${c.label}</th>`).join('')
+    const body = rows.map((row) => (
+      `<tr>${cols.map((c) => {
+        const cell = plainReportCell(c, row)
+        return `<td style="text-align:${c.align || 'left'};padding:6px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px">${escapeHtml(cell)}</td>`
+      }).join('')}</tr>`
+    )).join('')
+    const html = `<!doctype html><html><head><title>Arth ${config.label}</title>
+      <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{color:#666;font-size:12px;margin:0 0 16px}table{width:100%;border-collapse:collapse}</style>
+      </head><body>
+      <h1>Arth — ${config.label}</h1>
+      <p>Generated ${new Date().toLocaleString('en-IN')} · ${rows.length} rows</p>
+      <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>`
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+  }
+
   const filterCount = [
     filters.search,
     filters.from,
@@ -322,6 +371,14 @@ export function ReportsPage() {
             <button type="button" className="btn btn-ghost text-sm" onClick={load} disabled={loading}>
               <IconRefresh size={16} />
               Refresh
+            </button>
+            <button type="button" className="btn btn-ghost text-sm" onClick={exportPdf} disabled={!data.rows.length}>
+              <IconDocument size={16} />
+              Download PDF
+            </button>
+            <button type="button" className="btn btn-ghost text-sm" onClick={exportExcel} disabled={exporting || !data.rows.length}>
+              <IconDocument size={16} />
+              Excel
             </button>
             <button type="button" className="btn btn-primary text-sm" onClick={exportCsv} disabled={exporting || !data.rows.length}>
               <IconArrowDownLeft size={16} />
@@ -601,6 +658,33 @@ function pageWindow(page, total) {
   const start = Math.max(1, Math.min(page - 2, total - 4))
   const end = Math.min(total, start + 4)
   return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index)
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
+
+function plainReportCell(column, row) {
+  const value = row[column.key]
+  if (column.format === money) return money(value)
+  if (column.format === pnl) {
+    const amount = Number(value || 0)
+    return `${amount >= 0 ? '+' : '−'}₹${formatINR(Math.abs(amount))}`
+  }
+  if (column.format === dateTime) {
+    if (!value) return '—'
+    return `${date(value)} ${new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+  }
+  if (column.format === date) return typeof date(value) === 'string' ? date(value) : String(value ?? '—')
+  if (column.format === number) return number(value)
+  if (column.format === decimal) return decimal(value)
+  if (column.format === title) return title(value)
+  if (column.format === badge) return title(value)
+  return String(text(value))
 }
 
 function downloadCsv(filename, columns, rows) {

@@ -1,0 +1,376 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Arth API",
+    "description": "Realtime paper-trading broker API (SSE market stream, session cookie auth).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://127.0.0.1:4000", "description": "Local" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "arth_session"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "cash": { "type": "number" },
+          "kycComplete": { "type": "boolean" }
+        }
+      },
+      "Instrument": {
+        "type": "object",
+        "properties": {
+          "symbol": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "sector": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Service ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "service": { "type": "string" },
+                    "marketData": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "summary": "OpenAPI document",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "OpenAPI 3 JSON" }
+        }
+      }
+    },
+    "/api/docs": {
+      "get": {
+        "summary": "Swagger UI (CDN)",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "HTML docs page" }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "phone", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created; session cookie set" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Email taken" },
+          "429": { "description": "Rate limited" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK; session cookie set" },
+          "401": { "description": "Invalid credentials" },
+          "429": { "description": "Rate limited" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Current user",
+        "tags": ["Auth"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout current session",
+        "tags": ["Auth"],
+        "responses": {
+          "200": { "description": "Logged out" }
+        }
+      }
+    },
+    "/api/market/instruments": {
+      "get": {
+        "summary": "List instruments",
+        "tags": ["Market"],
+        "responses": {
+          "200": {
+            "description": "Instrument list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "instruments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Instrument" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/stream": {
+      "get": {
+        "summary": "SSE market tick stream",
+        "tags": ["Market"],
+        "responses": {
+          "200": {
+            "description": "text/event-stream of snapshot + ticks",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "List orders",
+        "tags": ["Orders"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Orders for current user" },
+          "401": { "description": "Not authenticated" },
+          "429": { "description": "Rate limited" }
+        }
+      },
+      "post": {
+        "summary": "Place order",
+        "tags": ["Orders"],
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": { "type": "string" },
+                  "side": { "type": "string", "enum": ["BUY", "SELL"] },
+                  "qty": { "type": "number" },
+                  "type": { "type": "string" },
+                  "price": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Order accepted" },
+          "201": { "description": "Order created" },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Not authenticated" },
+          "429": { "description": "Rate limited" }
+        }
+      }
+    },
+    "/api/orders/preview": {
+      "post": {
+        "summary": "Preview order charges",
+        "tags": ["Orders"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Preview" }
+        }
+      }
+    },
+    "/api/portfolio/summary": {
+      "get": {
+        "summary": "Portfolio summary",
+        "tags": ["Portfolio"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Cash + equity snapshot" }
+        }
+      }
+    },
+    "/api/portfolio/holdings": {
+      "get": {
+        "summary": "Holdings",
+        "tags": ["Portfolio"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Position list" }
+        }
+      }
+    },
+    "/api/portfolio/funds": {
+      "get": {
+        "summary": "Funds / cash",
+        "tags": ["Portfolio"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Available funds" }
+        }
+      }
+    },
+    "/api/learn/content": {
+      "get": {
+        "summary": "Learn hub content + progress",
+        "tags": ["Learn"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lessons and challenges" }
+        }
+      }
+    },
+    "/api/learn/mode": {
+      "patch": {
+        "summary": "Set learn / paper mode",
+        "tags": ["Learn"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Updated" }
+        }
+      }
+    },
+    "/api/conditional": {
+      "get": {
+        "summary": "List conditional orders",
+        "tags": ["Conditional"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Conditional orders" }
+        }
+      },
+      "post": {
+        "summary": "Create conditional order",
+        "tags": ["Conditional"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Created" },
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/api/conditional/{id}": {
+      "delete": {
+        "summary": "Cancel conditional order",
+        "tags": ["Conditional"],
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" }
+        }
+      }
+    },
+    "/api/activity": {
+      "get": {
+        "summary": "Activity feed",
+        "tags": ["Activity"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Recent activity events" }
+        }
+      }
+    },
+    "/api/admin/reset-demo": {
+      "post": {
+        "summary": "Soft-reset demo account",
+        "tags": ["Admin"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Demo reset" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    }
+  }
+}

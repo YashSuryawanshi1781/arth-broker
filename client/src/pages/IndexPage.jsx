@@ -293,8 +293,11 @@ function OptionChainPanel({ chain, error, spot }) {
         </div>
         <div className="row wrap gap-sm text-xs bold">
           <span className="rounded py-md up">PCR {chain.pcr}</span>
+          <span className="rounded py-md muted">Max pain {chain.maxPain ?? '—'}</span>
           <span className="rounded py-md muted">Expiry {chain.expiry}</span>
           <span className="rounded py-md muted">Spot {fmt(spot)}</span>
+          <span className="rounded py-md muted">Call OI {formatINRShort(chain.callOi)}</span>
+          <span className="rounded py-md muted">Put OI {formatINRShort(chain.putOi)}</span>
         </div>
       </div>
 

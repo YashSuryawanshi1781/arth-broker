@@ -178,6 +178,68 @@ export function initDb() {
       triggered_at INTEGER,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS learning_progress (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      challenge_id TEXT NOT NULL,
+      completed_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, challenge_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS activity_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      meta TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS conditional_orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      symbol TEXT NOT NULL,
+      side TEXT NOT NULL,
+      product TEXT NOT NULL,
+      qty REAL NOT NULL,
+      trigger_type TEXT NOT NULL,
+      trigger_price REAL NOT NULL,
+      limit_price REAL,
+      status TEXT NOT NULL,
+      linked_order_id TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      triggered_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      target_amount REAL NOT NULL,
+      target_date INTEGER,
+      monthly_sip REAL,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS trade_lots (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      symbol TEXT NOT NULL,
+      qty REAL NOT NULL,
+      remaining_qty REAL NOT NULL,
+      avg_price REAL NOT NULL,
+      bought_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS positions (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      symbol TEXT NOT NULL,
+      qty INTEGER NOT NULL,
+      avg_price REAL NOT NULL,
+      PRIMARY KEY (user_id, symbol)
+    );
   `)
 
   migrateColumns()
@@ -192,6 +254,26 @@ function migrateColumns() {
   const sipCols = db.prepare('PRAGMA table_info(sips)').all().map((c) => c.name)
   if (!sipCols.includes('last_run_at')) {
     db.exec('ALTER TABLE sips ADD COLUMN last_run_at INTEGER')
+  }
+  const userCols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name)
+  if (!userCols.includes('learning_mode')) {
+    db.exec('ALTER TABLE users ADD COLUMN learning_mode INTEGER NOT NULL DEFAULT 1')
+  }
+  if (!userCols.includes('nominee_name')) {
+    db.exec('ALTER TABLE users ADD COLUMN nominee_name TEXT')
+  }
+  if (!userCols.includes('dp_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN dp_id TEXT')
+  }
+  if (!userCols.includes('pin_hash')) {
+    db.exec('ALTER TABLE users ADD COLUMN pin_hash TEXT')
+  }
+  const wlCols = db.prepare('PRAGMA table_info(watchlists)').all().map((c) => c.name)
+  if (!wlCols.includes('pinned')) {
+    db.exec('ALTER TABLE watchlists ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!wlCols.includes('sort_order')) {
+    db.exec('ALTER TABLE watchlists ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
   }
 }
 

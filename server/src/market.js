@@ -2,6 +2,8 @@ import YahooFinance from 'yahoo-finance2'
 import { matchOpenOrders } from './orderMatcher.js'
 import { processDueSips } from './sipRunner.js'
 import { processPriceAlerts } from './alertRunner.js'
+import { processConditionalOrders } from './conditionalRunner.js'
+import { processAutoSquareOff } from './squareOffRunner.js'
 
 export const INSTRUMENTS = [
   { symbol: 'RELIANCE', name: 'Reliance Industries', sector: 'Energy', price: 2845.5, industry: 'Refineries & Petrochemicals', mcap: 1925000, pe: 28.4, pb: 2.1, eps: 100.2, divYield: 0.35, roe: 8.9, week52High: 3217, week52Low: 2220, faceValue: 10, about: 'India\'s largest conglomerate with operations spanning oil-to-chemicals, retail, digital services and new energy.' },
@@ -350,6 +352,16 @@ class MarketEngine {
       } catch (err) {
         console.warn('Alert runner error:', err.message)
       }
+      try {
+        processConditionalOrders(prices)
+      } catch (err) {
+        console.warn('Conditional runner error:', err.message)
+      }
+      try {
+        processAutoSquareOff()
+      } catch (err) {
+        console.warn('Square-off runner error:', err.message)
+      }
     }
     const data = `data: ${JSON.stringify(payload)}\n\n`
     for (const res of this.clients) {
@@ -358,6 +370,12 @@ class MarketEngine {
       } catch {
         this.clients.delete(res)
       }
+    }
+    // Optional WS dual-support hook — see docs/WEBSOCKET.md
+    try {
+      this.wsSend?.(payload)
+    } catch (err) {
+      console.warn('wsSend hook error:', err.message)
     }
   }
 
@@ -553,26 +571,33 @@ class MarketEngine {
       const iv = +(baseIv + moneyness * 0.55).toFixed(4)
       const ce = blackScholes(spot, strike, t, r, iv, 'call')
       const pe = blackScholes(spot, strike, t, r, iv, 'put')
-      const ceOi = Math.floor(120000 + Math.random() * 1800000 * (1 - moneyness * 2.2))
-      const peOi = Math.floor(120000 + Math.random() * 1800000 * (1 - moneyness * 2.2))
+      // Deterministic synthetic OI so PCR / max-pain stay stable across refreshes.
+      const seed = Math.abs(Math.sin(strike * 12.9898 + atm * 0.17))
+      const seed2 = Math.abs(Math.cos(strike * 9.13 + atm * 0.11))
+      const callOpenInterest = Math.max(5000, Math.floor(180000 + seed * 1600000 * (1 - moneyness * 2)))
+      const putOpenInterest = Math.max(5000, Math.floor(160000 + seed2 * 1700000 * (1 - moneyness * 2)))
+      const chgSeed = Math.sin(strike + daysToExpiry)
       rows.push({
         strike,
         atm: strike === atm,
+        callOi: callOpenInterest,
+        putOi: putOpenInterest,
+        oi: callOpenInterest + putOpenInterest,
         call: {
           ltp: +ce.toFixed(2),
-          change: +((Math.random() - 0.45) * ce * 0.08).toFixed(2),
+          change: +((chgSeed * 0.08) * ce).toFixed(2),
           iv: +(iv * 100).toFixed(2),
-          oi: Math.max(5000, ceOi),
-          volume: Math.floor(ceOi * (0.05 + Math.random() * 0.25)),
+          oi: callOpenInterest,
+          volume: Math.floor(callOpenInterest * (0.08 + seed * 0.2)),
           bid: +(ce * 0.985).toFixed(2),
           ask: +(ce * 1.015).toFixed(2),
         },
         put: {
           ltp: +pe.toFixed(2),
-          change: +((Math.random() - 0.45) * pe * 0.08).toFixed(2),
+          change: +((chgSeed * -0.06) * pe).toFixed(2),
           iv: +(iv * 100).toFixed(2),
-          oi: Math.max(5000, peOi),
-          volume: Math.floor(peOi * (0.05 + Math.random() * 0.25)),
+          oi: putOpenInterest,
+          volume: Math.floor(putOpenInterest * (0.08 + seed2 * 0.2)),
           bid: +(pe * 0.985).toFixed(2),
           ask: +(pe * 1.015).toFixed(2),
         },
@@ -581,6 +606,21 @@ class MarketEngine {
 
     const callOi = rows.reduce((s, r) => s + r.call.oi, 0)
     const putOi = rows.reduce((s, r) => s + r.put.oi, 0)
+
+    // Max pain: strike where option writers' total payoff is minimized.
+    let maxPain = atm
+    let minPain = Infinity
+    for (const candidate of rows) {
+      let pain = 0
+      for (const row of rows) {
+        if (candidate.strike > row.strike) pain += (candidate.strike - row.strike) * row.call.oi
+        if (candidate.strike < row.strike) pain += (row.strike - candidate.strike) * row.put.oi
+      }
+      if (pain < minPain) {
+        minPain = pain
+        maxPain = candidate.strike
+      }
+    }
 
     return {
       underlying: index.key,
@@ -594,6 +634,7 @@ class MarketEngine {
       pcr: +(putOi / callOi).toFixed(2),
       callOi,
       putOi,
+      maxPain,
       rows,
       note: 'Demo option chain modelled from the live index spot. Premiums are indicative, not exchange quotes.',
     }

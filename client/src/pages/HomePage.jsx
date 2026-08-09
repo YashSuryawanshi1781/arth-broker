@@ -833,7 +833,7 @@ export function HomePage() {
               return (
                 <Link
                   key={s.sector}
-                  to={`/app/explore?sector=${encodeURIComponent(s.sector)}`}
+                  to={`/app/heatmap?sector=${encodeURIComponent(s.sector)}`}
                   className="heat-tile"
                   style={{ background: heatTint(s.avg) }}
                 >

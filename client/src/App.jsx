@@ -22,6 +22,16 @@ import { MfFundPage } from './pages/MfFundPage'
 import { MfCalculatorPage } from './pages/MfCalculatorPage'
 import { AccountPage } from './pages/AccountPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { LearnPage } from './pages/LearnPage'
+import { ComparePage } from './pages/ComparePage'
+import { ScreenerPage } from './pages/ScreenerPage'
+import { BasketPage } from './pages/BasketPage'
+import { CalendarPage } from './pages/CalendarPage'
+import { ActivityPage } from './pages/ActivityPage'
+import { AdminPage } from './pages/AdminPage'
+import { HeatmapPage } from './pages/HeatmapPage'
+import { OnboardingTour } from './components/OnboardingTour'
+import { PinLock } from './components/PinLock'
 
 export default function App() {
   const dispatch = useAppDispatch()
@@ -51,7 +61,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
+      <PinLock>
       <Toast />
+      <OnboardingTour />
       <Routes>
         <Route path="/" element={<PublicOnly><LandingPage /></PublicOnly>} />
         <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
@@ -75,10 +87,19 @@ export default function App() {
           <Route path="ipo" element={<IpoPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="learn" element={<LearnPage />} />
+          <Route path="compare" element={<ComparePage />} />
+          <Route path="screener" element={<ScreenerPage />} />
+          <Route path="heatmap" element={<HeatmapPage />} />
+          <Route path="basket" element={<BasketPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="activity" element={<ActivityPage />} />
+          <Route path="admin" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </PinLock>
       </ErrorBoundary>
     </BrowserRouter>
   )

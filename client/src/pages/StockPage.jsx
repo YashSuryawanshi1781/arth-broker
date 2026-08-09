@@ -51,6 +51,8 @@ export function StockPage() {
 
   const [depth, setDepth] = useState({ bids: [], asks: [] })
   const [position, setPosition] = useState(null)
+  const [misPosition, setMisPosition] = useState(null)
+  const [news, setNews] = useState([])
   const [side, setSide] = useState('buy')
   const [type, setType] = useState('market')
   const [product, setProduct] = useState('delivery')
@@ -59,6 +61,7 @@ export function StockPage() {
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState('overview')
   const [showCharges, setShowCharges] = useState(false)
+  const [riskPrompt, setRiskPrompt] = useState(null)
 
   useEffect(() => {
     if (!sym) return undefined
@@ -75,7 +78,40 @@ export function StockPage() {
     api('/portfolio/holdings')
       .then((d) => setPosition((d.holdings || []).find((h) => h.symbol === sym) || null))
       .catch(() => {})
+    api('/portfolio/positions')
+      .then((d) => setMisPosition((d.positions || []).find((h) => h.symbol === sym) || null))
+      .catch(() => {})
+    api(`/market/news?symbol=${encodeURIComponent(sym)}`)
+      .then((d) => setNews(d.news || []))
+      .catch(() => {})
   }, [sym, user?.cash])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = (e.target?.tagName || '').toLowerCase()
+      const editable = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable
+      if (editable) {
+        if (e.key === 'Escape') e.target.blur()
+        return
+      }
+      if (e.key === 'Escape') {
+        document.activeElement?.blur?.()
+        return
+      }
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault()
+        setSide('buy')
+        document.getElementById('order-qty')?.focus()
+      }
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault()
+        setSide('sell')
+        document.getElementById('order-qty')?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const peers = useMemo(() => {
     if (!live) return []
@@ -110,22 +146,33 @@ export function StockPage() {
     )
   }
 
-  const placeOrder = async () => {
-    if (!user?.kycComplete) {
-      dispatch(showToast({ type: 'warning', title: 'KYC required', message: 'Complete KYC before placing orders' }))
-      navigate('/kyc')
-      return
-    }
-    const quantity = Number(qty)
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      dispatch(showToast({ type: 'warning', title: 'Invalid quantity', message: 'Enter a whole number greater than 0' }))
-      return
-    }
-    if (type === 'limit' && !(Number(limitPrice) > 0)) {
-      dispatch(showToast({ type: 'warning', title: 'Limit price required', message: 'Enter a valid limit price' }))
-      return
-    }
+  const availableSellQty = product === 'intraday' ? (misPosition?.qty || 0) : (position?.qty || 0)
+  const orderPrice = type === 'limit' ? Number(limitPrice) || live.price : live.price
+  const orderValue = orderPrice * Number(qty || 0)
+  const charges = computeCharges(orderValue, side, product)
+  const marginRequired = product === 'intraday' ? orderValue / INTRADAY_LEVERAGE : orderValue
 
+  const learningRisks = () => {
+    if (!user?.learningMode || side !== 'buy') return []
+    const warnings = []
+    const cash = user?.cash || 0
+    const spend = marginRequired + charges.total
+    if (cash > 0 && spend / cash >= 0.85) {
+      warnings.push('This uses most of your practice cash (all-in risk).')
+    }
+    const holdingValue = (position?.value || 0) + orderValue
+    const equity = cash + (position?.value || 0) + orderValue
+    if (equity > 0 && holdingValue / equity >= 0.4) {
+      warnings.push(`Heavy concentration in ${live.symbol} — diversify when you can.`)
+    }
+    if (product === 'intraday') {
+      warnings.push('MIS positions auto square-off near 15:20 IST in this paper sandbox.')
+    }
+    return warnings
+  }
+
+  const submitOrder = async () => {
+    const quantity = Number(qty)
     setBusy(true)
     try {
       const data = await api('/orders', {
@@ -149,20 +196,45 @@ export function StockPage() {
       api('/portfolio/holdings')
         .then((d) => setPosition((d.holdings || []).find((h) => h.symbol === sym) || null))
         .catch(() => {})
+      api('/portfolio/positions')
+        .then((d) => setMisPosition((d.positions || []).find((h) => h.symbol === sym) || null))
+        .catch(() => {})
+      api('/learn/sync', { method: 'POST' }).catch(() => {})
     } catch (err) {
       dispatch(showToast({ type: 'error', title: 'Order failed', message: err.message || 'Something went wrong' }))
     } finally {
       setBusy(false)
+      setRiskPrompt(null)
     }
   }
 
+  const placeOrder = async () => {
+    if (!user?.kycComplete) {
+      dispatch(showToast({ type: 'warning', title: 'KYC required', message: 'Complete KYC before placing orders' }))
+      navigate('/kyc')
+      return
+    }
+    const quantity = Number(qty)
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      dispatch(showToast({ type: 'warning', title: 'Invalid quantity', message: 'Enter a whole number greater than 0' }))
+      return
+    }
+    if (type === 'limit' && !(Number(limitPrice) > 0)) {
+      dispatch(showToast({ type: 'warning', title: 'Limit price required', message: 'Enter a valid limit price' }))
+      return
+    }
+
+    const risks = learningRisks()
+    if (risks.length) {
+      setRiskPrompt(risks)
+      return
+    }
+    await submitOrder()
+  }
+
   const up = live.changePct >= 0
-  const orderPrice = type === 'limit' ? Number(limitPrice) || live.price : live.price
-  const orderValue = orderPrice * Number(qty || 0)
-  const charges = computeCharges(orderValue, side, product)
-  const marginRequired = product === 'intraday' ? orderValue / INTRADAY_LEVERAGE : orderValue
   const shortfall = side === 'buy' ? marginRequired + charges.total - (user?.cash || 0) : 0
-  const sellShort = side === 'sell' && Number(qty || 0) > (position?.qty || 0)
+  const sellShort = side === 'sell' && Number(qty || 0) > availableSellQty
   const canSubmit = !busy
     && Number.isInteger(Number(qty))
     && Number(qty) > 0
@@ -201,6 +273,23 @@ export function StockPage() {
           { label: live.symbol },
         ]}
       />
+
+      {news.length > 0 && (
+        <section className="card px-lg py-md">
+          <div className="row gap-sm mb-sm">
+            <IconDocument size={14} />
+            <span className="text-xs bold uppercase muted">News · demo feed</span>
+          </div>
+          <div className="stack gap-sm">
+            {news.slice(0, 3).map((item) => (
+              <div key={item.id || item.title} className="text-xs">
+                <span className="bold ink">{item.title}</span>
+                {item.source && <span className="muted"> — {item.source}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Instrument header */}
       <section className="card overflow-hidden">
@@ -503,6 +592,16 @@ export function StockPage() {
                 onChange={setType}
               />
 
+              {user?.learningMode && (
+                <details className="rounded border p-md text-xs">
+                  <summary className="bold pointer">Learning tip · Product & order type</summary>
+                  <p className="mt-sm muted">
+                    CNC delivery keeps shares overnight and blocks full cash. MIS intraday uses leverage and should be squared off the same day.
+                    Market fills immediately near LTP; Limit waits for your price (buys fill at or below).
+                  </p>
+                </details>
+              )}
+
               <div>
                 <label className="label" htmlFor="order-qty">Quantity</label>
                 <div className="row gap-sm">
@@ -574,13 +673,18 @@ export function StockPage() {
                   <span className="mono bold">₹{formatINR(charges.total)}</span>
                 </button>
                 {showCharges && (
-                  <div className="stack gap-md border-t border /50 px-lg py-md text-[11px]">
+                  <div className="stack gap-md border-t border px-lg py-md text-xs">
                     <ChargeLine label="Brokerage" value={charges.brokerage} />
                     <ChargeLine label="STT / CTT" value={charges.stt} />
                     <ChargeLine label="Exchange txn" value={charges.exchange} />
                     <ChargeLine label="SEBI charges" value={charges.sebi} />
                     <ChargeLine label="Stamp duty" value={charges.stamp} />
                     <ChargeLine label="GST (18%)" value={charges.gst} />
+                    {user?.learningMode && (
+                      <p className="muted">
+                        STT is a government tax on securities. GST applies on brokerage + exchange fees. These are paper stubs matching demo settlement.
+                      </p>
+                    )}
                   </div>
                 )}
                 <div className="row border-t border px-lg py-md text-xs">
@@ -604,8 +708,28 @@ export function StockPage() {
                   <IconAlertTriangle size={15} className="mt-px shrink-0 down" />
                   <span>
                     <span className="bold down">Not enough shares. </span>
-                    <span className="muted">You hold {position?.qty || 0} {live.symbol}.</span>
+                    <span className="muted">
+                      {product === 'intraday' ? 'MIS position' : 'You hold'} {availableSellQty} {live.symbol}.
+                    </span>
                   </span>
+                </div>
+              )}
+
+              {riskPrompt && (
+                <div className="stack gap-sm rounded border px-lg py-md text-xs">
+                  <div className="row-start gap-sm">
+                    <IconAlertTriangle size={15} className="shrink-0" />
+                    <span className="bold">Learning sandbox check</span>
+                  </div>
+                  <ul className="stack gap-xs muted" style={{ paddingLeft: '1.1rem', margin: 0 }}>
+                    {riskPrompt.map((w) => <li key={w}>{w}</li>)}
+                  </ul>
+                  <div className="row gap-sm">
+                    <button type="button" className="btn btn-ghost text-xs" onClick={() => setRiskPrompt(null)}>Back</button>
+                    <button type="button" className="btn btn-primary text-xs" disabled={busy} onClick={submitOrder}>
+                      Place anyway
+                    </button>
+                  </div>
                 </div>
               )}
 
