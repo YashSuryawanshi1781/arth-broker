@@ -94,7 +94,7 @@ export function MfCalculatorPage() {
         <ReturnBasisBar fund={fund} rate={rate} onRate={setRate} />
       )}
 
-      <nav className="row gap-xs overflow-auto rounded border p-1">
+      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
         {MODES.map(([id, label, Icon]) => (
           <button
             key={id}
@@ -235,13 +235,13 @@ export function MfCalculatorPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="border-b border px-lg py-md">
+        <div className="border-b border-line px-lg py-md">
           <h3 className="extrabold">Year-by-year projection</h3>
         </div>
         <div className="max-h-[420px] overflow-auto">
           <table className="w-full text-sm">
             <thead className="sticky">
-              <tr className="border-b border text-[10px] bold muted uppercase">
+              <tr className="border-b border-line text-[10px] bold muted uppercase">
                 <th className="px-lg py-md">Year</th>
                 <th className="px-lg py-md right">Invested</th>
                 <th className="px-lg py-md right">Returns</th>
@@ -251,7 +251,7 @@ export function MfCalculatorPage() {
             </thead>
             <tbody className="mono">
               {result.schedule.slice(1).map((row) => (
-                <tr key={row.year} className="border-b border last:border-0">
+                <tr key={row.year} className="border-b border-line last:border-0">
                   <td className="px-lg py-md bold">Year {row.year}</td>
                   <td className="px-lg py-md right muted">₹{formatINRShort(row.invested)}</td>
                   <td className="px-lg py-md right bold up">₹{formatINRShort(row.gain)}</td>
@@ -294,7 +294,7 @@ function ReturnBasisBar({ fund, rate, onRate }) {
         </div>
       </div>
 
-      <div className="mt-md border-t border">
+      <div className="mt-md border-t border-line">
         <div className="mb-sm text-[10px] bold muted uppercase">
           Project using this fund&apos;s returns
         </div>
@@ -309,7 +309,7 @@ function ReturnBasisBar({ fund, rate, onRate }) {
                 className={`rounded border px-lg ${ active ? 'border-page-accent bg-page-tint' : 'border-line bg-surface hover:border-page-accent' }`}
               >
                 <span className="block text-[10px] bold muted uppercase">{label}</span>
-                <span className={`block mono text-sm bold ${value >= 0 ? '' : ''}`}>
+                <span className={`block mono text-sm bold ${value >= 0 ? 'text-up' : 'text-down'}`}>
                   {value >= 0 ? '+' : ''}{value}%
                 </span>
               </button>
@@ -325,7 +325,7 @@ function MiniFact({ label, value, tone }) {
   return (
     <div className="rounded border px-lg py-md">
       <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className={`mt-sm mono text-sm bold ${tone === 'up' ? '' : ''}`}>{value}</div>
+      <div className={`mt-sm mono text-sm bold ${tone === 'up' ? 'text-up' : ''}`}>{value}</div>
     </div>
   )
 }
@@ -335,7 +335,7 @@ function Range({ label, display, min, max, step, value, onChange }) {
     <div>
       <div className="mb-sm row flex-wrap gap-sm">
         <span className="text-sm bold">{label}</span>
-        <span className="rounded py-md mono text-sm bold up">{display}</span>
+        <span className="rounded-lg bg-up-bg px-2.5 py-1 font-mono text-sm font-bold text-up">{display}</span>
       </div>
       <input
         className="w-full accent-[#00a878]"

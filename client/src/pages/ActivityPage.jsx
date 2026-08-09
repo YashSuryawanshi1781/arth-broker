@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Chip } from '@mui/material'
 import { api } from '../lib/api'
 import { useAppDispatch } from '../app/hooks'
 import { showToast } from '../features/ui/uiSlice'
@@ -29,20 +28,22 @@ export function ActivityPage() {
 
       <div className="stack gap-sm">
         {events.map((e) => (
-          <div key={e.id} className="card stack gap-xs px-lg py-md">
-            <div className="row flex-wrap gap-sm">
-              <Chip size="small" label={e.kind} />
-              <span className="bold">{e.title}</span>
-              <span className="ml-auto text-xs muted">
+          <div key={e.id} className="card space-y-1 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-bold tracking-wide text-muted uppercase">
+                {e.kind}
+              </span>
+              <span className="font-bold">{e.title}</span>
+              <span className="ml-auto text-xs text-muted">
                 {new Date(e.createdAt).toLocaleString('en-IN', { hour12: false })}
               </span>
             </div>
-            {e.body && <p className="text-sm muted">{e.body}</p>}
+            {e.body && <p className="text-sm text-muted">{e.body}</p>}
           </div>
         ))}
-        {loading && <div className="card px-lg py-md muted text-sm">Loading…</div>}
+        {loading && <div className="card px-4 py-8 text-center text-sm text-muted">Loading…</div>}
         {!loading && events.length === 0 && (
-          <div className="card px-lg py-md muted text-sm">No activity yet — place an order or set a goal.</div>
+          <div className="card px-4 py-8 text-center text-sm text-muted">No activity yet — place an order or set a goal.</div>
         )}
       </div>
     </Screen>

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Button, MenuItem, TextField } from '@mui/material'
 import { api, formatINR } from '../lib/api'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { fetchMe } from '../features/auth/authSlice'
@@ -111,81 +110,105 @@ export function BasketPage() {
 
       <div className="stack gap-md">
         {legs.map((leg, idx) => (
-          <div key={idx} className="card grid-3 gap-md p-lg">
-            <TextField
-              size="small"
-              label="Symbol"
-              value={leg.symbol}
-              onChange={(e) => updateLeg(idx, { symbol: e.target.value.toUpperCase() })}
-            />
-            <TextField select size="small" label="Side" value={leg.side} onChange={(e) => updateLeg(idx, { side: e.target.value })}>
-              <MenuItem value="buy">Buy</MenuItem>
-              <MenuItem value="sell">Sell</MenuItem>
-            </TextField>
-            <TextField select size="small" label="Type" value={leg.type} onChange={(e) => updateLeg(idx, { type: e.target.value })}>
-              <MenuItem value="market">Market</MenuItem>
-              <MenuItem value="limit">Limit</MenuItem>
-            </TextField>
-            <TextField
-              size="small"
-              label="Qty"
-              type="number"
-              value={leg.qty}
-              onChange={(e) => updateLeg(idx, { qty: e.target.value })}
-            />
-            <TextField
-              size="small"
-              label="Limit price"
-              type="number"
-              disabled={leg.type !== 'limit'}
-              value={leg.price}
-              onChange={(e) => updateLeg(idx, { price: e.target.value })}
-            />
-            <TextField select size="small" label="Product" value={leg.product} onChange={(e) => updateLeg(idx, { product: e.target.value })}>
-              <MenuItem value="delivery">Delivery</MenuItem>
-              <MenuItem value="intraday">Intraday</MenuItem>
-            </TextField>
+          <div key={idx} className="card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="label">Symbol</label>
+              <input
+                className="field font-mono"
+                value={leg.symbol}
+                onChange={(e) => updateLeg(idx, { symbol: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div>
+              <label className="label">Side</label>
+              <select className="field" value={leg.side} onChange={(e) => updateLeg(idx, { side: e.target.value })}>
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Type</label>
+              <select className="field" value={leg.type} onChange={(e) => updateLeg(idx, { type: e.target.value })}>
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Qty</label>
+              <input
+                className="field"
+                type="number"
+                value={leg.qty}
+                onChange={(e) => updateLeg(idx, { qty: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Limit price</label>
+              <input
+                className="field"
+                type="number"
+                disabled={leg.type !== 'limit'}
+                value={leg.price}
+                onChange={(e) => updateLeg(idx, { price: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Product</label>
+              <select className="field" value={leg.product} onChange={(e) => updateLeg(idx, { product: e.target.value })}>
+                <option value="delivery">Delivery</option>
+                <option value="intraday">Intraday</option>
+              </select>
+            </div>
             {legs.length > 1 && (
-              <Button color="inherit" onClick={() => setLegs((prev) => prev.filter((_, i) => i !== idx))}>
+              <button
+                type="button"
+                className="btn btn-ghost text-sm text-down sm:col-span-2 lg:col-span-3"
+                onClick={() => setLegs((prev) => prev.filter((_, i) => i !== idx))}
+              >
                 Remove leg
-              </Button>
+              </button>
             )}
           </div>
         ))}
       </div>
 
-      <div className="row flex-wrap gap-sm">
-        <Button variant="outlined" onClick={() => setLegs((p) => [...p, emptyLeg()].slice(0, 8))} disabled={legs.length >= 8}>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setLegs((p) => [...p, emptyLeg()].slice(0, 8))}
+          disabled={legs.length >= 8}
+        >
           Add leg
-        </Button>
-        <Button variant="outlined" onClick={preview} disabled={busy}>Preview</Button>
-        <Button variant="contained" onClick={place} disabled={busy}>Place basket</Button>
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={preview} disabled={busy}>Preview</button>
+        <button type="button" className="btn btn-primary" onClick={place} disabled={busy}>Place basket</button>
       </div>
 
       {previews.length > 0 && (
-        <div className="card overflow-auto">
-          <div className="px-lg py-md row-between">
-            <span className="bold">Preview</span>
-            <span className="mono muted">Est. required ₹{formatINR(totalRequired)}</span>
+        <div className="card overflow-x-auto">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <span className="font-bold">Preview</span>
+            <span className="font-mono text-sm text-muted">Est. required ₹{formatINR(totalRequired)}</span>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] bold muted uppercase">
-                <th className="px-lg py-md">Symbol</th>
-                <th>Side</th>
-                <th className="right">Price</th>
-                <th className="right">Notional</th>
-                <th className="right">Required</th>
+              <tr className="bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">
+                <th className="px-4 py-2.5 text-left">Symbol</th>
+                <th className="px-4 py-2.5 text-left">Side</th>
+                <th className="px-4 py-2.5 text-right">Price</th>
+                <th className="px-4 py-2.5 text-right">Notional</th>
+                <th className="px-4 py-2.5 text-right">Required</th>
               </tr>
             </thead>
             <tbody>
               {previews.map((p) => (
-                <tr key={`${p.symbol}-${p.side}`} className="border-t border">
-                  <td className="px-lg py-md mono bold">{p.symbol}</td>
-                  <td>{p.side.toUpperCase()}</td>
-                  <td className="right mono">₹{formatINR(p.preview.price)}</td>
-                  <td className="right mono">₹{formatINR(p.preview.notional)}</td>
-                  <td className="right mono bold">₹{formatINR(p.preview.required)}</td>
+                <tr key={`${p.symbol}-${p.side}`} className="border-t border-line transition hover:bg-surface-2/50">
+                  <td className="px-4 py-2.5 font-mono font-bold">{p.symbol}</td>
+                  <td className="px-4 py-2.5">{p.side.toUpperCase()}</td>
+                  <td className="px-4 py-2.5 text-right font-mono">₹{formatINR(p.preview.price)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono">₹{formatINR(p.preview.notional)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-bold">₹{formatINR(p.preview.required)}</td>
                 </tr>
               ))}
             </tbody>

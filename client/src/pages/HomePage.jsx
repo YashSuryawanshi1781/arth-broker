@@ -265,14 +265,14 @@ export function HomePage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <Screen theme="home" className="stack gap-md">
+    <Screen theme="home" className="space-y-4">
       {/* Greeting row */}
-      <div className="row flex-wrap items-end gap-md">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl extrabold">
+          <h1 className="text-2xl font-extrabold tracking-tight">
             {greeting}, {user?.name?.split(' ')[0] || 'Investor'}
           </h1>
-          <div className="mt-1.5 row flex-wrap gap-sm text-sm muted">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span className="session-chip" data-tone={session.tone}>
               <span className="dot" />
               {session.label}
@@ -286,7 +286,7 @@ export function HomePage() {
             </span>
           </div>
         </div>
-        <div className="row gap-sm">
+        <div className="flex items-center gap-2">
           <button type="button" className="btn btn-ghost text-sm" onClick={() => navigate('/app/funds')}>
             <IconPlus size={16} />
             Add money
@@ -301,18 +301,18 @@ export function HomePage() {
       {/* Action centre — only rendered when something actually needs the user */}
       {attention.length > 0 && (
         <section>
-          <h2 className="mb-sm text-[11px] bold tracking-[0.14em] muted uppercase">Needs your attention</h2>
-          <div className="grid gap-md">
+          <h2 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">Needs your attention</h2>
+          <div className="grid gap-3">
             {attention.map((a) => (
               <Link key={a.key} to={a.to} className={`action-tile theme-${a.theme}`}>
-                <span className="icon-chip icon-chip-md">
+                <span className="icon-chip icon-chip-3">
                   <a.icon size={17} />
                 </span>
-                <span className="min-w-0 grow">
-                  <span className="block truncate text-sm bold ink">{a.title}</span>
-                  <span className="block truncate text-xs muted">{a.hint}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-ink">{a.title}</span>
+                  <span className="block truncate text-xs text-muted">{a.hint}</span>
                 </span>
-                <span className="row gap-xs text-xs bold text-page-accent">
+                <span className="flex items-center gap-1 text-xs font-bold text-page-accent">
                   {a.cta}
                   <IconArrowRight size={14} />
                 </span>
@@ -323,49 +323,49 @@ export function HomePage() {
       )}
 
       {/* Market pulse: live indices + breadth */}
-      <section className="grid gap-md">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {indexCards.length === 0
-          ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[86px] rounded" />)
+          ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[86px] rounded-2xl" />)
           : indexCards.map(([key, idx]) => {
               const up = idx.changePct >= 0
               return (
                 <button
                   key={key}
                   type="button"
-                  className="index-card w-full"
+                  className="index-card w-full text-left"
                   data-tone={up ? 'up' : 'down'}
                   onClick={() => navigate(`/app/indices/${key}`)}
                 >
-                  <div className="row-between gap-sm">
-                    <span className="text-[11px] bold muted uppercase">{idx.name}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold tracking-wide text-muted uppercase">{idx.name}</span>
                     {up ? (
-                      <IconTrendingUp size={15} className="up" />
+                      <IconTrendingUp size={15} className="text-up" />
                     ) : (
-                      <IconTrendingDown size={15} className="down" />
+                      <IconTrendingDown size={15} className="text-down" />
                     )}
                   </div>
-                  <div className="mt-1.5 mono text-xl bold">
+                  <div className="mt-1.5 font-mono text-xl font-bold">
                     {Number(idx.value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </div>
-                  <div className={`mt-sm row-between gap-sm text-xs bold ${up ? 'text-up' : 'text-down'}`}>
+                  <div className={`mt-0.5 flex items-center justify-between gap-2 text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                     <span>{up ? '+' : ''}{idx.changePct}% today</span>
-                    <span className="bold muted">Chart · Options →</span>
+                    <span className="font-semibold text-muted">Chart · Options →</span>
                   </div>
                 </button>
               )
             })}
 
         <div className="index-card" data-tone={breadth.advancing >= breadth.declining ? 'up' : 'down'}>
-          <div className="row-between gap-sm">
-            <span className="text-[11px] bold muted uppercase">Market breadth</span>
-            <span className="text-[11px] bold muted">{breadth.total} stocks</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold text-muted uppercase">Market breadth</span>
+            <span className="text-[11px] font-bold text-muted">{breadth.total} stocks</span>
           </div>
-          <div className="mt-1.5 row gap-sm mono text-xl bold">
-            <span className="up">{breadth.advancing}</span>
-            <span className="text-sm muted">/</span>
-            <span className="down">{breadth.declining}</span>
+          <div className="mt-1.5 flex items-center gap-2 font-mono text-xl font-bold">
+            <span className="text-up">{breadth.advancing}</span>
+            <span className="text-sm text-muted">/</span>
+            <span className="text-down">{breadth.declining}</span>
           </div>
-          <div className="breadth-bar mt-sm">
+          <div className="breadth-bar mt-2">
             <span style={{ width: `${pctOf(breadth.advancing, breadth.total)}%`, background: 'var(--color-up)' }} />
             <span style={{ width: `${pctOf(breadth.unchanged, breadth.total)}%`, background: 'var(--color-line)' }} />
             <span style={{ width: `${pctOf(breadth.declining, breadth.total)}%`, background: 'var(--color-down)' }} />
@@ -375,18 +375,18 @@ export function HomePage() {
 
       {/* Portfolio hero */}
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-xl px-lg page-pad">
+        <div className="hero-mesh grid gap-6 px-5 py-6 text-white md:grid-cols-[1.05fr_1fr] md:px-7">
           <div>
-            <p className="text-[11px] bold tracking-[0.16em] uppercase">Portfolio value</p>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Portfolio value</p>
             {loadingSummary ? (
               <>
                 <Skeleton className="mt-1.5" />
-                <Skeleton className="mt-md" />
+                <Skeleton className="mt-3" />
               </>
             ) : (
               <>
-                <h2 className="mt-sm mono text-4xl bold">₹{formatINR(totals.equity)}</h2>
-                <div className="mt-md row flex-wrap gap-sm">
+                <h2 className="mt-2 font-mono text-4xl font-bold">₹{formatINR(totals.equity)}</h2>
+                <div className="mt-3 flex items-center flex-wrap gap-2">
                   <Pill
                     label="Today"
                     value={`${dayUp ? '+' : ''}₹${formatINR(totals.dayPnl)}`}
@@ -399,20 +399,20 @@ export function HomePage() {
                   />
                 </div>
                 {hasHoldings && (
-                  <p className="mt-md text-xs">
+                  <p className="mt-3 text-xs">
                     {dayUp ? 'Up' : 'Down'} today, driven by{' '}
-                    <span className="bold">{topDriver(liveHoldings)}</span>
+                    <span className="font-bold">{topDriver(liveHoldings)}</span>
                   </p>
                 )}
               </>
             )}
           </div>
-          <div className="row items-end">
+          <div className="flex items-end">
             <Sparkline data={curve} loading={intraday.loading && loadingSummary} empty={!hasHoldings} />
           </div>
         </div>
 
-        <div className="grid-2 border-t border">
+        <div className="grid grid-cols-2 border-t border-line md:grid-cols-4">
           <Metric label="Invested" value={`₹${formatINR(totals.invested)}`} loading={loadingSummary} />
           <Metric label="Current value" value={`₹${formatINR(totals.current)}`} loading={loadingSummary} />
           <Metric
@@ -426,7 +426,7 @@ export function HomePage() {
       </section>
 
       {/* Quick actions */}
-      <section className="grid-2 gap-md">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { title: 'Stocks', sub: 'Buy & sell equity', to: '/app/explore', icon: IconCandles, theme: 'explore' },
           { title: 'Mutual funds', sub: 'SIP & lumpsum', to: '/app/mf', icon: IconCoins, theme: 'mf' },
@@ -448,27 +448,27 @@ export function HomePage() {
           <Link
             key={q.to}
             to={q.to}
-            className={`card card-hover tile-accent theme-${q.theme} row gap-md p-1.5`}
+            className={`card card-hover tile-accent theme-${q.theme} flex items-center gap-3 p-1.5`}
           >
             <span className="icon-chip">
               <q.icon size={18} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm bold ink">{q.title}</span>
-              <span className="block truncate text-xs muted">{q.sub}</span>
+              <span className="block truncate text-sm font-bold text-ink">{q.title}</span>
+              <span className="block truncate text-xs text-muted">{q.sub}</span>
             </span>
           </Link>
         ))}
       </section>
 
-      <div className="grid gap-lg">
-        <div className="stack gap-md">
+      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <div className="space-y-4">
           {/* Holdings */}
           <section className="card overflow-hidden">
-            <div className="row-between border-b border px-lg py-md">
+            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
               <SectionTitle icon={IconBriefcase} theme="investments">Your holdings</SectionTitle>
               {hasHoldings && (
-                <Link to="/app/investments" className="text-sm bold accent">
+                <Link to="/app/investments" className="text-sm font-bold text-accent">
                   View all ({liveHoldings.length})
                 </Link>
               )}
@@ -489,31 +489,31 @@ export function HomePage() {
                 }
               />
             ) : (
-              <div className="">
+              <div className="divide-y divide-line">
                 {liveHoldings.slice(0, 5).map((h) => {
                   const up = h.pnl >= 0
                   return (
                     <button
                       key={h.symbol}
                       type="button"
-                      className="grid w-full grid-cols-[1.4fr_1fr_1fr] px-lg py-md"
+                      className="grid w-full grid-cols-[1.4fr_1fr_1fr] items-center px-4 py-3 text-left transition hover:bg-surface-2/70"
                       onClick={() => navigate(`/app/stocks/${h.symbol}`)}
                     >
                       <div className="min-w-0">
-                        <div className="mono text-sm bold">{h.symbol}</div>
-                        <div className="truncate text-xs muted">
+                        <div className="font-mono text-sm font-bold">{h.symbol}</div>
+                        <div className="truncate text-xs text-muted">
                           {h.qty} qty · avg ₹{formatINR(h.avgPrice)}
                         </div>
                       </div>
-                      <div className="right">
-                        <div className="mono text-sm bold">₹{formatINR(h.value)}</div>
-                        <div className="text-xs muted">LTP ₹{formatINR(h.ltp)}</div>
+                      <div className="text-right">
+                        <div className="font-mono text-sm font-bold">₹{formatINR(h.value)}</div>
+                        <div className="text-xs text-muted">LTP ₹{formatINR(h.ltp)}</div>
                       </div>
-                      <div className="right">
-                        <div className={`mono text-sm bold ${up ? 'text-up' : 'text-down'}`}>
+                      <div className="text-right">
+                        <div className={`font-mono text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}₹{formatINR(h.pnl)}
                         </div>
-                        <div className={`text-xs bold ${up ? 'text-up' : 'text-down'}`}>
+                        <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                           {up ? '+' : ''}{h.pnlPct.toFixed(2)}%
                         </div>
                       </div>
@@ -526,9 +526,9 @@ export function HomePage() {
 
           {/* Market movers */}
           <section className="card overflow-hidden">
-            <div className="row flex-wrap gap-sm border-b border px-lg py-md">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
               <SectionTitle icon={IconTrendingUp} theme="explore">Market movers</SectionTitle>
-              <div className="row gap-xs rounded p-1">
+              <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
                 {[
                   ['gainers', 'Gainers'],
                   ['losers', 'Losers'],
@@ -538,14 +538,16 @@ export function HomePage() {
                     key={id}
                     type="button"
                     onClick={() => setMoverTab(id)}
-                    className={`rounded py-md text-xs bold ${ moverTab === id ? 'bg-white text-ink shadow-sm' : 'text-muted' }`}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      moverTab === id ? 'bg-white text-ink shadow-sm' : 'text-muted'
+                    }`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="">
+            <div className="divide-y divide-line">
               {movers.map((m) => {
                 const up = m.changePct >= 0
                 const Trend = up ? IconTrendingUp : IconTrendingDown
@@ -553,23 +555,25 @@ export function HomePage() {
                   <button
                     key={m.symbol}
                     type="button"
-                    className="grid w-full grid-cols-[1.6fr_1fr_0.9fr] px-lg py-md"
+                    className="grid w-full grid-cols-[1.6fr_1fr_0.9fr] items-center px-4 py-2.5 text-left transition hover:bg-surface-2/70"
                     onClick={() => navigate(`/app/stocks/${m.symbol}`)}
                   >
                     <div className="min-w-0">
-                      <div className="mono text-sm bold">{m.symbol}</div>
-                      <div className="truncate text-xs muted">{m.name}</div>
-                      <div className="mt-1.5 w-full overflow-hidden rounded">
+                      <div className="font-mono text-sm font-bold">{m.symbol}</div>
+                      <div className="truncate text-xs text-muted">{m.name}</div>
+                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
                         <div
-                          className={`h-full rounded ${up ? 'bg-up' : 'bg-down'}`}
+                          className={`h-full rounded-full ${up ? 'bg-up' : 'bg-down'}`}
                           style={{ width: `${(Math.abs(m.changePct) / maxMove) * 100}%` }}
                         />
                       </div>
                     </div>
-                    <div className="right mono text-sm bold">₹{formatINR(m.price)}</div>
-                    <div className="right">
+                    <div className="text-right font-mono text-sm font-semibold">₹{formatINR(m.price)}</div>
+                    <div className="text-right">
                       <span
-                        className={`gap-xs rounded px-lg py-md text-xs bold ${ up ? ' ' : '-bg ' }`}
+                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold ${
+                          up ? 'bg-up-bg text-up' : 'bg-down-bg text-down'
+                        }`}
                       >
                         <Trend size={12} />
                         {up ? '+' : ''}{m.changePct}%
@@ -584,36 +588,36 @@ export function HomePage() {
 
           {/* Recent activity */}
           <section className="card overflow-hidden">
-            <div className="row-between border-b border px-lg py-md">
+            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
               <SectionTitle icon={IconClock} theme="orders">Recent activity</SectionTitle>
-              <Link to="/app/orders" className="text-sm bold accent">History</Link>
+              <Link to="/app/orders" className="text-sm font-bold text-accent">History</Link>
             </div>
             {orders === null ? (
               <SkeletonRows rows={4} />
             ) : (
-              <div className="">
+              <div className="divide-y divide-line">
                 {orders.slice(0, 5).map((o) => (
-                  <div key={o.id} className="grid grid-cols-[1.4fr_1fr_1fr] px-lg py-md">
+                  <div key={o.id} className="grid grid-cols-[1.4fr_1fr_1fr] items-center px-4 py-3 transition hover:bg-surface-2/70">
                     <div className="min-w-0">
-                      <div className="text-sm bold">
-                        <span className={o.side === 'buy' ? 'up' : 'down'}>
+                      <div className="text-sm font-bold">
+                        <span className={o.side === 'buy' ? 'text-up' : 'text-down'}>
                           {o.side.toUpperCase()}
                         </span>{' '}
-                        <span className="mono">{o.symbol}</span>
+                        <span className="font-mono">{o.symbol}</span>
                       </div>
-                      <div className="text-xs muted">
+                      <div className="text-xs text-muted">
                         {o.qty} qty · {new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </div>
                     </div>
-                    <div className="right">
-                      <div className="mono text-sm">₹{formatINR(o.fillPrice || o.price || 0)}</div>
-                      <div className="text-xs muted">
+                    <div className="text-right">
+                      <div className="font-mono text-sm">₹{formatINR(o.fillPrice || o.price || 0)}</div>
+                      <div className="text-xs text-muted">
                         {new Date(o.createdAt).toLocaleTimeString('en-IN', { hour12: false })}
                       </div>
                     </div>
-                    <div className="right">
+                    <div className="text-right">
                       <span
-                        className={`inline-block rounded px-lg py-md text-[11px] bold capitalize ${ o.status === 'filled' ? ' ' : o.status === 'cancelled' || o.status === 'rejected' ? '-bg ' : ' text-muted' }`}
+                        className={`inline-block rounded-full px-2 py-1 text-[11px] font-bold capitalize ${o.status === 'filled' ? 'bg-up-bg text-up' : o.status === 'cancelled' || o.status === 'rejected' ? 'bg-down-bg text-down' : 'bg-surface-2 text-muted'}`}
                       >
                         {o.status}
                       </span>
@@ -634,31 +638,31 @@ export function HomePage() {
           </section>
         </div>
 
-        <div className="stack gap-md">
+        <div className="space-y-4">
           {/* Allocation */}
-          <section className="card p-lg">
-            <div className="mb-md">
+          <section className="card p-4">
+            <div className="mb-3">
               <SectionTitle icon={IconPieChart} theme="investments">Asset allocation</SectionTitle>
             </div>
             {allocation.length === 0 ? (
-              <p className="text-sm muted">Allocation appears once you hold stocks.</p>
+              <p className="text-sm text-muted">Allocation appears once you hold stocks.</p>
             ) : (
               <>
-                <div className="row gap-lg">
+                <div className="flex items-center gap-4">
                   <Donut segments={allocation} />
-                  <div className="min-w-0 grow stack gap-1.5">
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     {allocation.slice(0, 5).map((a) => (
-                      <div key={a.sector} className="row gap-sm text-xs">
-                        <span className="h-3 w-24 shrink-0 rounded" style={{ background: a.color }} />
-                        <span className="min-w-0 grow truncate bold">{a.sector}</span>
-                        <span className="mono muted">{a.pct.toFixed(1)}%</span>
+                      <div key={a.sector} className="flex items-center gap-2 text-xs">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: a.color }} />
+                        <span className="min-w-0 flex-1 truncate font-bold">{a.sector}</span>
+                        <span className="font-mono text-muted">{a.pct.toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {allocation[0]?.pct > 40 && (
-                  <p className="mt-md rounded py-md text-xs muted">
-                    <span className="bold ink">{allocation[0].pct.toFixed(0)}%</span> of your equity sits in{' '}
+                  <p className="mt-3 rounded py-2.5 text-xs text-muted">
+                    <span className="font-bold text-ink">{allocation[0].pct.toFixed(0)}%</span> of your equity sits in{' '}
                     {allocation[0].sector}. Spreading across sectors lowers concentration risk.
                   </p>
                 )}
@@ -667,26 +671,26 @@ export function HomePage() {
           </section>
 
           {/* Mutual funds */}
-          <section className="card p-lg theme-mf">
-            <div className="mb-md row-between">
+          <section className="card p-4 theme-mf">
+            <div className="mb-3 flex items-center justify-between">
               <SectionTitle icon={IconCoins} theme="mf">Mutual funds</SectionTitle>
-              <Link to="/app/mf" className="text-sm bold text-page-accent">
+              <Link to="/app/mf" className="text-sm font-bold text-page-accent">
                 {mfSummary.funds > 0 ? 'Manage' : 'Explore'}
               </Link>
             </div>
             {mfSummary.funds === 0 ? (
-              <div className="rounded bg-page-tint px-lg py-md text-xs muted">
+              <div className="rounded bg-page-tint px-4 py-2.5 text-xs text-muted">
                 Start a SIP from ₹100 a month and build wealth on autopilot.
               </div>
             ) : (
               <>
-                <div className="row items-end gap-md">
+                <div className="flex items-end gap-3">
                   <div>
-                    <div className="text-[10px] bold muted uppercase">Current value</div>
-                    <div className="mono text-xl bold">₹{formatINR(mfSummary.current)}</div>
+                    <div className="text-[10px] font-bold text-muted uppercase">Current value</div>
+                    <div className="font-mono text-xl font-bold">₹{formatINR(mfSummary.current)}</div>
                   </div>
                   <div
-                    className={`right text-sm bold ${mfSummary.pnl >= 0 ? '' : ''}`}
+                    className={`text-right text-sm font-bold ${mfSummary.pnl >= 0 ? 'text-up' : 'text-down'}`}
                   >
                     {mfSummary.pnl >= 0 ? '+' : ''}₹{formatINR(mfSummary.pnl)}
                     <div className="text-xs">
@@ -694,7 +698,7 @@ export function HomePage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-md grid-3 gap-sm border-t border center">
+                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line text-center">
                   <MiniStat label="Invested" value={`₹${formatINRShort(mfSummary.invested)}`} />
                   <MiniStat label="Funds" value={String(mfSummary.funds)} />
                   <MiniStat
@@ -708,9 +712,9 @@ export function HomePage() {
 
           {/* Watchlist */}
           <section className="card overflow-hidden">
-            <div className="row-between border-b border px-lg py-md">
+            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
               <SectionTitle icon={IconStar} theme="explore">Watchlist</SectionTitle>
-              <Link to="/app/explore" className="text-sm bold accent">Edit</Link>
+              <Link to="/app/explore" className="text-sm font-bold text-accent">Edit</Link>
             </div>
             {watchlist.ready === false ? (
               <SkeletonRows rows={4} />
@@ -720,8 +724,8 @@ export function HomePage() {
                   const inst = market.instruments[sym]
                   if (!inst) {
                     return (
-                      <div key={sym} className="row-between px-lg py-md">
-                        <div className="mono text-sm bold muted">{sym}</div>
+                      <div key={sym} className="flex items-center justify-between px-4 py-2.5">
+                        <div className="font-mono text-sm font-bold text-muted">{sym}</div>
                         <WatchlistButton
                           compact
                           symbol={sym}
@@ -736,7 +740,7 @@ export function HomePage() {
                   return (
                     <div
                       key={sym}
-                      className="row w-full gap-sm px-lg py-md"
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition hover:bg-surface-2/70"
                     >
                       <WatchlistButton
                         compact
@@ -747,16 +751,16 @@ export function HomePage() {
                       />
                       <button
                         type="button"
-                        className="row min-w-0 grow"
+                        className="flex items-center min-w-0 flex-1"
                         onClick={() => navigate(`/app/stocks/${sym}`)}
                       >
                         <div className="min-w-0">
-                          <div className="mono text-sm bold">{inst.symbol}</div>
-                          <div className="truncate text-xs muted">Vol {formatINRShort(inst.volume)}</div>
+                          <div className="font-mono text-sm font-bold">{inst.symbol}</div>
+                          <div className="truncate text-xs text-muted">Vol {formatINRShort(inst.volume)}</div>
                         </div>
-                        <div className="right">
-                          <div className="mono text-sm bold">₹{formatINR(inst.price)}</div>
-                          <div className={`text-xs bold ${up ? 'text-up' : 'text-down'}`}>
+                        <div className="text-right">
+                          <div className="font-mono text-sm font-bold">₹{formatINR(inst.price)}</div>
+                          <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                             {up ? '+' : ''}{inst.changePct}%
                           </div>
                         </div>
@@ -784,25 +788,25 @@ export function HomePage() {
 
           {/* IPOs */}
           {ipos.length > 0 && (
-            <section className="card p-lg">
-              <div className="mb-md row-between">
+            <section className="card p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <SectionTitle icon={IconRocket} theme="ipo">IPOs open now</SectionTitle>
-                <Link to="/app/ipo" className="text-sm bold accent">See all</Link>
+                <Link to="/app/ipo" className="text-sm font-bold text-accent">See all</Link>
               </div>
-              <div className="stack gap-md">
+              <div className="space-y-4">
                 {ipos.slice(0, 2).map((ipo) => (
                   <Link
                     key={ipo.id}
                     to="/app/ipo"
-                    className="row-between rounded border px-lg py-md"
+                    className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 transition hover:bg-surface-2/70"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm bold">{ipo.name}</div>
-                      <div className="text-xs muted">
+                      <div className="truncate text-sm font-bold">{ipo.name}</div>
+                      <div className="text-xs text-muted">
                         ₹{ipo.priceMin}–{ipo.priceMax} · Lot {ipo.lotSize}
                       </div>
                     </div>
-                    <span className="rounded px-lg py-md text-xs bold up">
+                    <span className="rounded px-4 py-2.5 text-xs font-bold text-up">
                       GMP ₹{ipo.gmp}
                     </span>
                   </Link>
@@ -815,10 +819,10 @@ export function HomePage() {
       </div>
 
       {/* Sector heatmap */}
-      <section className="card p-lg">
-        <div className="mb-md row flex-wrap gap-sm">
+      <section className="card p-4">
+        <div className="mb-3 flex items-center flex-wrap gap-2">
           <SectionTitle icon={IconGrid} theme="explore">Sector heatmap</SectionTitle>
-          <span className="text-xs muted">Average move across {instrumentList.length} stocks · tap to filter</span>
+          <span className="text-xs text-muted">Average move across {instrumentList.length} stocks · tap to filter</span>
         </div>
         {sectorHeat.length === 0 ? (
           <div className="heat-grid">
@@ -837,12 +841,12 @@ export function HomePage() {
                   className="heat-tile"
                   style={{ background: heatTint(s.avg) }}
                 >
-                  <span className="truncate text-xs bold ink">{s.sector}</span>
+                  <span className="truncate text-xs font-bold text-ink">{s.sector}</span>
                   <span>
-                    <span className={`block mono text-sm bold ${up ? 'text-up' : 'text-down'}`}>
+                    <span className={`block font-mono text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                       {up ? '+' : ''}{s.avg.toFixed(2)}%
                     </span>
-                    <span className="block text-[10px] bold muted">
+                    <span className="block text-[10px] font-bold text-muted">
                       {s.advancing}/{s.count} up
                     </span>
                   </span>
@@ -914,8 +918,8 @@ function SectionTitle({ icon: Icon, theme, children }) {
 function MiniStat({ label, value }) {
   return (
     <div>
-      <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className="mt-sm mono text-sm bold">{value}</div>
+      <div className="text-[10px] font-bold text-muted uppercase">{label}</div>
+      <div className="mt-2 font-mono text-sm font-bold">{value}</div>
     </div>
   )
 }
@@ -923,22 +927,22 @@ function MiniStat({ label, value }) {
 function Pill({ label, value, tone }) {
   const color = tone === 'up' ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'
   return (
-    <span className="rounded border px-lg text-xs">
-      <span className="">{label} </span>
-      <span className={`mono bold ${color}`}>{value}</span>
+    <span className="rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-xs">
+      <span className="text-white/55">{label} </span>
+      <span className={`font-mono font-bold ${color}`}>{value}</span>
     </span>
   )
 }
 
 function Metric({ label, value, tone, accent, loading }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : accent ? 'text-accent' : ''
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : accent ? 'text-accent' : ''
   return (
-    <div className="border-b border px-lg py-md">
-      <div className="text-[10px] bold muted uppercase">{label}</div>
+    <div className="border-b border-line px-4 py-3 last:border-b-0 md:border-b-0">
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
       {loading ? (
-        <Skeleton className="mt-1.5 h-3 w-24" />
+        <Skeleton className="mt-1.5 h-3.5 w-24" />
       ) : (
-        <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
+        <div className={`mt-1 font-mono text-sm font-bold ${color}`}>{value}</div>
       )}
     </div>
   )
@@ -946,11 +950,11 @@ function Metric({ label, value, tone, accent, loading }) {
 
 function Sparkline({ data, loading, empty }) {
   if (loading) {
-    return <Skeleton className="w-full" />
+    return <Skeleton className="h-32 w-full opacity-20" />
   }
   if (empty || !data || data.length < 2) {
     return (
-      <div className="grid w-full rounded border border-dashed px-lg center text-xs">
+      <div className="grid h-32 w-full place-items-center rounded-xl border border-dashed border-white/15 bg-white/5 px-4 text-center text-xs text-white/45">
         {empty ? 'Your equity curve appears after your first buy' : 'Building curve…'}
       </div>
     )
@@ -972,7 +976,7 @@ function Sparkline({ data, loading, empty }) {
 
   return (
     <div className="w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-28 w-full" preserveAspectRatio="none">
         <polyline
           points={`0,${height} ${points.join(' ')} ${width},${height}`}
           fill={up ? 'rgba(125,255,200,0.14)' : 'rgba(255,157,157,0.14)'}
@@ -981,9 +985,9 @@ function Sparkline({ data, loading, empty }) {
         <polyline points={points.join(' ')} fill="none" stroke={stroke} strokeWidth="2" strokeLinejoin="round" />
         <circle cx={lastX} cy={lastY} r="3" fill={stroke} />
       </svg>
-      <div className="mt-sm row-between text-[10px] bold uppercase">
+      <div className="mt-1 flex items-center justify-between text-[10px] font-semibold tracking-wide text-white/40 uppercase">
         <span>Intraday · 5 min</span>
-        <span className="mono normal-case">
+        <span className="font-mono normal-case">
           ₹{formatINRShort(min)} – ₹{formatINRShort(max)}
         </span>
       </div>
@@ -1003,11 +1007,11 @@ function Donut({ segments }) {
 
   return (
     <div
-      className="relative shrink-0 rounded"
+      className="relative h-24 w-24 shrink-0 rounded-full"
       style={{ background: `conic-gradient(${stops})` }}
     >
-      <div className="absolute inset-[22%] grid rounded">
-        <span className="text-[10px] bold muted">{segments.length}</span>
+      <div className="absolute inset-[22%] grid place-items-center rounded-full bg-surface">
+        <span className="text-[10px] font-bold text-muted">{segments.length}</span>
       </div>
     </div>
   )

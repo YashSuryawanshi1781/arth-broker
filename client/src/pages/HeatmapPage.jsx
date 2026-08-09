@@ -48,7 +48,7 @@ export function HeatmapPage() {
         subtitle="Drill into sectors, then open any stock — live from the Arth universe"
       />
 
-      <section className="card p-lg">
+      <section className="card p-4">
         <div className="heat-grid">
           {sectors.map((s) => {
             const up = s.avg >= 0
@@ -61,12 +61,12 @@ export function HeatmapPage() {
                 style={{ background: heatTint(s.avg), textAlign: 'left' }}
                 onClick={() => setParams(s.sector === sector ? {} : { sector: s.sector })}
               >
-                <span className="truncate text-xs bold ink">{s.sector}</span>
+                <span className="truncate text-xs font-bold text-ink">{s.sector}</span>
                 <span>
-                  <span className={`block mono text-sm bold ${up ? 'up' : 'down'}`}>
+                  <span className={`block font-mono text-sm font-bold ${up ? 'text-up' : 'text-down'}`}>
                     {up ? '+' : ''}{s.avg.toFixed(2)}%
                   </span>
-                  <span className="block text-[10px] bold muted">
+                  <span className="block text-[10px] font-bold text-muted">
                     {s.advancing}/{s.count} up
                   </span>
                 </span>
@@ -77,14 +77,13 @@ export function HeatmapPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="row-between flex-wrap gap-sm border-b border px-lg py-md">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
           <div>
-            <h3 className="extrabold">{sector || 'All sectors'}</h3>
-            <p className="text-xs muted">{stocks.length} stocks · tap a tile to filter</p>
+            <h3 className="font-extrabold">{sector || 'All sectors'}</h3>
+            <p className="text-xs text-muted">{stocks.length} stocks · tap a tile to filter</p>
           </div>
           <input
-            className="field"
-            style={{ maxWidth: 220 }}
+            className="field max-w-[220px]"
             placeholder="Filter symbol"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -97,22 +96,24 @@ export function HeatmapPage() {
               <Link
                 key={s.symbol}
                 to={`/app/stocks/${s.symbol}`}
-                className="row w-full px-lg py-md"
-                style={{ textDecoration: 'none', color: 'inherit' }}
+                className="flex w-full items-center justify-between gap-3 border-b border-line px-4 py-2.5 last:border-0 transition hover:bg-surface-2/50"
               >
                 <div className="min-w-0">
-                  <div className="mono text-sm bold">{s.symbol}</div>
-                  <div className="truncate text-xs muted">{s.name}</div>
+                  <div className="font-mono text-sm font-bold">{s.symbol}</div>
+                  <div className="truncate text-xs text-muted">{s.name}</div>
                 </div>
-                <div className="right">
-                  <div className="mono text-sm bold">₹{formatINR(s.price)}</div>
-                  <div className={`text-xs bold ${up ? 'up' : 'down'}`}>
+                <div className="shrink-0 text-right">
+                  <div className="font-mono text-sm font-bold">₹{formatINR(s.price)}</div>
+                  <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                     {up ? '+' : ''}{s.changePct}%
                   </div>
                 </div>
               </Link>
             )
           })}
+          {stocks.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-muted">No stocks match this filter.</div>
+          )}
         </div>
       </section>
     </Screen>

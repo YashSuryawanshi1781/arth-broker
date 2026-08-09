@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Button, Typography } from '@mui/material'
 import { api } from '../lib/api'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser } from '../features/auth/authSlice'
@@ -42,17 +41,17 @@ export function AdminPage() {
         subtitle="Soft-reset the demo@arth.app paper account"
       />
 
-      <div className="card stack gap-md p-xl">
-        <Typography variant="body1">
+      <div className="card max-w-xl space-y-4 p-6">
+        <p className="text-sm leading-relaxed text-muted">
           Clears orders, holdings, alerts and activity for the demo user, restores ₹2,50,000 cash
           and re-seeds sample stock / MF positions.
-        </Typography>
-        <Typography variant="body2" className="muted">
-          Signed in as {user?.email || '…'}
-        </Typography>
-        <Button variant="contained" color="warning" disabled={busy} onClick={reset}>
+        </p>
+        <p className="text-xs text-muted">
+          Signed in as <span className="font-mono font-bold text-ink">{user?.email || '…'}</span>
+        </p>
+        <button type="button" className="btn btn-dark" disabled={busy} onClick={reset}>
           {busy ? 'Resetting…' : 'Reset demo account'}
-        </Button>
+        </button>
       </div>
     </Screen>
   )

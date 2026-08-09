@@ -1,16 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Button,
-  Chip,
-  LinearProgress,
-  Switch,
-  Typography,
-} from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { api } from '../lib/api'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser } from '../features/auth/authSlice'
@@ -23,6 +12,7 @@ export function LearnPage() {
   const dispatch = useAppDispatch()
   const [data, setData] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [openLesson, setOpenLesson] = useState(null)
 
   const load = () => {
     api('/learn/sync').catch(() => {})
@@ -58,6 +48,7 @@ export function LearnPage() {
   }
 
   const pct = data ? Math.round((data.completedCount / Math.max(data.totalChallenges, 1)) * 100) : 0
+  const learningOn = data?.learningMode ?? user?.learningMode ?? true
 
   return (
     <Screen theme="home" className="stack gap-lg">
@@ -67,77 +58,105 @@ export function LearnPage() {
         title="Learn"
         subtitle="Guided practice for beginners — still simulated money only."
         actions={
-          <div className="row gap-sm">
-            <Typography variant="body2" className="muted">Learning mode</Typography>
-            <Switch
-              checked={data?.learningMode ?? user?.learningMode ?? true}
+          <label className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm">
+            <span className="text-muted">Learning mode</span>
+            <input
+              type="checkbox"
+              checked={learningOn}
               disabled={busy}
               onChange={(e) => toggleMode(e.target.checked)}
             />
-          </div>
+          </label>
         }
       />
 
-      <section className="card p-lg stack gap-md">
-        <div className="row-between">
-          <Typography fontWeight={800}>Practice progress</Typography>
-          <Chip size="small" label={`${data?.completedCount || 0}/${data?.totalChallenges || 0}`} />
+      <section className="card space-y-3 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-extrabold">Practice progress</h2>
+          <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-bold text-muted">
+            {data?.completedCount || 0}/{data?.totalChallenges || 0}
+          </span>
         </div>
-        <LinearProgress variant="determinate" value={pct} sx={{ height: 8, borderRadius: 99 }} />
-        <Typography variant="caption" color="text.secondary">
+        <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-xs text-muted">
           Complete challenges by trading for real on Arth (paper). Sync runs automatically.
-        </Typography>
+        </p>
       </section>
 
-      <section className="stack gap-md">
-        <Typography variant="h6" fontWeight={800}>Challenges</Typography>
-        <div className="grid-2 gap-md">
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold">Challenges</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
           {(data?.challenges || []).map((c) => (
-            <div key={c.id} className={`card p-lg stack gap-sm ${c.completed ? 'border-page-accent' : ''}`}>
-              <div className="row-between">
-                <Typography fontWeight={800}>{c.title}</Typography>
-                <Chip size="small" color={c.completed ? 'success' : 'default'} label={c.completed ? 'Done' : 'Open'} />
+            <div
+              key={c.id}
+              className={`card space-y-2 p-4 ${c.completed ? 'border-page-accent' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-bold">{c.title}</h3>
+                <span className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
+                  c.completed ? 'bg-up-bg text-up' : 'bg-surface-2 text-muted'
+                }`}>
+                  {c.completed ? 'Done' : 'Open'}
+                </span>
               </div>
-              <Typography variant="body2" color="text.secondary">{c.hint}</Typography>
+              <p className="text-sm text-muted">{c.hint}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="stack gap-md">
-        <Typography variant="h6" fontWeight={800}>Lessons</Typography>
-        {(data?.lessons || []).map((lesson) => (
-          <Accordion key={lesson.id} disableGutters elevation={0} className="card">
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <div className="row gap-md grow">
-                <Typography fontWeight={700}>{lesson.title}</Typography>
-                <Chip size="small" label={`${lesson.minutes} min`} />
-              </div>
-            </AccordionSummary>
-            <AccordionDetails className="stack gap-md">
-              <Typography color="text.secondary">{lesson.summary}</Typography>
-              <ul className="stack gap-sm" style={{ paddingLeft: '1.1rem', margin: 0 }}>
-                {lesson.body.map((line) => (
-                  <li key={line}><Typography variant="body2">{line}</Typography></li>
-                ))}
-              </ul>
-              <div className="row gap-sm">
-                <Button variant="contained" onClick={() => completeLesson(lesson.id)}>Mark complete</Button>
-                {lesson.id === 'sip' && <Button component={Link} to="/app/mf" variant="outlined">Open mutual funds</Button>}
-                {lesson.id === 'market-vs-limit' && <Button component={Link} to="/app/explore" variant="outlined">Explore stocks</Button>}
-              </div>
-            </AccordionDetails>
-          </Accordion>
-        ))}
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold">Lessons</h2>
+        {(data?.lessons || []).map((lesson) => {
+          const open = openLesson === lesson.id
+          return (
+            <div key={lesson.id} className="card overflow-hidden">
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-surface-2/50"
+                onClick={() => setOpenLesson(open ? null : lesson.id)}
+              >
+                <span className="min-w-0 flex-1 font-bold">{lesson.title}</span>
+                <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-muted">
+                  {lesson.minutes} min
+                </span>
+                <span className="text-muted">{open ? '−' : '+'}</span>
+              </button>
+              {open && (
+                <div className="space-y-3 border-t border-line px-4 py-4">
+                  <p className="text-sm text-muted">{lesson.summary}</p>
+                  <ul className="list-disc space-y-1.5 pl-5 text-sm">
+                    {lesson.body.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" className="btn btn-primary text-sm" onClick={() => completeLesson(lesson.id)}>
+                      Mark complete
+                    </button>
+                    {lesson.id === 'sip' && (
+                      <Link to="/app/mf" className="btn btn-ghost text-sm">Open mutual funds</Link>
+                    )}
+                    {lesson.id === 'market-vs-limit' && (
+                      <Link to="/app/explore" className="btn btn-ghost text-sm">Explore stocks</Link>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </section>
 
-      <section className="card p-lg stack gap-md">
-        <Typography variant="h6" fontWeight={800}>Glossary</Typography>
-        <div className="grid-2 gap-md">
+      <section className="card space-y-4 p-5">
+        <h2 className="text-lg font-extrabold">Glossary</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
           {(data?.glossary || []).map((g) => (
             <div key={g.term}>
-              <Typography fontWeight={800} className="mono">{g.term}</Typography>
-              <Typography variant="body2" color="text.secondary">{g.def}</Typography>
+              <div className="font-mono font-bold">{g.term}</div>
+              <p className="mt-0.5 text-sm text-muted">{g.def}</p>
             </div>
           ))}
         </div>

@@ -64,7 +64,7 @@ export function InvestmentsPage() {
         : 'Demo fallback'
 
   return (
-    <Screen theme="investments" className="stack gap-md">
+    <Screen theme="investments" className="space-y-5">
       <PageHeader
         icon={IconBriefcase}
         eyebrow="Portfolio"
@@ -72,7 +72,7 @@ export function InvestmentsPage() {
         subtitle={
           <>
             Stocks update automatically from the live market feed{' · '}
-            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold up' : 'font-bold down'}>
+            <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold text-up' : 'font-bold text-down'}>
               {feedLabel}
             </span>
           </>
@@ -96,15 +96,15 @@ export function InvestmentsPage() {
       />
 
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-lg px-lg p-xl" style={{ color: '#fff' }}>
+        <div className="hero-mesh grid gap-5 px-5 py-5 text-white md:grid-cols-[1.2fr_1fr] md:px-7">
           <div>
-            <p className="text-xs bold uppercase">Equity portfolio</p>
-            <div className="mt-sm mono text-3xl bold">₹{formatINR(totals.current)}</div>
-            <div className={`mt-sm text-sm bold ${totals.pnl >= 0 ? 'up' : 'down'}`}>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Equity portfolio</p>
+            <div className="mt-2 font-mono text-3xl font-bold">₹{formatINR(totals.current)}</div>
+            <div className={`mt-2 text-sm font-bold ${totals.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
               {totals.pnl >= 0 ? '+' : ''}₹{formatINR(totals.pnl)} ({totals.pnlPct.toFixed(2)}%) overall
             </div>
           </div>
-          <div className="grid-3 gap-sm">
+          <div className="grid grid-cols-3 gap-2 self-end">
             <HeroMetric label="Invested" value={`₹${formatINR(totals.invested)}`} />
             <HeroMetric
               label="Today's P&L"
@@ -117,18 +117,18 @@ export function InvestmentsPage() {
       </section>
 
       {dividends && (
-        <section className="card row flex-wrap gap-lg px-lg py-md">
+        <section className="card flex flex-wrap items-center gap-4 px-4 py-3">
           <div>
-            <div className="text-[10px] bold muted uppercase">Projected dividends</div>
-            <div className="mono text-xl bold">₹{formatINR(dividends.totalProjected || 0)}</div>
-            <div className="text-xs muted">~{dividends.portfolioYieldPct || 0}% portfolio yield (demo)</div>
+            <div className="text-[10px] font-bold tracking-wide text-muted uppercase">Projected dividends</div>
+            <div className="font-mono text-xl font-bold">₹{formatINR(dividends.totalProjected || 0)}</div>
+            <div className="text-xs text-muted">~{dividends.portfolioYieldPct || 0}% portfolio yield (demo)</div>
           </div>
-          <div className="row flex-wrap gap-sm flex-1">
+          <div className="flex flex-1 flex-wrap gap-2">
             {(dividends.dividends || []).slice(0, 6).map((d) => (
-              <span key={d.symbol} className="rounded border px-lg py-md text-xs">
-                <span className="mono bold">{d.symbol}</span>
+              <span key={d.symbol} className="rounded-xl border border-line bg-surface-2/60 px-3 py-1.5 text-xs">
+                <span className="font-mono font-bold">{d.symbol}</span>
                 {' '}
-                <span className="muted">₹{formatINR(d.projectedAnnual)} · {d.yieldPct}%</span>
+                <span className="text-muted">₹{formatINR(d.projectedAnnual)} · {d.yieldPct}%</span>
               </span>
             ))}
           </div>
@@ -136,10 +136,10 @@ export function InvestmentsPage() {
       )}
 
       <section className="card overflow-hidden">
-        <div className="row-between flex-wrap gap-sm border-b border px-lg py-md">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
           <div>
-            <h3 className="extrabold">Intraday positions (MIS)</h3>
-            <p className="text-xs muted">Auto square-off near 15:20 IST · paper only</p>
+            <h3 className="font-extrabold tracking-tight">Intraday positions (MIS)</h3>
+            <p className="text-xs text-muted">Auto square-off near 15:20 IST · paper only</p>
           </div>
           <button
             type="button"
@@ -163,7 +163,7 @@ export function InvestmentsPage() {
           </button>
         </div>
         {positions.length === 0 ? (
-          <p className="px-lg py-md text-sm muted">No open MIS positions.</p>
+          <p className="px-4 py-6 text-sm text-muted">No open MIS positions.</p>
         ) : (
           positions.map((p) => {
             const up = (p.pnl || 0) >= 0
@@ -171,16 +171,15 @@ export function InvestmentsPage() {
               <Link
                 key={p.symbol}
                 to={`/app/stocks/${p.symbol}`}
-                className="row w-full border-b border px-lg py-md"
-                style={{ textDecoration: 'none', color: 'inherit' }}
+                className="flex w-full items-center justify-between border-b border-line px-4 py-3 transition last:border-b-0 hover:bg-surface-2/70"
               >
                 <div>
-                  <div className="mono bold">{p.symbol}</div>
-                  <div className="text-xs muted">{p.qty} qty · avg ₹{formatINR(p.avgPrice)}</div>
+                  <div className="font-mono font-bold">{p.symbol}</div>
+                  <div className="text-xs text-muted">{p.qty} qty · avg ₹{formatINR(p.avgPrice)}</div>
                 </div>
-                <div className="right">
-                  <div className="mono bold">₹{formatINR(p.ltp)}</div>
-                  <div className={`text-xs bold ${up ? 'up' : 'down'}`}>
+                <div className="text-right">
+                  <div className="font-mono font-bold">₹{formatINR(p.ltp)}</div>
+                  <div className={`text-xs font-bold ${up ? 'text-up' : 'text-down'}`}>
                     {up ? '+' : ''}₹{formatINR(p.pnl)}
                   </div>
                 </div>
@@ -190,12 +189,10 @@ export function InvestmentsPage() {
         )}
       </section>
 
-      <section className="card stack gap-md p-lg">
-        <div className="row-between">
-          <h3 className="text-sm extrabold">Goals</h3>
-        </div>
+      <section className="card space-y-3 p-4">
+        <h3 className="text-sm font-extrabold tracking-tight">Goals</h3>
         <form
-          className="row flex-wrap gap-sm"
+          className="flex flex-wrap gap-2"
           onSubmit={async (e) => {
             e.preventDefault()
             try {
@@ -215,20 +212,20 @@ export function InvestmentsPage() {
             }
           }}
         >
-          <input className="field" placeholder="Goal name" value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} required />
-          <input className="field" type="number" placeholder="Target ₹" value={goalForm.targetAmount} onChange={(e) => setGoalForm({ ...goalForm, targetAmount: e.target.value })} required />
-          <input className="field" type="number" placeholder="Monthly SIP" value={goalForm.monthlySip} onChange={(e) => setGoalForm({ ...goalForm, monthlySip: e.target.value })} />
+          <input className="field min-w-[140px] flex-1" placeholder="Goal name" value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} required />
+          <input className="field w-32" type="number" placeholder="Target ₹" value={goalForm.targetAmount} onChange={(e) => setGoalForm({ ...goalForm, targetAmount: e.target.value })} required />
+          <input className="field w-36" type="number" placeholder="Monthly SIP" value={goalForm.monthlySip} onChange={(e) => setGoalForm({ ...goalForm, monthlySip: e.target.value })} />
           <button className="btn btn-primary text-sm" type="submit">Add goal</button>
         </form>
         {goals.length === 0 ? (
-          <p className="text-sm muted">No goals yet — set a target to track SIPs against.</p>
+          <p className="text-sm text-muted">No goals yet — set a target to track SIPs against.</p>
         ) : (
-          <div className="stack gap-sm">
+          <div className="space-y-2">
             {goals.map((g) => (
-              <div key={g.id} className="row-between rounded border px-lg py-md">
+              <div key={g.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5">
                 <div>
-                  <div className="bold">{g.name}</div>
-                  <div className="text-xs muted">
+                  <div className="font-bold">{g.name}</div>
+                  <div className="text-xs text-muted">
                     Target ₹{formatINR(g.targetAmount)}
                     {g.monthlySip ? ` · SIP ₹${formatINR(g.monthlySip)}` : ''}
                     {g.targetDate ? ` · by ${new Date(g.targetDate).toLocaleDateString('en-IN')}` : ''}
@@ -236,7 +233,7 @@ export function InvestmentsPage() {
                 </div>
                 <button
                   type="button"
-                  className="text-xs bold down"
+                  className="text-xs font-bold text-down"
                   onClick={async () => {
                     try {
                       await api(`/goals/${g.id}`, { method: 'DELETE' })
@@ -255,23 +252,19 @@ export function InvestmentsPage() {
       </section>
 
       {analytics?.sectorExposure?.length > 0 && (
-        <section className="card p-lg stack gap-md">
-          <h3 className="text-sm extrabold">Sector exposure</h3>
-          <div className="stack gap-sm">
+        <section className="card space-y-3 p-4">
+          <h3 className="text-sm font-extrabold tracking-tight">Sector exposure</h3>
+          <div className="space-y-2">
             {analytics.sectorExposure.map((s) => (
-              <div key={s.sector} className="stack gap-xs">
-                <div className="row-between text-xs">
-                  <span className="bold">{s.sector}</span>
-                  <span className="mono muted">{s.weightPct}% · ₹{formatINR(s.value)}</span>
+              <div key={s.sector} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold">{s.sector}</span>
+                  <span className="font-mono text-muted">{s.weightPct}% · ₹{formatINR(s.value)}</span>
                 </div>
-                <div style={{ height: 8, borderRadius: 99, background: 'var(--color-surface-2)' }}>
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
-                    style={{
-                      width: `${Math.min(100, s.weightPct)}%`,
-                      height: '100%',
-                      borderRadius: 99,
-                      background: 'var(--page-accent)',
-                    }}
+                    className="h-full rounded-full bg-page-accent"
+                    style={{ width: `${Math.min(100, s.weightPct)}%` }}
                   />
                 </div>
               </div>
@@ -295,41 +288,41 @@ export function InvestmentsPage() {
             action={<Link to="/app/explore" className="btn btn-primary text-sm"><IconCandles size={16} />Explore stocks</Link>}
           />
         ) : (
-          <div className="overflow-auto">
-            <table className="w-full w-[720px] text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
-                <tr className="border-b border text-[10px] bold muted uppercase">
-                  <th className="px-lg py-md">Instrument</th>
-                  <th className="px-lg right">Qty</th>
-                  <th className="px-lg right">Avg price</th>
-                  <th className="px-lg right">LTP</th>
-                  <th className="px-lg right">Current value</th>
-                  <th className="px-lg right">Total P&L</th>
+                <tr className="border-b border-line bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">
+                  <th className="px-4 py-2.5">Instrument</th>
+                  <th className="px-3 py-2.5 text-right">Qty</th>
+                  <th className="px-3 py-2.5 text-right">Avg price</th>
+                  <th className="px-3 py-2.5 text-right">LTP</th>
+                  <th className="px-3 py-2.5 text-right">Current value</th>
+                  <th className="px-4 py-2.5 text-right">Total P&L</th>
                 </tr>
               </thead>
               <tbody>
                 {liveHoldings.map((holding) => (
-                  <tr key={holding.symbol} className="border-b border last:border-0">
-                    <td className="px-lg py-md">
-                      <Link to={`/app/stocks/${holding.symbol}`} className="mono bold">
+                  <tr key={holding.symbol} className="border-b border-line transition last:border-0 hover:bg-surface-2/70">
+                    <td className="px-4 py-2.5">
+                      <Link to={`/app/stocks/${holding.symbol}`} className="font-mono font-bold hover:text-accent">
                         {holding.symbol}
                       </Link>
-                      <div className="text-xs muted">{holding.name}</div>
+                      <div className="text-xs text-muted">{holding.name}</div>
                     </td>
-                    <td className="px-lg right mono">{holding.qty}</td>
-                    <td className="px-lg right mono">₹{formatINR(holding.avgPrice)}</td>
-                    <td className="px-lg right">
-                      <div className="mono bold">₹{formatINR(holding.ltp)}</div>
-                      <div className={`text-xs bold ${holding.dayChangePct >= 0 ? '' : ''}`}>
+                    <td className="px-3 py-2.5 text-right font-mono">{holding.qty}</td>
+                    <td className="px-3 py-2.5 text-right font-mono">₹{formatINR(holding.avgPrice)}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      <div className="font-mono font-bold">₹{formatINR(holding.ltp)}</div>
+                      <div className={`text-xs font-bold ${holding.dayChangePct >= 0 ? 'text-up' : 'text-down'}`}>
                         {holding.dayChangePct >= 0 ? '+' : ''}{holding.dayChangePct.toFixed(2)}%
                       </div>
                     </td>
-                    <td className="px-lg right mono bold">₹{formatINR(holding.value)}</td>
-                    <td className={`px-lg right ${holding.pnl >= 0 ? '' : ''}`}>
-                      <div className="mono bold">
+                    <td className="px-3 py-2.5 text-right font-mono font-bold">₹{formatINR(holding.value)}</td>
+                    <td className={`px-4 py-2.5 text-right ${holding.pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                      <div className="font-mono font-bold">
                         {holding.pnl >= 0 ? '+' : ''}₹{formatINR(holding.pnl)}
                       </div>
-                      <div className="text-xs bold">
+                      <div className="text-xs font-bold">
                         {holding.pnlPct >= 0 ? '+' : ''}{holding.pnlPct.toFixed(2)}%
                       </div>
                     </td>
@@ -356,20 +349,20 @@ export function InvestmentsPage() {
             action={<Link to="/app/mf" className="btn btn-primary text-sm"><IconCoins size={16} />Browse funds</Link>}
           />
         ) : (
-          <div className="stack gap-md p-lg">
+          <div className="space-y-2 p-4">
             {mf.map((h) => (
               <Link
                 key={h.id}
                 to={`/app/mf/${h.fundId}`}
-                className="row-between rounded /60 px-lg py-md"
+                className="flex items-center justify-between rounded-xl bg-surface-2/60 px-3 py-2.5 transition hover:bg-page-tint"
               >
                 <div>
-                  <div className="bold">{h.name}</div>
-                  <div className="text-xs muted">{h.units} units · avg NAV ₹{formatINR(h.avgNav)}</div>
+                  <div className="font-semibold">{h.name}</div>
+                  <div className="text-xs text-muted">{h.units} units · avg NAV ₹{formatINR(h.avgNav)}</div>
                 </div>
-                <div className="right mono text-sm">
+                <div className="text-right font-mono text-sm">
                   <div>₹{formatINR(h.value)}</div>
-                  <div className={h.pnl >= 0 ? 'up' : 'down'}>{h.pnl >= 0 ? '+' : ''}{formatINR(h.pnl)}</div>
+                  <div className={h.pnl >= 0 ? 'text-up' : 'text-down'}>{h.pnl >= 0 ? '+' : ''}{formatINR(h.pnl)}</div>
                 </div>
               </Link>
             ))}
@@ -387,12 +380,12 @@ export function InvestmentsPage() {
             action={<Link to="/app/mf" className="btn btn-primary text-sm"><IconSparkles size={16} />Start a SIP</Link>}
           />
         ) : (
-          <div className="stack gap-md p-lg">
+          <div className="space-y-2 p-4">
             {sips.map((s) => (
-              <div key={s.id} className="row-between rounded border px-lg py-md text-sm">
+              <div key={s.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5 text-sm">
                 <div>
-                  <div className="bold">{s.name}</div>
-                  <div className="muted">₹{formatINR(s.amount)} on day {s.dayOfMonth} · {s.status}</div>
+                  <div className="font-bold">{s.name}</div>
+                  <div className="text-muted">₹{formatINR(s.amount)} on day {s.dayOfMonth} · {s.status}</div>
                 </div>
                 <SipActions id={s.id} status={s.status} onDone={load} />
               </div>
@@ -415,9 +408,9 @@ function SipActions({ id, status, onDone }) {
       dispatch(showToast({ type: 'error', title: 'SIP update failed', message: err.message }))
     }
   }
-  if (status === 'cancelled') return <span className="text-xs muted">Cancelled</span>
+  if (status === 'cancelled') return <span className="text-xs text-muted">Cancelled</span>
   return (
-    <div className="row gap-sm">
+    <div className="flex gap-2">
       {status === 'active' ? (
         <button type="button" className="btn btn-ghost text-xs" onClick={() => toggle('paused')}>Pause</button>
       ) : (
@@ -431,18 +424,18 @@ function SipActions({ id, status, onDone }) {
 function HeroMetric({ label, value, tone }) {
   const color = tone === 'up' ? 'text-[#7dffc8]' : tone === 'down' ? 'text-[#ff9d9d]' : ''
   return (
-    <div className="rounded border p-1.5">
-      <div className="text-[9px] bold uppercase">{label}</div>
-      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
+    <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
+      <div className="text-[9px] font-bold tracking-wide text-white/50 uppercase">{label}</div>
+      <div className={`mt-1 font-mono text-sm font-bold ${color}`}>{value}</div>
     </div>
   )
 }
 
 function Section({ title, meta, icon: Icon, theme, children }) {
   return (
-    <section className={`card overflow-hidden ${theme ?`theme-${theme}` : ''}`}>
-      <div className="row-between gap-md border-b border px-lg py-md">
-        <h2 className="row gap-sm extrabold">
+    <section className={`card overflow-hidden ${theme ? `theme-${theme}` : ''}`}>
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+        <h2 className="flex items-center gap-2 font-extrabold tracking-tight">
           {Icon ? (
             <span className="icon-chip icon-chip-sm">
               <Icon size={15} />
@@ -450,7 +443,7 @@ function Section({ title, meta, icon: Icon, theme, children }) {
           ) : null}
           {title}
         </h2>
-        {meta && <span className="text-[11px] muted">{meta}</span>}
+        {meta && <span className="text-[11px] text-muted">{meta}</span>}
       </div>
       {children}
     </section>

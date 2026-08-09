@@ -51,7 +51,7 @@ export function PriceAlertButton({ symbol, ltp }) {
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Price alert · {symbol}</DialogTitle>
-        <DialogContent className="stack gap-md" sx={{ pt: 1 }}>
+        <DialogContent className="space-y-3" sx={{ pt: 1 }}>
           <TextField
             select
             label="Trigger when price is"

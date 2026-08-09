@@ -117,16 +117,16 @@ export function IndexPage() {
       <section className="card overflow-hidden">
         <div className="row flex-wrap gap-lg p-lg">
           <div className="row gap-md">
-            <span className="grid shrink-0 rounded text-xs extrabold">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand text-xs font-extrabold text-white">
               {indexKey.slice(0, 3)}
             </span>
             <div>
               <div className="row flex-wrap gap-sm">
                 <h1 className="text-2xl extrabold">{live.name}</h1>
-                <span className="rounded border text-[10px] bold muted">
+                <span className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold text-muted">
                   {live.exchange || 'NSE'}
                 </span>
-                <span className="rounded px-lg text-[11px] bold muted">Index</span>
+                <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-muted">Index</span>
               </div>
               <p className="mt-sm text-sm muted">
                 Lot size {live.lotSize || '—'} · Strike step {live.strikeStep || '—'}
@@ -152,7 +152,7 @@ export function IndexPage() {
           </div>
         </div>
 
-        <div className="grid-2 border-t border">
+        <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
           <Quote label="Open" value={fmt(live.open)} />
           <Quote label="High" value={fmt(live.high)} tone="up" />
           <Quote label="Low" value={fmt(live.low)} tone="down" />
@@ -161,11 +161,11 @@ export function IndexPage() {
           <Quote label="Volume" value={live.volume ? formatINRShort(live.volume) : '—'} />
         </div>
 
-        <div className="border-t border p-lg">
+        <div className="border-t border-line p-lg">
           <RangeBar label="Day range" low={live.low} high={live.high} value={live.value} pct={dayRangePct} />
         </div>
 
-        <div className="row flex-wrap gap-sm border-t border /40 px-lg py-md">
+        <div className="row flex-wrap gap-sm border-t border-line bg-surface-2/40 px-lg py-md">
           <button type="button" className="btn btn-primary text-sm" onClick={() => setTab('chart')}>
             <IconCandles size={16} />
             Open chart
@@ -212,7 +212,7 @@ export function IndexPage() {
               <Stat label="ATM (approx)" value={chain ? String(chain.atm) : '—'} />
             </div>
             {chain && (
-              <div className="mt-lg rounded border /60 px-lg py-md text-xs muted">
+              <div className="mt-4 rounded-xl border border-line bg-surface-2/60 px-3 py-3 text-xs text-muted">
                 Next weekly expiry <span className="bold ink">{chain.expiry}</span>
                 {' · '}
                 Put-call ratio <span className="bold ink">{chain.pcr}</span>
@@ -223,7 +223,7 @@ export function IndexPage() {
           </section>
 
           <section className="card overflow-hidden">
-            <div className="row-between border-b border px-lg py-md">
+            <div className="row-between border-b border-line px-lg py-md">
               <h3 className="extrabold">
                 {indexKey === 'BANKNIFTY' ? 'Banking movers' : 'Market movers'}
               </h3>
@@ -288,7 +288,7 @@ function OptionChainPanel({ chain, error, spot }) {
 
   return (
     <section className="card overflow-hidden">
-      <div className="row flex-wrap gap-sm border-b border px-lg py-md">
+      <div className="row flex-wrap gap-sm border-b border-line px-lg py-md">
         <div>
           <h3 className="extrabold">Option chain · {chain.name}</h3>
           <p className="text-xs muted">{chain.note}</p>
@@ -306,12 +306,12 @@ function OptionChainPanel({ chain, error, spot }) {
       <div className="overflow-auto">
         <table className="w-full w-[720px] text-xs">
           <thead>
-            <tr className="border-b border /80 text-[10px] bold muted uppercase">
+            <tr className="border-b border-line bg-surface-2/80 text-[10px] bold muted uppercase">
               <th className="px-lg py-md right" colSpan={4}>Calls (CE)</th>
               <th className="px-lg py-md center">Strike</th>
               <th className="px-lg py-md" colSpan={4}>Puts (PE)</th>
             </tr>
-            <tr className="border-b border text-[10px] bold muted">
+            <tr className="border-b border-line text-[10px] bold muted">
               <th className="px-lg right">OI</th>
               <th className="px-lg right">IV</th>
               <th className="px-lg right">Chg</th>
@@ -330,21 +330,21 @@ function OptionChainPanel({ chain, error, spot }) {
               return (
                 <tr
                   key={row.strike}
-                  className={`border-b border ${row.atm ? 'bg-mint' : 'hover:bg-surface-2'}`}
+                  className={`border-b border-line ${row.atm ? 'bg-mint/50' : 'hover:bg-surface-2/50'}`}
                 >
                   <td className="px-lg right mono muted">{formatINRShort(row.call.oi)}</td>
                   <td className="px-lg right mono">{row.call.iv}%</td>
-                  <td className={`px-lg right mono ${ceUp ? '' : ''}`}>
+                  <td className={`px-lg right mono ${ceUp ? 'text-up' : 'text-down'}`}>
                     {ceUp ? '+' : ''}{row.call.change}
                   </td>
                   <td className="px-lg right mono bold">{formatINR(row.call.ltp)}</td>
                   <td className="px-lg center">
-                    <span className={`inline-block rounded px-lg mono text-sm bold ${row.atm ? 'bg-brand text-white' : ''}`}>
+                    <span className={`inline-block rounded px-lg mono text-sm bold ${row.atm ? 'bg-brand text-white' : 'bg-surface-2'}`}>
                       {row.strike}
                     </span>
                   </td>
                   <td className="px-lg mono bold">{formatINR(row.put.ltp)}</td>
-                  <td className={`px-lg mono ${peUp ? '' : ''}`}>
+                  <td className={`px-lg mono ${peUp ? 'text-up' : 'text-down'}`}>
                     {peUp ? '+' : ''}{row.put.change}
                   </td>
                   <td className="px-lg mono">{row.put.iv}%</td>
@@ -365,7 +365,7 @@ function fmt(value) {
 }
 
 function Quote({ label, value, tone }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : ''
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : ''
   return (
     <div className="px-lg py-md">
       <div className="text-[10px] bold muted uppercase">{label}</div>

@@ -211,15 +211,15 @@ export function MfPage() {
 
       {/* Portfolio summary */}
       <section className="card overflow-hidden">
-        <div className="hero-mesh grid gap-lg px-lg py-md">
+        <div className="hero-mesh grid gap-5 px-5 py-5 text-white md:grid-cols-[1.2fr_1fr] md:px-7">
           <div>
-            <p className="text-[11px] bold tracking-[0.16em] uppercase">Mutual fund portfolio</p>
-            <div className="mt-sm mono text-3xl bold">₹{formatINR(portfolio.current)}</div>
-            <div className={`mt-sm text-sm bold ${portfolio.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Mutual fund portfolio</p>
+            <div className="mt-1 font-mono text-3xl font-bold text-white">₹{formatINR(portfolio.current)}</div>
+            <div className={`mt-1 text-sm font-bold ${portfolio.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
               {portfolio.pnl >= 0 ? '+' : ''}₹{formatINR(portfolio.pnl)} ({portfolio.pnlPct.toFixed(2)}%) overall
             </div>
           </div>
-          <div className="grid-3 gap-sm">
+          <div className="grid grid-cols-3 gap-2">
             <HeroMetric label="Invested" value={`₹${formatINRShort(portfolio.invested)}`} />
             <HeroMetric label="Monthly SIP" value={`₹${formatINRShort(portfolio.monthlySip)}`} />
             <HeroMetric label="Funds" value={String(holdings.length)} />
@@ -227,7 +227,7 @@ export function MfPage() {
         </div>
       </section>
 
-      <nav className="row gap-xs overflow-auto rounded border p-1">
+      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
         {[
           { id: 'explore', label: `Explore (${funds.length})`, Icon: IconExplore },
           { id: 'portfolio', label: `My investments (${holdings.length})`, Icon: IconPieChart },
@@ -281,7 +281,7 @@ export function MfPage() {
                       key={r}
                       type="button"
                       onClick={() => setMinRating(r)}
-                      className={`grow rounded border py-md text-xs bold ${ minRating === r ? 'border-accent text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
+                      className={`grow rounded border py-md text-xs bold ${ minRating === r ? 'border-accent bg-up-bg text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
                     >
                       {r === 0 ? 'Any' : `${r}★+`}
                     </button>
@@ -292,8 +292,8 @@ export function MfPage() {
           </div>
 
           {/* Comparison table on desktop */}
-          <section className="card hidden overflow-hidden">
-            <div className="grid grid-cols-[2.2fr_repeat(5,1fr)] border-b border px-lg py-md text-[10px] bold muted uppercase">
+          <section className="card hidden overflow-hidden lg:block">
+            <div className="grid grid-cols-[2.2fr_repeat(5,1fr)] border-b border-line px-lg py-md text-[10px] bold muted uppercase">
               <span>Fund</span>
               <span className="right">1Y</span>
               <span className="right">3Y</span>
@@ -306,7 +306,7 @@ export function MfPage() {
                 key={f.id}
                 type="button"
                 onClick={() => navigate(`/app/mf/${f.id}`)}
-                className="grid w-full grid-cols-[2.2fr_repeat(5,1fr)] border-b border px-lg py-md last:border-0"
+                className="grid w-full grid-cols-[2.2fr_repeat(5,1fr)] border-b border-line px-lg py-md last:border-0"
               >
                 <div className="row min-w-0 gap-md">
                   <FundLogo name={f.amcShort} />
@@ -362,7 +362,7 @@ export function MfPage() {
                     <div className="text-[10px] bold muted">3Y CAGR</div>
                   </div>
                 </div>
-                <div className="mt-lg grid-3 border-t border">
+                <div className="mt-lg grid-3 border-t border-line">
                   <MiniMetric label="NAV" value={`₹${formatINR(f.nav)}`} />
                   <MiniMetric label="Fund size" value={`₹${formatINRShort(f.aum)} Cr`} />
                   <MiniMetric label="Expense" value={`${f.expenseRatio}%`} />
@@ -376,7 +376,7 @@ export function MfPage() {
       {tab === 'portfolio' && (
         <div className="grid gap-lg">
           <section className="card overflow-hidden">
-            <div className="border-b border px-lg py-md">
+            <div className="border-b border-line px-lg py-md">
               <h3 className="row gap-sm extrabold">
                 <span className="icon-chip icon-chip-sm">
                   <IconCoins size={15} />
@@ -408,7 +408,7 @@ export function MfPage() {
                       </button>
                       <div className="shrink-0 right">
                         <div className="mono text-sm bold">₹{formatINR(h.value)}</div>
-                        <div className={`text-xs bold ${h.pnl >= 0 ? '' : ''}`}>
+                        <div className={`text-xs bold ${h.pnl >= 0 ? 'text-up' : 'text-down'}`}>
                           {h.pnl >= 0 ? '+' : ''}₹{formatINR(h.pnl)} ({h.pnlPct}%)
                         </div>
                       </div>
@@ -464,7 +464,7 @@ export function MfPage() {
                 </div>
               </div>
             )}
-            <div className="mt-lg stack gap-md border-t border text-sm">
+            <div className="mt-lg stack gap-md border-t border-line text-sm">
               <SummaryLine label="Total invested" value={`₹${formatINR(portfolio.invested)}`} />
               <SummaryLine label="Current value" value={`₹${formatINR(portfolio.current)}`} />
               <SummaryLine
@@ -498,7 +498,7 @@ export function MfPage() {
                     <div className="text-xs muted">{sip.subCategory}</div>
                   </div>
                 </div>
-                <span className={`shrink-0 rounded px-lg py-md text-[10px] bold uppercase ${ sip.status === 'active' ? ' ' : sip.status === 'paused' ? 'bg-[#fff6e8] text-gold' : ' text-muted' }`}>{sip.status}</span>
+                <span className={`shrink-0 rounded px-lg py-md text-[10px] bold uppercase ${ sip.status === 'active' ? 'bg-up-bg text-up' : sip.status === 'paused' ? 'bg-[#fff6e8] text-gold' : 'bg-surface-2 text-muted' }`}>{sip.status}</span>
               </div>
 
               <div className="mt-lg mono text-2xl bold">
@@ -567,7 +567,7 @@ export function MfPage() {
 
       {tab === 'transactions' && (
         <section className="card overflow-hidden">
-          <div className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border px-lg py-md text-[10px] bold muted uppercase">
+          <div className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border-line px-lg py-md text-[10px] bold muted uppercase">
             <span>Fund</span>
             <span className="right">Amount</span>
             <span className="right">Units</span>
@@ -581,7 +581,7 @@ export function MfPage() {
               message="Purchases and redemptions will be listed here with NAV and units."
             />
           ) : transactions.map((t) => (
-            <div key={t.id} className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border px-lg py-md last:border-0">
+            <div key={t.id} className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border-line px-lg py-md last:border-0">
               <div className="min-w-0">
                 <div className="truncate text-sm bold">{t.name}</div>
                 <div className="text-xs">
@@ -601,7 +601,7 @@ export function MfPage() {
 
       {/* Redeem modal */}
       {redeeming && (
-        <div className="fixed z-[90] grid p-lg">
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-ink/40 p-4">
           <div className="card w-full p-xl">
             <h2 className="text-lg extrabold">Redeem units</h2>
             <p className="mt-sm text-sm muted">{redeeming.name}</p>
@@ -657,7 +657,7 @@ export function MfPage() {
       {!user?.kycComplete && (
         <button
           type="button"
-          className="card card-hover row w-full /50 p-lg"
+          className="card card-hover row w-full hover:bg-surface-2/50 p-lg"
           onClick={() => navigate('/kyc')}
         >
           <div>
@@ -673,9 +673,9 @@ export function MfPage() {
 
 function HeroMetric({ label, value }) {
   return (
-    <div className="rounded border p-1.5">
-      <div className="text-[9px] bold uppercase">{label}</div>
-      <div className="mt-sm mono text-sm bold">{value}</div>
+    <div className="rounded-xl border border-white/15 bg-white/10 p-2.5">
+      <div className="text-[9px] font-bold tracking-wide text-white/50 uppercase">{label}</div>
+      <div className="mt-1 font-mono text-sm font-bold text-white">{value}</div>
     </div>
   )
 }
@@ -694,7 +694,7 @@ function FilterSelect({ label, value, onChange, options }) {
 
 function Perf({ value }) {
   return (
-    <span className={`right mono text-sm bold ${value >= 0 ? '' : ''}`}>
+    <span className={`right mono text-sm bold ${value >= 0 ? 'text-up' : 'text-down'}`}>
       {value >= 0 ? '+' : ''}{value}%
     </span>
   )
@@ -710,11 +710,11 @@ function MiniMetric({ label, value }) {
 }
 
 function SummaryLine({ label, value, tone }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : ''
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : ''
   return (
-    <div className="row">
-      <span className="muted">{label}</span>
-      <span className={`mono bold ${color}`}>{value}</span>
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-muted">{label}</span>
+      <span className={`font-mono font-bold ${color}`}>{value}</span>
     </div>
   )
 }

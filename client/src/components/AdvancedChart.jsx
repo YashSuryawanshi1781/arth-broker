@@ -537,7 +537,7 @@ function IndicatorToggle({ color, label, active, onClick }) {
   return (
     <button type="button" onClick={onClick} className="menu-item row w-full gap-md">
       <span
-        className={`row-center shrink-0 rounded border ${active ? '' : ''}`}
+        className="inline-flex shrink-0 items-center justify-center rounded border"
         style={{
           width: 18,
           height: 18,

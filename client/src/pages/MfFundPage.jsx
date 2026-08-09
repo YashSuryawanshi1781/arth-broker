@@ -156,38 +156,38 @@ export function MfFundPage() {
 
       {/* Fund header */}
       <section className="card overflow-hidden">
-        <div className="row flex-wrap gap-lg p-xl">
-          <div className="row gap-lg">
+        <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+          <div className="flex gap-4">
             <FundLogo name={fund.amcShort} size="lg" />
             <div>
-              <h1 className="text-xl extrabold">{fund.name}</h1>
-              <p className="mt-sm text-sm muted">
+              <h1 className="text-xl font-extrabold tracking-tight">{fund.name}</h1>
+              <p className="mt-0.5 text-sm text-muted">
                 {fund.plan} · {fund.option} · {fund.amc}
               </p>
-              <div className="mt-sm row flex-wrap gap-sm text-[11px]">
-                <span className="rounded px-lg bold muted">{fund.category}</span>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="rounded-lg bg-surface-2 px-2 py-0.5 font-bold text-muted">{fund.category}</span>
                 <Link
                   to={categoryHref}
-                  className="rounded px-lg bold muted"
+                  className="rounded-lg bg-surface-2 px-2 py-0.5 font-bold text-muted transition hover:bg-page-tint hover:text-page-accent"
                 >
                   {fund.subCategory}
                 </Link>
                 <RiskBadge risk={fund.risk} />
                 <Stars count={fund.rating} />
-                <span className="muted">CRISIL Rank {fund.crisilRank}</span>
+                <span className="text-muted">CRISIL Rank {fund.crisilRank}</span>
               </div>
             </div>
           </div>
-          <div className="right">
-            <div className="text-[10px] bold muted uppercase">Current NAV</div>
-            <div className="mono text-3xl bold">₹{formatINR(fund.nav)}</div>
-            <div className={`text-sm bold ${navUp ? '' : ''}`}>
+          <div className="text-right">
+            <div className="text-[10px] font-bold tracking-wide text-muted uppercase">Current NAV</div>
+            <div className="font-mono text-3xl font-bold">₹{formatINR(fund.nav)}</div>
+            <div className={`text-sm font-bold ${navUp ? 'text-up' : 'text-down'}`}>
               {navUp ? '+' : ''}{fund.navChange}% today
             </div>
           </div>
         </div>
 
-        <div className="grid-2 border-t border">
+        <div className="grid grid-cols-2 divide-x divide-y divide-line border-t border-line sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
           <Quote label="1Y return" value={`${fund.returns['1y']}%`} tone={fund.returns['1y'] >= 0 ? 'up' : 'down'} />
           <Quote label="3Y CAGR" value={`${fund.returns['3y']}%`} tone="up" />
           <Quote label="5Y CAGR" value={`${fund.returns['5y']}%`} tone="up" />
@@ -321,10 +321,10 @@ export function MfFundPage() {
               {tab === 'calculator' && <FundCalculator fund={fund} />}
 
               {tab === 'portfolio' && (
-                <div className="stack gap-md">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="mb-md text-sm bold">Asset allocation</h4>
-                    <div className="stack gap-md">
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">Asset allocation</h4>
+                    <div className="space-y-3">
                       <AllocationBar label="Equity" pct={fund.assetAllocation.equity} color="#00a878" />
                       <AllocationBar label="Debt" pct={fund.assetAllocation.debt} color="#16325c" />
                       <AllocationBar label="Cash & equivalents" pct={fund.assetAllocation.cash} color="#94a3b8" />
@@ -333,8 +333,8 @@ export function MfFundPage() {
 
                   {fund.marketCapAllocation.large > 0 && (
                     <div>
-                      <h4 className="mb-md text-sm bold">Market cap allocation</h4>
-                      <div className="stack gap-md">
+                      <h4 className="mb-3 text-sm font-bold tracking-tight">Market cap allocation</h4>
+                      <div className="space-y-3">
                         <AllocationBar label="Large cap" pct={fund.marketCapAllocation.large} color="#16325c" />
                         <AllocationBar label="Mid cap" pct={fund.marketCapAllocation.mid} color="#6366f1" />
                         <AllocationBar label="Small cap" pct={fund.marketCapAllocation.small} color="#f59e0b" />
@@ -343,15 +343,15 @@ export function MfFundPage() {
                   )}
 
                   <div>
-                    <h4 className="mb-md text-sm bold">Sector breakdown</h4>
-                    <div className="row flex-wrap gap-lg">
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">Sector breakdown</h4>
+                    <div className="flex flex-wrap items-center gap-4">
                       <Donut segments={sectorSegments} size="h-28 w-28" />
-                      <div className="w-[200px] grow stack gap-1.5">
+                      <div className="min-w-[200px] flex-1 space-y-1.5">
                         {sectorSegments.map((s) => (
-                          <div key={s.label} className="row gap-sm text-xs">
-                            <span className="h-3 w-24 shrink-0 rounded" style={{ background: s.color }} />
-                            <span className="min-w-0 grow truncate">{s.label}</span>
-                            <span className="mono bold">{s.pct}%</span>
+                          <div key={s.label} className="flex items-center gap-2 text-xs">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} />
+                            <span className="min-w-0 flex-1 truncate text-muted">{s.label}</span>
+                            <span className="font-mono font-bold">{s.pct}%</span>
                           </div>
                         ))}
                       </div>
@@ -359,24 +359,24 @@ export function MfFundPage() {
                   </div>
 
                   <div>
-                    <h4 className="mb-sm text-sm bold">Top holdings</h4>
-                    <div className="">
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Top holdings</h4>
+                    <div className="overflow-hidden rounded-xl border border-line">
                       {fund.topHoldings.map((h) => (
-                        <div key={h.name} className="row-between py-md">
+                        <div key={h.name} className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 last:border-0 hover:bg-surface-2/50">
                           <div className="min-w-0">
-                            <div className="truncate text-sm bold">{h.name}</div>
-                            <div className="text-[11px] muted">{h.sector}</div>
+                            <div className="truncate text-sm font-bold">{h.name}</div>
+                            <div className="text-[11px] text-muted">{h.sector}</div>
                           </div>
-                          <div className="row gap-md">
-                            <div className="h-3 w-24 overflow-hidden rounded">
-                              <div className="h-full rounded bg-accent" style={{ width: `${(h.pct / 12) * 100}%` }} />
+                          <div className="flex items-center gap-3">
+                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
+                              <div className="h-full rounded-full bg-accent" style={{ width: `${(h.pct / 12) * 100}%` }} />
                             </div>
-                            <span className="right mono text-sm bold">{h.pct}%</span>
+                            <span className="w-12 text-right font-mono text-sm font-bold">{h.pct}%</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <p className="mt-sm text-[11px] muted">
+                    <p className="mt-2 text-[11px] text-muted">
                       Portfolio turnover ratio: {fund.turnoverRatio}% · Holdings are indicative for demonstration.
                     </p>
                   </div>
@@ -384,18 +384,18 @@ export function MfFundPage() {
               )}
 
               {tab === 'risk' && (
-                <div className="stack gap-md">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="mb-md text-sm bold">Riskometer</h4>
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">Riskometer</h4>
                     <Riskometer level={fund.riskometer} />
-                    <p className="mt-md text-xs muted">
-                      Investors understand that their principal will be at <strong className="ink">{fund.risk.toLowerCase()}</strong> risk.
+                    <p className="mt-3 text-xs text-muted">
+                      Investors understand that their principal will be at <strong className="text-ink">{fund.risk.toLowerCase()}</strong> risk.
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="mb-md text-sm bold">Risk-adjusted metrics (3 year)</h4>
-                    <div className="grid gap-md">
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">Risk-adjusted metrics (3 year)</h4>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <MetricCard label="Alpha" value={fund.riskMetrics.alpha} hint="Excess return vs benchmark" />
                       <MetricCard label="Beta" value={fund.riskMetrics.beta} hint="Volatility vs market" />
                       <MetricCard label="Sharpe ratio" value={fund.riskMetrics.sharpe} hint="Return per unit of risk" />
@@ -405,7 +405,7 @@ export function MfFundPage() {
                     </div>
                   </div>
 
-                  <div className="rounded p-md text-xs leading-relaxed muted">
+                  <div className="rounded-xl bg-surface-2/60 px-4 py-3 text-xs leading-relaxed text-muted">
                     An alpha above zero means the fund has outperformed its benchmark after adjusting for risk.
                     A beta below 1 indicates the fund has historically been less volatile than its benchmark.
                   </div>
@@ -413,30 +413,30 @@ export function MfFundPage() {
               )}
 
               {tab === 'details' && (
-                <div className="stack gap-md">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="mb-sm text-sm bold">Investment objective</h4>
-                    <p className="text-sm leading-relaxed muted">{fund.objective}</p>
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Investment objective</h4>
+                    <p className="text-sm leading-relaxed text-muted">{fund.objective}</p>
                   </div>
 
                   <div>
-                    <h4 className="mb-sm text-sm bold">Fund managers</h4>
-                    <div className="stack gap-md">
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Fund managers</h4>
+                    <div className="space-y-2">
                       {fund.managers.map((m) => (
-                        <div key={m.name} className="row gap-md rounded border p-md">
-                          <span className="grid shrink-0 rounded text-xs bold">
+                        <div key={m.name} className="flex items-center gap-3 rounded-xl border border-line p-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-bold text-muted">
                             {m.name.split(' ').map((p) => p[0]).join('')}
                           </span>
                           <div>
-                            <div className="text-sm bold">{m.name}</div>
-                            <div className="text-[11px] muted">{m.qualification} · Managing since {m.since}</div>
+                            <div className="text-sm font-bold">{m.name}</div>
+                            <div className="text-[11px] text-muted">{m.qualification} · Managing since {m.since}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid gap-x-6">
+                  <div className="overflow-hidden rounded-xl border border-line px-4">
                     <DetailRow label="Benchmark" value={fund.benchmark} />
                     <DetailRow label="Launch date" value={fund.launchDate} />
                     <DetailRow label="Fund size (AUM)" value={`₹${formatINRShort(fund.aum)} Cr`} />
@@ -450,16 +450,16 @@ export function MfFundPage() {
               )}
 
               {tab === 'tax' && (
-                <div className="stack gap-md">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="mb-sm text-sm bold">Exit load</h4>
-                    <p className="rounded border p-md text-sm muted">{fund.exitLoad}</p>
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Exit load</h4>
+                    <p className="rounded-xl border border-line p-3 text-sm text-muted">{fund.exitLoad}</p>
                   </div>
 
                   <div>
-                    <h4 className="mb-sm text-sm bold">Taxation</h4>
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Taxation</h4>
                     {fund.taxation === 'equity' ? (
-                      <div className="grid gap-md">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <TaxCard
                           title="Short term capital gains"
                           period="Units held under 1 year"
@@ -472,7 +472,7 @@ export function MfFundPage() {
                         />
                       </div>
                     ) : (
-                      <div className="grid gap-md">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <TaxCard
                           title="All capital gains"
                           period="Any holding period"
@@ -488,8 +488,8 @@ export function MfFundPage() {
                   </div>
 
                   <div>
-                    <h4 className="mb-sm text-sm bold">Charges on Arth</h4>
-                    <div className="grid gap-x-6">
+                    <h4 className="mb-2 text-sm font-bold tracking-tight">Charges on Arth</h4>
+                    <div className="overflow-hidden rounded-xl border border-line px-4">
                       <DetailRow label="Commission" value="₹0 (direct plan)" />
                       <DetailRow label="Transaction charges" value="₹0" />
                       <DetailRow label="Account maintenance" value="₹0" />
@@ -497,7 +497,7 @@ export function MfFundPage() {
                     </div>
                   </div>
 
-                  <p className="rounded px-lg py-md text-xs muted">
+                  <p className="rounded-xl bg-surface-2/60 px-4 py-3 text-xs text-muted">
                     Tax rates shown are indicative for resident individuals and may change with the Finance Act.
                     Please consult a tax advisor for your specific situation.
                   </p>
@@ -508,7 +508,7 @@ export function MfFundPage() {
 
           {detail.peers.length > 0 && (
             <section className="card overflow-hidden">
-              <div className="border-b border px-lg py-md">
+              <div className="border-b border-line px-lg py-md">
                 <h3 className="extrabold">Similar {detail.peerScope || fund.subCategory} funds</h3>
               </div>
               <div className="">
@@ -516,7 +516,7 @@ export function MfFundPage() {
                   <button
                     key={p.id}
                     type="button"
-                    className="row w-full px-lg py-md"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-surface-2/60"
                     onClick={() => navigate(`/app/mf/${p.id}`)}
                   >
                     <div className="row min-w-0 gap-md">
@@ -529,7 +529,7 @@ export function MfFundPage() {
                       </div>
                     </div>
                     <div className="shrink-0 right">
-                      <div className="mono text-sm bold up">{p.returns['3y']}%</div>
+                      <div className="font-mono text-sm font-bold text-up">{p.returns['3y']}%</div>
                       <div className="text-[10px] muted">3Y CAGR</div>
                     </div>
                   </button>
@@ -561,17 +561,17 @@ export function MfFundPage() {
           )}
 
           <section className="card overflow-hidden">
-            <div className="grid-2">
+            <div className="grid grid-cols-2">
               <button
                 type="button"
-                className={`py-md text-sm extrabold ${ mode === 'sip' ? 'bg-accent text-white' : ' text-muted hover:text-ink' }`}
+                className={`py-3 text-sm font-extrabold transition ${mode === 'sip' ? 'bg-accent text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
                 onClick={() => setMode('sip')}
               >
                 MONTHLY SIP
               </button>
               <button
                 type="button"
-                className={`py-md text-sm extrabold ${ mode === 'lumpsum' ? 'bg-accent text-white' : ' text-muted hover:text-ink' }`}
+                className={`py-3 text-sm font-extrabold transition ${mode === 'lumpsum' ? 'bg-accent text-white' : 'bg-surface-2 text-muted hover:text-ink'}`}
                 onClick={() => setMode('lumpsum')}
               >
                 ONE-TIME
@@ -595,7 +595,7 @@ export function MfFundPage() {
                     <button
                       key={n}
                       type="button"
-                      className={`rounded border py-md text-[11px] bold ${ Number(amount) === n ? 'border-accent text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
+                      className={`rounded border py-md text-[11px] bold ${ Number(amount) === n ? 'border-accent bg-up-bg text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
                       onClick={() => setAmount(String(n))}
                     >
                       {n >= 1000 ? `${n / 1000}k` : n}
@@ -717,10 +717,10 @@ function FundCalculator({ fund }) {
             key={option.id}
             type="button"
             onClick={() => setBasis(option.id)}
-            className={`rounded border px-lg ${ basis === option.id ? 'border-page-accent bg-page-tint' : 'border-line bg-surface hover:border-page-accent' }`}
+            className={`rounded-xl border px-3 py-1.5 text-left transition ${basis === option.id ? 'border-page-accent bg-page-tint' : 'border-line bg-surface hover:border-page-accent/40'}`}
           >
             <span className="block text-[10px] bold muted uppercase">{option.label}</span>
-            <span className={`block mono text-sm bold ${option.rate >= 0 ? '' : ''}`}>
+            <span className={`block mono text-sm bold ${option.rate >= 0 ? 'text-up' : 'text-down'}`}>
               {option.rate >= 0 ? '+' : ''}{option.rate}%
             </span>
           </button>
@@ -729,13 +729,13 @@ function FundCalculator({ fund }) {
 
       <div className="grid gap-lg">
         <div className="stack gap-md">
-          <div className="row gap-xs rounded p-1">
+          <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
             {[['sip', 'Monthly SIP'], ['lumpsum', 'One-time']].map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setMode(id)}
-                className={`grow rounded px-lg text-xs bold ${ mode === id ? 'bg-white text-ink shadow-sm' : 'text-muted' }`}
+                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${mode === id ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}
               >
                 {label}
               </button>
@@ -747,7 +747,7 @@ function FundCalculator({ fund }) {
               <span className="text-sm bold">
                 {mode === 'sip' ? 'Monthly investment' : 'One-time investment'}
               </span>
-              <span className="rounded py-md mono text-sm bold up">
+              <span className="rounded-lg bg-up-bg px-2.5 py-1 font-mono text-sm font-bold text-up">
                 ₹{formatINR(amount)}
               </span>
             </div>
@@ -769,7 +769,7 @@ function FundCalculator({ fund }) {
           <div>
             <div className="mb-sm row-between gap-sm">
               <span className="text-sm bold">Investment period</span>
-              <span className="rounded py-md mono text-sm bold up">
+              <span className="rounded-lg bg-up-bg px-2.5 py-1 font-mono text-sm font-bold text-up">
                 {years} {years === 1 ? 'year' : 'years'}
               </span>
             </div>
@@ -785,15 +785,15 @@ function FundCalculator({ fund }) {
           </div>
 
           {belowMinimum && (
-            <p className="rounded px-lg py-md text-xs bold down">
+            <p className="rounded px-lg py-md text-xs font-bold text-down">
               Minimum {mode === 'sip' ? 'SIP' : 'lumpsum'} for this fund is ₹{formatINR(minimum)}.
             </p>
           )}
         </div>
 
-        <div className="rounded border /50 p-lg">
+        <div className="rounded border border-line bg-surface-2/50 p-lg">
           <GrowthDonut invested={result.invested} gain={result.gain} size={150} thickness={17} />
-          <div className="mt-lg border-t border">
+          <div className="mt-lg border-t border-line">
             <div className="text-[10px] bold muted uppercase">Projected value</div>
             <div className="mt-sm mono text-2xl bold">₹{formatINR(result.value)}</div>
             <div className="mt-sm text-xs muted">
@@ -836,19 +836,19 @@ function FundCalculator({ fund }) {
 
 function MiniStat({ label, value, tone }) {
   return (
-    <div className="rounded border px-lg py-md">
-      <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className={`mt-sm mono text-sm bold ${tone === 'up' ? '' : ''}`}>{value}</div>
+    <div className="rounded-xl border border-line px-3 py-2">
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
+      <div className={`mt-0.5 font-mono text-sm font-bold ${tone === 'up' ? 'text-up' : ''}`}>{value}</div>
     </div>
   )
 }
 
 function Quote({ label, value, tone }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
   return (
-    <div className="px-lg py-md">
-      <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
+    <div className="px-3 py-2.5">
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
+      <div className={`mt-0.5 font-mono text-sm font-bold ${color}`}>{value}</div>
     </div>
   )
 }
@@ -856,12 +856,12 @@ function Quote({ label, value, tone }) {
 function AllocationBar({ label, pct, color }) {
   return (
     <div>
-      <div className="mb-sm row text-xs">
-        <span className="bold">{label}</span>
-        <span className="mono bold">{pct}%</span>
+      <div className="mb-1 flex justify-between text-xs">
+        <span className="font-semibold">{label}</span>
+        <span className="font-mono font-bold">{pct}%</span>
       </div>
-      <div className="overflow-hidden rounded">
-        <div className="h-full rounded" style={{ width: `${pct}%`, background: color }} />
+      <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   )
@@ -869,48 +869,48 @@ function AllocationBar({ label, pct, color }) {
 
 function MetricCard({ label, value, hint }) {
   return (
-    <div className="rounded px-lg py-md">
-      <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className="mt-sm mono text-lg bold">{value}</div>
-      <div className="mt-sm text-[10px] muted">{hint}</div>
+    <div className="rounded-xl bg-surface-2 px-3 py-2.5">
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
+      <div className="mt-0.5 font-mono text-lg font-bold">{value}</div>
+      <div className="mt-0.5 text-[10px] text-muted">{hint}</div>
     </div>
   )
 }
 
 function TaxCard({ title, period, rate }) {
   return (
-    <div className="rounded border p-md">
-      <div className="text-sm bold">{title}</div>
-      <div className="mt-sm text-[11px] muted">{period}</div>
-      <div className="mt-sm mono text-sm bold accent">{rate}</div>
+    <div className="rounded-xl border border-line p-3">
+      <div className="text-sm font-bold">{title}</div>
+      <div className="mt-0.5 text-[11px] text-muted">{period}</div>
+      <div className="mt-2 font-mono text-sm font-bold text-accent">{rate}</div>
     </div>
   )
 }
 
 function DetailRow({ label, value }) {
   return (
-    <div className="row-between border-b border py-md text-sm last:border-0">
-      <span className="muted">{label}</span>
-      <span className="right bold">{value}</span>
+    <div className="flex items-center justify-between border-b border-line py-2.5 text-sm last:border-0">
+      <span className="text-muted">{label}</span>
+      <span className="text-right font-semibold">{value}</span>
     </div>
   )
 }
 
 function PositionStat({ label, value, tone }) {
-  const color = tone === 'up' ? 'up' : tone === 'down' ? 'down' : 'text-ink'
+  const color = tone === 'up' ? 'text-up' : tone === 'down' ? 'text-down' : 'text-ink'
   return (
     <div>
-      <div className="text-[10px] bold muted uppercase">{label}</div>
-      <div className={`mt-sm mono text-sm bold ${color}`}>{value}</div>
+      <div className="text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
+      <div className={`mt-0.5 font-mono text-sm font-bold ${color}`}>{value}</div>
     </div>
   )
 }
 
 function SummaryRow({ label, value, strong }) {
   return (
-    <div className="row border-b border px-lg py-md text-xs last:border-0">
-      <span className="muted">{label}</span>
-      <span className={`mono ${strong ? 'font-bold' : ''}`}>{value}</span>
+    <div className="flex justify-between border-b border-line px-3 py-2 text-xs last:border-0">
+      <span className="text-muted">{label}</span>
+      <span className={`font-mono ${strong ? 'font-bold' : ''}`}>{value}</span>
     </div>
   )
 }

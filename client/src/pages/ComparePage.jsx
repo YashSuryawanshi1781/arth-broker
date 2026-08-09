@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Button, TextField } from '@mui/material'
 import { api, formatINR } from '../lib/api'
 import { useAppSelector } from '../app/hooks'
 import { PageHeader, Screen } from '../components/Screen'
@@ -80,40 +79,43 @@ export function ComparePage() {
         subtitle="Compare 2–4 symbols on price, momentum and range"
       />
 
-      <div className="card row flex-wrap gap-md p-lg">
-        <TextField
-          size="small"
-          label="Symbols (comma separated)"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          sx={{ minWidth: 280, flex: 1 }}
-          helperText="2–4 NSE symbols, e.g. INFY,TCS,WIPRO"
-        />
-        <Button variant="contained" onClick={apply}>Compare</Button>
+      <div className="card flex flex-wrap items-end gap-3 p-4">
+        <div className="min-w-[240px] flex-1">
+          <label className="label" htmlFor="compare-symbols">Symbols (comma separated)</label>
+          <input
+            id="compare-symbols"
+            className="field font-mono"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="INFY,TCS,WIPRO"
+          />
+          <p className="mt-1.5 text-xs text-muted">2–4 NSE symbols</p>
+        </div>
+        <button type="button" className="btn btn-primary" onClick={apply}>Compare</button>
       </div>
 
-      <div className="card overflow-auto">
+      <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[10px] bold muted uppercase">
-              <th className="px-lg py-md left">Metric</th>
+            <tr className="bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">
+              <th className="px-4 py-2.5 text-left">Metric</th>
               {rows.map((r) => (
-                <th key={r.symbol} className="px-lg py-md">
-                  <Link to={`/app/stocks/${r.symbol}`} className="mono bold">{r.symbol}</Link>
-                  <div className="text-xs muted normal-case">{r.name}</div>
+                <th key={r.symbol} className="px-4 py-2.5 text-left">
+                  <Link to={`/app/stocks/${r.symbol}`} className="font-mono font-bold normal-case text-ink">{r.symbol}</Link>
+                  <div className="text-xs font-normal tracking-normal text-muted normal-case">{r.name}</div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {metrics.map((m) => (
-              <tr key={m.key} className="border-t border">
-                <td className="px-lg py-md muted">{m.label}</td>
+              <tr key={m.key} className="border-t border-line transition hover:bg-surface-2/50">
+                <td className="px-4 py-2.5 text-muted">{m.label}</td>
                 {rows.map((r) => {
                   const v = r[m.key]
-                  const tone = m.tone && v != null ? (v >= 0 ? 'up' : 'down') : ''
+                  const tone = m.tone && v != null ? (v >= 0 ? 'text-up' : 'text-down') : ''
                   return (
-                    <td key={r.symbol} className={`px-lg py-md mono bold ${tone}`}>
+                    <td key={r.symbol} className={`px-4 py-2.5 font-mono font-bold ${tone}`}>
                       {m.fmt(v)}
                     </td>
                   )

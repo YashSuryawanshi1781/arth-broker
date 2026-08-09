@@ -387,7 +387,7 @@ export function KycPage() {
 
               {step === 4 && (
                 <>
-                  <div className="rounded border /60 p-lg center">
+                  <div className="rounded-xl border border-line bg-surface-2/60 p-4 text-center">
                     <KycShieldArt accent="#00a878" className="page" width={158} height={118} />
                     <p className="mt-sm text-sm extrabold">You are one tap away</p>
                     <p className="mt-sm text-xs muted">
@@ -526,7 +526,7 @@ function OtpInput({ value, onChange, length = 6 }) {
   return (
     <div className="relative">
       <input
-        className="absolute h-full w-full cursor-text"
+        className="absolute inset-0 z-10 h-full w-full cursor-text opacity-0"
         value={value}
         inputMode="numeric"
         autoComplete="one-time-code"

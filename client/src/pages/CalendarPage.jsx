@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Chip } from '@mui/material'
 import { api } from '../lib/api'
 import { useAppDispatch } from '../app/hooks'
 import { showToast } from '../features/ui/uiSlice'
 import { PageHeader, Screen } from '../components/Screen'
 import { IconClock } from '../components/Icons'
 
-const TYPE_TONE = {
-  dividend: 'success',
-  bonus: 'info',
-  split: 'warning',
-  result: 'default',
+const TYPE_CLASS = {
+  dividend: 'bg-up-bg text-up',
+  bonus: 'bg-page-tint text-page-accent',
+  split: 'bg-[#fff6e8] text-gold',
+  result: 'bg-surface-2 text-muted',
 }
 
 export function CalendarPage() {
@@ -39,18 +38,20 @@ export function CalendarPage() {
 
       <div className="stack gap-sm">
         {sorted.map((a, i) => (
-          <div key={`${a.symbol}-${a.date}-${i}`} className="card row flex-wrap gap-md px-lg py-md">
-            <div className="mono bold" style={{ minWidth: 96 }}>{a.date}</div>
-            <Chip size="small" label={a.type} color={TYPE_TONE[a.type] || 'default'} />
-            <Link to={`/app/stocks/${a.symbol}`} className="mono bold">{a.symbol}</Link>
-            <div className="min-w-0 flex-1">{a.title}</div>
-            {a.amount != null && <span className="mono muted">₹{a.amount}</span>}
-            {a.ratio && <span className="mono muted">{a.ratio}</span>}
+          <div key={`${a.symbol}-${a.date}-${i}`} className="card flex flex-wrap items-center gap-3 px-4 py-3">
+            <div className="min-w-[96px] font-mono text-sm font-bold">{a.date}</div>
+            <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${TYPE_CLASS[a.type] || 'bg-surface-2 text-muted'}`}>
+              {a.type}
+            </span>
+            <Link to={`/app/stocks/${a.symbol}`} className="font-mono font-bold">{a.symbol}</Link>
+            <div className="min-w-0 flex-1 text-sm">{a.title}</div>
+            {a.amount != null && <span className="font-mono text-sm text-muted">₹{a.amount}</span>}
+            {a.ratio && <span className="font-mono text-sm text-muted">{a.ratio}</span>}
           </div>
         ))}
-        {loading && <div className="card px-lg py-md muted text-sm">Loading…</div>}
+        {loading && <div className="card px-4 py-8 text-center text-sm text-muted">Loading…</div>}
         {!loading && sorted.length === 0 && (
-          <div className="card px-lg py-md muted text-sm">No corporate actions in the demo calendar.</div>
+          <div className="card px-4 py-8 text-center text-sm text-muted">No corporate actions in the demo calendar.</div>
         )}
       </div>
     </Screen>

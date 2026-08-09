@@ -388,7 +388,7 @@ export function ReportsPage() {
         }
       />
 
-      <nav className="row gap-xs overflow-auto rounded border p-1">
+      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
         {Object.entries(REPORTS).map(([id, item]) => {
           const Icon = item.icon
           return (
@@ -396,7 +396,9 @@ export function ReportsPage() {
               key={id}
               type="button"
               onClick={() => switchReport(id)}
-              className={`row shrink-0 gap-sm rounded px-lg py-md text-xs bold ${ type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:text-ink' }`}
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition ${
+                type === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2 hover:text-ink'
+              }`}
             >
               <Icon size={15} />
               {item.label}
@@ -414,7 +416,7 @@ export function ReportsPage() {
       <section className="card p-md">
         <div className="row flex-wrap items-end gap-sm">
           <label className="w-[210px] grow">
-            <span className="mb-sm block text-[10px] bold muted uppercase">Search</span>
+            <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">Search</span>
             <span className="field-wrap block">
               <IconSearch size={16} className="field-icon" />
               <input
@@ -448,7 +450,7 @@ export function ReportsPage() {
           ) : null}
         </div>
 
-        <div className="mt-md row flex-wrap gap-sm border-t border">
+        <div className="mt-md row flex-wrap gap-sm border-t border-line">
           <IconFilter size={14} className="mr-1 muted" />
           {[
             ['today', 'Today'],
@@ -464,7 +466,7 @@ export function ReportsPage() {
           {filterCount > 0 && (
             <button
               type="button"
-              className="ml-auto text-xs bold down"
+              className="ml-auto text-xs font-bold text-down"
               onClick={() => {
                 setSearchDraft('')
                 update({ search: '', from: '', to: '', status: '', side: '', product: '', transactionType: '' })
@@ -477,7 +479,7 @@ export function ReportsPage() {
       </section>
 
       <section className="card overflow-hidden">
-        <div className="row flex-wrap gap-sm border-b border px-lg py-md">
+        <div className="row flex-wrap gap-sm border-b border-line px-lg py-md">
           <div>
             <h2 className="extrabold">{config.label}</h2>
             <p className="text-xs muted">{config.description}</p>
@@ -500,14 +502,14 @@ export function ReportsPage() {
             <div className="grid-2 gap-md">
               <div className="card border p-lg">
                 <p className="text-xs bold muted uppercase">STCG (≤ 1 year)</p>
-                <p className={`mono text-2xl bold mt-sm ${taxData.tax.stcg >= 0 ? 'up' : 'down'}`}>
+                <p className={`mono text-2xl bold mt-sm ${taxData.tax.stcg >= 0 ? 'text-up' : 'down'}`}>
                   ₹{formatINR(taxData.tax.stcg)}
                 </p>
                 <p className="text-xs muted mt-sm">Stub tax @ 15%: ₹{formatINR(taxData.tax.stcgTaxStub)}</p>
               </div>
               <div className="card border p-lg">
                 <p className="text-xs bold muted uppercase">LTCG (&gt; 1 year)</p>
-                <p className={`mono text-2xl bold mt-sm ${taxData.tax.ltcg >= 0 ? 'up' : 'down'}`}>
+                <p className={`mono text-2xl bold mt-sm ${taxData.tax.ltcg >= 0 ? 'text-up' : 'down'}`}>
                   ₹{formatINR(taxData.tax.ltcg)}
                 </p>
                 <p className="text-xs muted mt-sm">Stub tax @ 12.5%: ₹{formatINR(taxData.tax.ltcgTaxStub)}</p>
@@ -528,15 +530,15 @@ export function ReportsPage() {
           <div className="overflow-auto">
             <table className="w-full w-max text-xs">
               <thead>
-                <tr className="border-b border">
+                <tr className="border-b border-line">
                   {config.columns.map((column) => (
                     <th
                       key={column.key}
-                      className={`px-lg py-md bold muted uppercase ${ column.align === 'left' ? '' : '' }`}
+                      className={`px-lg py-md bold muted uppercase ${ column.align === 'left' ? 'text-left' : 'text-right' }`}
                     >
                       <button
                         type="button"
-                        className={`inline-flex gap-xs ${column.align === 'left' ? '' : ''}`}
+                        className={`inline-flex gap-xs ${column.align === 'left' ? 'text-left' : 'text-right'}`}
                         onClick={() => sort(column.key)}
                       >
                         {column.label}
@@ -550,11 +552,11 @@ export function ReportsPage() {
               </thead>
               <tbody>
                 {data.rows.map((row) => (
-                  <tr key={row.id || row.symbol} className="border-b border">
+                  <tr key={row.id || row.symbol} className="border-b border-line">
                     {config.columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`px-lg py-md ${ column.align === 'left' ? '' : '' } ${column.strong ? 'bold ink' : 'muted'}`}
+                        className={`px-lg py-md ${ column.align === 'left' ? 'text-left' : 'text-right' } ${column.strong ? 'bold ink' : 'muted'}`}
                       >
                         {column.format(row[column.key], row)}
                       </td>
@@ -587,7 +589,7 @@ function SummaryCard({ label, value, format }) {
   const output = format(value ?? 0)
   return (
     <div className="card min-w-0 p-md">
-      <div className="text-[10px] bold muted uppercase">{label}</div>
+      <div className="bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</div>
       <div className="mt-sm truncate mono text-lg bold">{output}</div>
     </div>
   )
@@ -596,7 +598,7 @@ function SummaryCard({ label, value, format }) {
 function DateField({ label, value, onChange }) {
   return (
     <label>
-      <span className="mb-sm block text-[10px] bold muted uppercase">{label}</span>
+      <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
       <input type="date" className="field w-[142px]" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   )
@@ -605,7 +607,7 @@ function DateField({ label, value, onChange }) {
 function SelectFilter({ label, value, options, onChange }) {
   return (
     <label>
-      <span className="mb-sm block text-[10px] bold muted uppercase">{label}</span>
+      <span className="mb-sm block bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">{label}</span>
       <select className="field w-[120px]" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{title(option)}</option>
@@ -621,7 +623,7 @@ function Pagination({ pagination, update }) {
   const end = Math.min(total, page * pageSize)
   const pages = pageWindow(page, totalPages)
   return (
-    <div className="row flex-wrap gap-md border-t border px-lg py-md">
+    <div className="row flex-wrap gap-md border-t border-line px-lg py-md">
       <div className="row gap-sm text-xs muted">
         <span>Showing {start}–{end} of {total}</span>
         <select className="rounded border px-lg py-md bold" value={pageSize} onChange={(event) => update({ pageSize: event.target.value, page: 1 }, false)}>
@@ -771,7 +773,7 @@ function badge(value) {
   const up = ['buy', 'credit', 'filled', 'purchase', 'allotted', 'submitted'].includes(normal)
   const down = ['sell', 'debit', 'rejected', 'cancelled', 'redemption', 'not-allotted'].includes(normal)
   return (
-    <span className={`rounded px-lg py-md text-[10px] bold ${ up ? ' ' : down ? '-bg ' : ' text-muted' }`}>
+    <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${up ? 'bg-up-bg text-up' : down ? 'bg-down-bg text-down' : 'bg-surface-2 text-muted'}`}>
       {title(value)}
     </span>
   )

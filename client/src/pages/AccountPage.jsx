@@ -154,7 +154,7 @@ export function AccountPage() {
       <div className="grid gap-lg">
       <section className="card stack gap-md p-xl">
         <div className="row gap-md">
-          <span className="grid shrink-0 rounded text-md extrabold text-mint">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand text-sm font-extrabold text-white">
             {initials}
           </span>
           <div className="min-w-0">
@@ -162,14 +162,14 @@ export function AccountPage() {
             <div className="truncate text-sm muted">{user?.email}</div>
           </div>
           <span
-            className={`ml-auto row gap-xs rounded py-md text-[10px] bold uppercase ${ user?.kycComplete ? ' ' : 'bg-[#fff6e8] text-gold' }`}
+            className={`ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${user?.kycComplete ? 'bg-up-bg text-up' : 'bg-[#fff6e8] text-gold'}`}
           >
             {user?.kycComplete ? <IconCheckCircle size={13} /> : <IconShield size={13} />}
             {user?.kycComplete ? 'KYC done' : 'KYC pending'}
           </span>
         </div>
 
-        <div className="stack gap-md rounded /70 p-md text-sm">
+        <div className="stack gap-md rounded-xl bg-surface-2/70 p-md text-sm">
           <DetailRow icon={IconIdCard} label="PAN" value={user?.pan || '—'} />
           <DetailRow
             icon={IconBank}
@@ -208,7 +208,7 @@ export function AccountPage() {
           <button className="btn btn-primary" type="submit">Save</button>
         </form>
 
-        <div className="stack gap-md border-t border">
+        <div className="stack gap-md border-t border-line">
           <h2 className="row gap-sm bold">
             <IconSparkles size={16} className="text-page-accent" />
             Learning mode
@@ -237,7 +237,7 @@ export function AccountPage() {
           </label>
         </div>
 
-        <form onSubmit={savePin} className="stack gap-md border-t border">
+        <form onSubmit={savePin} className="stack gap-md border-t border-line">
           <h2 className="row gap-sm bold">
             <IconLock size={16} className="text-page-accent" />
             App PIN
@@ -259,7 +259,7 @@ export function AccountPage() {
           <button className="btn btn-ghost" type="submit" disabled={pin.length < 4}>Save PIN</button>
         </form>
 
-        <form onSubmit={changePassword} className="stack gap-md border-t border">
+        <form onSubmit={changePassword} className="stack gap-md border-t border-line">
           <h2 className="row gap-sm bold">
             <IconLock size={16} className="text-page-accent" />
             Security
@@ -303,16 +303,16 @@ export function AccountPage() {
           {sessions.map((session) => (
             <div
               key={session.id}
-              className={`row gap-md rounded border p-md ${ session.current ? 'border-accent bg-page-tint' : 'border-line' }`}
+              className={`flex items-center gap-3 rounded-xl border p-3 ${session.current ? 'border-accent/30 bg-page-tint' : 'border-line'}`}
             >
-              <span className={`grid shrink-0 rounded ${ session.current ? ' ' : ' text-muted' }`}>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${session.current ? 'bg-up-bg text-up' : 'bg-surface-2 text-muted'}`}>
                 <IconShield size={17} />
               </span>
               <div className="min-w-0 grow">
                 <div className="row flex-wrap gap-sm">
                   <span className="truncate text-sm bold">{session.device}</span>
                   {session.current && (
-                    <span className="rounded px-lg text-[9px] extrabold up uppercase">
+                    <span className="rounded-full bg-up-bg px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-up uppercase">
                       This device
                     </span>
                   )}
@@ -344,7 +344,7 @@ export function AccountPage() {
 
         <button
           type="button"
-          className="mt-md row gap-sm text-xs bold down"
+          className="mt-md row gap-sm text-xs font-bold text-down"
           onClick={closeAllSessions}
           disabled={sessionsBusy}
         >
@@ -352,7 +352,7 @@ export function AccountPage() {
           Sign out everywhere, including this device
         </button>
 
-        <div className="border-t border" />
+        <div className="border-t border-line" />
 
         <div className="mb-md row-between">
           <h2 className="row gap-sm text-xl bold">
@@ -395,10 +395,10 @@ export function AccountPage() {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`row gap-md rounded border p-md ${n.read ? '' : ''}`}
+              className={`flex gap-3 rounded-xl border border-line p-3 ${n.read ? 'opacity-60' : 'bg-mint/10'}`}
             >
               <span
-                className={`grid shrink-0 rounded ${ n.read ? ' text-muted' : ' ' }`}
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${n.read ? 'bg-surface-2 text-muted' : 'bg-up-bg text-up'}`}
               >
                 <IconBell size={15} />
               </span>
@@ -420,7 +420,7 @@ export function AccountPage() {
           )}
         </div>
 
-        <div className="mt-xl rounded /70 p-lg text-sm">
+        <div className="mt-xl rounded-xl bg-surface-2/70 p-lg text-sm">
           <h3 className="row gap-sm bold">
             <IconInfo size={16} className="text-page-accent" />
             Help / FAQ
