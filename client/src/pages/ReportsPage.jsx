@@ -647,7 +647,7 @@ function PageButton({ label, disabled, active, onClick }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`grid min-w-0 rounded border text-xs bold ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:' }`}
+      className={`grid min-w-0 rounded border text-xs bold ${ active ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-muted hover:bg-surface-2' }`}
     >
       {label}
     </button>

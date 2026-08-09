@@ -492,12 +492,14 @@ function Field({
       <label className="label">{label}</label>
       <div className="relative">
         {prefix && (
-          <span className="absolute /2 -translate-y-1 text-sm bold muted">
+          <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm font-bold text-muted">
             {prefix}
           </span>
         )}
         <input
-          className={`field ${mono ? 'font-mono tracking-wide' : ''} ${valid ? 'field-ok' : ''} ${ invalid ? 'field-bad' : '' }`}
+          className={`field ${mono ? 'font-mono tracking-wide' : ''} ${valid ? 'field-ok' : ''} ${
+            invalid ? 'field-bad' : ''
+          }`}
           style={{
             paddingLeft: prefix ? '3rem' : undefined,
             paddingRight: valid ? '2.6rem' : undefined,
@@ -508,7 +510,7 @@ function Field({
           {...rest}
         />
         {valid && (
-          <span className="absolute /2 -translate-y-1 up">
+          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-up">
             <IconCheckCircle size={18} />
           </span>
         )}

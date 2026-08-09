@@ -209,7 +209,9 @@ export function MfFundPage() {
                     key={id}
                     type="button"
                     onClick={() => setRange(id)}
-                    className={`rounded py-md mono text-xs bold ${ range === id ? ' text-ink' : 'text-muted hover:text-ink' }`}
+                    className={`rounded-md px-2.5 py-1 font-mono text-xs font-semibold transition ${
+                      range === id ? 'bg-surface-2 text-ink' : 'text-muted hover:text-ink'
+                    }`}
                   >
                     {label}
                   </button>
@@ -220,7 +222,7 @@ export function MfFundPage() {
           </section>
 
           <section className="card overflow-hidden">
-            <div className="row gap-xs overflow-auto border-b border px-lg">
+            <div className="flex gap-1 overflow-x-auto border-b border-line px-2 pt-2">
               {[
                 ['performance', 'Performance', IconTrendingUp],
                 ['calculator', 'Calculator', IconCalculator],
@@ -233,7 +235,9 @@ export function MfFundPage() {
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`row gap-sm border-b-2 px-lg h-3 w-24 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pt-1 pb-2.5 text-sm font-bold transition ${
+                    tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
+                  }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -241,22 +245,22 @@ export function MfFundPage() {
               ))}
             </div>
 
-            <div className="p-lg">
+            <div className="p-4 md:p-5">
               {tab === 'performance' && (
-                <div className="stack gap-md">
+                <div className="space-y-6">
                   <div>
-                    <h4 className="mb-sm text-sm bold">Trailing returns</h4>
-                    <div className="overflow-auto">
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">Trailing returns</h4>
+                    <div className="overflow-x-auto rounded-xl border border-line">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border text-[10px] bold muted uppercase">
-                            <th className="py-md">Period</th>
-                            <th className="py-md right">This fund</th>
-                            <th className="py-md right">Benchmark</th>
-                            <th className="py-md right">Category avg</th>
+                          <tr className="bg-surface-2/80 text-[10px] font-bold tracking-wide text-muted uppercase">
+                            <th className="px-4 py-2.5 text-left">Period</th>
+                            <th className="px-4 py-2.5 text-right">This fund</th>
+                            <th className="px-4 py-2.5 text-right">Benchmark</th>
+                            <th className="px-4 py-2.5 text-right">Category avg</th>
                           </tr>
                         </thead>
-                        <tbody className="mono">
+                        <tbody className="font-mono">
                           {[
                             ['1 month', fund.returns['1m'], null, null],
                             ['3 months', fund.returns['3m'], null, null],
@@ -266,39 +270,44 @@ export function MfFundPage() {
                             ['5 years', fund.returns['5y'], fund.benchmarkReturns['5y'], fund.categoryReturns['5y']],
                             ['Since launch', fund.returns.all, null, null],
                           ].map(([label, self, bench, cat]) => (
-                            <tr key={label} className="border-b border last:border-0">
-                              <td className="py-md muted">{label}</td>
-                              <td className={`py-md right bold ${self >= 0 ? '' : ''}`}>
+                            <tr key={label} className="border-t border-line transition hover:bg-surface-2/50">
+                              <td className="px-4 py-2.5 font-sans text-muted">{label}</td>
+                              <td className={`px-4 py-2.5 text-right font-bold ${self >= 0 ? 'text-up' : 'text-down'}`}>
                                 {self >= 0 ? '+' : ''}{self}%
                               </td>
-                              <td className="py-md right muted">{bench != null ? `${bench}%` : '—'}</td>
-                              <td className="py-md right muted">{cat != null ? `${cat}%` : '—'}</td>
+                              <td className="px-4 py-2.5 text-right text-muted">{bench != null ? `${bench}%` : '—'}</td>
+                              <td className="px-4 py-2.5 text-right text-muted">{cat != null ? `${cat}%` : '—'}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                    <p className="mt-sm text-[11px] muted">
+                    <p className="mt-2 text-[11px] text-muted">
                       Returns up to 1 year are absolute; beyond 1 year they are compounded annually (CAGR).
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="mb-sm text-sm bold">If you had invested in this fund</h4>
-                    <div className="grid gap-md">
+                    <h4 className="mb-3 text-sm font-bold tracking-tight">If you had invested in this fund</h4>
+                    <div className="grid gap-3 sm:grid-cols-3">
                       {['1y', '3y', '5y'].map((key) => {
                         const g = detail.growth[key]
                         const gain = g.sipValue - g.sipInvested
                         return (
-                          <div key={key} className="rounded border p-md">
-                            <div className="text-[10px] bold muted uppercase">
+                          <div
+                            key={key}
+                            className="rounded-xl border border-line bg-gradient-to-b from-surface to-surface-2/40 p-4 shadow-sm"
+                          >
+                            <div className="text-[10px] font-bold tracking-wide text-muted uppercase">
                               ₹10,000 SIP · {key.toUpperCase()}
                             </div>
-                            <div className="mt-sm mono text-lg bold">₹{formatINRShort(g.sipValue)}</div>
-                            <div className="mt-sm text-[11px] muted">
+                            <div className="mt-2 font-mono text-xl font-bold tracking-tight">
+                              ₹{formatINRShort(g.sipValue)}
+                            </div>
+                            <div className="mt-1 text-[11px] text-muted">
                               Invested ₹{formatINRShort(g.sipInvested)}
                             </div>
-                            <div className="mt-sm text-xs bold up">
+                            <div className="mt-2 inline-flex rounded-md bg-up-bg px-2 py-0.5 text-xs font-bold text-up">
                               +₹{formatINRShort(gain)} gain
                             </div>
                           </div>
@@ -586,7 +595,7 @@ export function MfFundPage() {
                     <button
                       key={n}
                       type="button"
-                      className={`rounded border py-md text-[11px] bold ${ Number(amount) === n ? 'border-accent text-accent' : 'border-line text-muted hover:' }`}
+                      className={`rounded border py-md text-[11px] bold ${ Number(amount) === n ? 'border-accent text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
                       onClick={() => setAmount(String(n))}
                     >
                       {n >= 1000 ? `${n / 1000}k` : n}

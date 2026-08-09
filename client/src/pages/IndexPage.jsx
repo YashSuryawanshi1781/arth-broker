@@ -182,12 +182,14 @@ export function IndexPage() {
         </div>
       </section>
 
-      <nav className="row gap-xs overflow-auto rounded border p-1">
+      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1">
         {TABS.map(([id, label, Icon]) => (
           <button
             key={id}
             type="button"
-            className={`row gap-sm rounded px-lg py-md text-sm bold ${ tab === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:' }`}
+            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
+              tab === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2 hover:text-ink'
+            }`}
             onClick={() => setTab(id)}
           >
             <Icon size={16} />
@@ -328,7 +330,7 @@ function OptionChainPanel({ chain, error, spot }) {
               return (
                 <tr
                   key={row.strike}
-                  className={`border-b border ${row.atm ? 'bg-mint' : 'hover:'}`}
+                  className={`border-b border ${row.atm ? 'bg-mint' : 'hover:bg-surface-2'}`}
                 >
                   <td className="px-lg right mono muted">{formatINRShort(row.call.oi)}</td>
                   <td className="px-lg right mono">{row.call.iv}%</td>
@@ -384,15 +386,15 @@ function Stat({ label, value }) {
 function RangeBar({ label, low, high, value, pct }) {
   return (
     <div>
-      <div className="mb-1.5 row-between text-[11px] bold muted">
+      <div className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-muted">
         <span>{label}</span>
-        <span className="mono">
+        <span className="font-mono">
           {fmt(low)} — {fmt(high)}
         </span>
       </div>
-      <div className="relative h-3 w-24 rounded">
+      <div className="relative h-1.5 rounded-full bg-surface-2">
         <div
-          className="absolute /2 -translate-y-1 rounded border-2 border-white shadow"
+          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-white bg-brand shadow"
           style={{ left: `calc(${Math.min(100, Math.max(0, pct))}% - 6px)` }}
           title={fmt(value)}
         />

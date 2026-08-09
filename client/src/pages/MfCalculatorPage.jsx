@@ -99,7 +99,9 @@ export function MfCalculatorPage() {
           <button
             key={id}
             type="button"
-            className={`row gap-sm rounded px-lg py-md text-sm bold ${ mode === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:' }`}
+            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition ${
+              mode === id ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-surface-2 hover:text-ink'
+            }`}
             onClick={() => setMode(id)}
           >
             <Icon size={16} />

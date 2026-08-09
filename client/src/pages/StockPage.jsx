@@ -360,7 +360,7 @@ export function StockPage() {
           <AdvancedChart symbol={live.symbol} live={live} />
 
           <div className="card overflow-hidden">
-            <div className="row gap-xs overflow-auto border-b border px-lg">
+            <div className="flex gap-1 overflow-x-auto border-b border-line px-2 pt-2">
               {[
                 ['overview', 'Overview', IconCandles],
                 ['fundamentals', 'Fundamentals', IconPieChart],
@@ -371,7 +371,9 @@ export function StockPage() {
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`row gap-sm border-b-2 px-lg h-3 w-24 text-sm bold ${ tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink' }`}
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pt-1 pb-2.5 text-sm font-bold transition ${
+                    tab === id ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
+                  }`}
                 >
                   <Icon size={15} />
                   {label}
@@ -622,7 +624,7 @@ export function StockPage() {
                     <button
                       key={n}
                       type="button"
-                      className={`rounded border py-md text-[11px] bold ${ Number(qty) === n ? 'border-accent text-accent' : 'border-line text-muted hover:' }`}
+                      className={`rounded border py-md text-[11px] bold ${ Number(qty) === n ? 'border-accent text-accent' : 'border-line text-muted hover:bg-surface-2' }`}
                       onClick={() => setQty(n)}
                     >
                       {n}
@@ -800,17 +802,17 @@ function RangeBar({ label, low, high, pct }) {
   const clamped = Math.min(100, Math.max(0, pct))
   return (
     <div>
-      <div className="mb-1.5 row-between text-[10px] bold muted uppercase">
+      <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold tracking-wide text-muted uppercase">
         <span>{label}</span>
       </div>
-      <div className="relative h-3 w-24 rounded">
-        <div className="h-full rounded bg-gradient-" style={{ width: '100%' }} />
+      <div className="relative h-1.5 rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-gradient-to-r from-down via-gold to-up" style={{ width: '100%' }} />
         <div
-          className="absolute /2 -translate-x-1 -translate-y-1 rounded border-2 border-white bg-ink shadow"
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-ink shadow"
           style={{ left: `${clamped}%` }}
         />
       </div>
-      <div className="mt-1.5 row mono text-[11px] muted">
+      <div className="mt-1.5 flex justify-between font-mono text-[11px] text-muted">
         <span>₹{formatINR(low)}</span>
         <span>₹{formatINR(high)}</span>
       </div>
