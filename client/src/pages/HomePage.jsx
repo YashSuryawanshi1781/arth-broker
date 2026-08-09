@@ -109,16 +109,23 @@ export function HomePage() {
   const instrumentList = useMemo(() => Object.values(market.instruments), [market.instruments])
 
   const movers = useMemo(() => {
-    const list = instrumentList.slice()
+    const list = instrumentList
+      .filter((i) => i && i.symbol && Number.isFinite(Number(i.price)))
+      .map((i) => ({
+        ...i,
+        changePct: Number.isFinite(Number(i.changePct)) ? Number(i.changePct) : 0,
+        volume: Number.isFinite(Number(i.volume)) ? Number(i.volume) : 0,
+        price: Number(i.price),
+      }))
     if (moverTab === 'gainers') return list.sort((a, b) => b.changePct - a.changePct).slice(0, 6)
     if (moverTab === 'losers') return list.sort((a, b) => a.changePct - b.changePct).slice(0, 6)
     return list.sort((a, b) => b.volume - a.volume).slice(0, 6)
   }, [instrumentList, moverTab])
 
-  const maxMove = useMemo(
-    () => Math.max(1, ...movers.map((m) => Math.abs(m.changePct))),
-    [movers],
-  )
+  const maxMove = useMemo(() => {
+    const peak = Math.max(0, ...movers.map((m) => Math.abs(m.changePct)))
+    return peak > 0 ? peak : 1
+  }, [movers])
 
   const breadth = useMemo(() => {
     let advancing = 0
@@ -578,7 +585,7 @@ export function HomePage() {
           <section className="card overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
               <SectionTitle icon={IconTrendingUp} theme="explore">Market movers</SectionTitle>
-              <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
+              <div className="mover-tabs">
                 {[
                   ['gainers', 'Gainers'],
                   ['losers', 'Losers'],
@@ -588,47 +595,37 @@ export function HomePage() {
                     key={id}
                     type="button"
                     onClick={() => setMoverTab(id)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
-                      moverTab === id ? 'bg-white text-ink shadow-sm' : 'text-muted'
-                    }`}
+                    className={`mover-tab${moverTab === id ? ' is-active' : ''}`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="divide-y divide-line">
+            <div className="mover-list">
               {movers.map((m) => {
                 const up = m.changePct >= 0
                 const Trend = up ? IconTrendingUp : IconTrendingDown
+                const barPct = Math.max(4, Math.min(100, (Math.abs(m.changePct) / maxMove) * 100))
                 return (
                   <button
                     key={m.symbol}
                     type="button"
-                    className="grid w-full grid-cols-[1.6fr_1fr_0.9fr] items-center px-4 py-2.5 text-left transition hover:bg-surface-2/70"
+                    className="mover-row"
                     onClick={() => navigate(`/app/stocks/${m.symbol}`)}
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm font-bold">{m.symbol}</div>
-                      <div className="truncate text-xs text-muted">{m.name}</div>
-                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
-                        <div
-                          className={`h-full rounded-full ${up ? 'bg-up' : 'bg-down'}`}
-                          style={{ width: `${(Math.abs(m.changePct) / maxMove) * 100}%` }}
-                        />
+                    <div className="mover-meta">
+                      <div className="mover-sym">{m.symbol}</div>
+                      <div className="mover-name">{m.name}</div>
+                      <div className={`mover-bar ${up ? 'is-up' : 'is-down'}`}>
+                        <span style={{ width: `${barPct}%` }} />
                       </div>
                     </div>
-                    <div className="text-right font-mono text-sm font-semibold">₹{formatINR(m.price)}</div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold ${
-                          up ? 'bg-up-bg text-up' : 'bg-down-bg text-down'
-                        }`}
-                      >
-                        <Trend size={12} />
-                        {up ? '+' : ''}{m.changePct}%
-                      </span>
-                    </div>
+                    <div className="mover-price">₹{formatINR(m.price)}</div>
+                    <span className={`mover-chg ${up ? 'is-up' : 'is-down'}`}>
+                      <Trend size={12} />
+                      {up ? '+' : ''}{m.changePct.toFixed(2)}%
+                    </span>
                   </button>
                 )
               })}

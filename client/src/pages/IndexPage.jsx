@@ -66,6 +66,12 @@ export function IndexPage() {
 
   const constituents = useMemo(() => {
     const list = Object.values(market.instruments || {})
+      .filter((i) => i && i.symbol && Number.isFinite(Number(i.price)))
+      .map((i) => ({
+        ...i,
+        changePct: Number.isFinite(Number(i.changePct)) ? Number(i.changePct) : 0,
+        price: Number(i.price),
+      }))
     if (indexKey === 'BANKNIFTY') {
       return list
         .filter((i) => i.sector === 'Banking' || i.sector === 'Finance')
@@ -229,29 +235,32 @@ export function IndexPage() {
               </h3>
               <Link to="/app/explore" className="text-sm bold accent">Explore</Link>
             </div>
-            <div className="">
+            <div className="mover-list">
               {constituents.map((m) => {
                 const mUp = m.changePct >= 0
+                const Trend = mUp ? IconTrendingUp : IconTrendingDown
                 return (
                   <button
                     key={m.symbol}
                     type="button"
-                    className="row w-full px-lg py-md"
+                    className="mover-row"
                     onClick={() => navigate(`/app/stocks/${m.symbol}`)}
                   >
-                    <div className="min-w-0">
-                      <div className="mono text-sm bold">{m.symbol}</div>
-                      <div className="truncate text-xs muted">{m.name}</div>
+                    <div className="mover-meta">
+                      <div className="mover-sym">{m.symbol}</div>
+                      <div className="mover-name">{m.name}</div>
                     </div>
-                    <div className="right">
-                      <div className="mono text-sm bold">₹{formatINR(m.price)}</div>
-                      <div className={`text-xs bold ${mUp ? 'text-up' : 'text-down'}`}>
-                        {mUp ? '+' : ''}{m.changePct}%
-                      </div>
-                    </div>
+                    <div className="mover-price">₹{formatINR(m.price)}</div>
+                    <span className={`mover-chg ${mUp ? 'is-up' : 'is-down'}`}>
+                      <Trend size={12} />
+                      {mUp ? '+' : ''}{m.changePct.toFixed(2)}%
+                    </span>
                   </button>
                 )
               })}
+              {constituents.length === 0 && (
+                <p className="px-lg py-xl text-sm muted">Waiting for live movers…</p>
+              )}
             </div>
           </section>
         </div>
