@@ -9,6 +9,7 @@ import { BreadcrumbBar } from '../components/BreadcrumbBar'
 import { WatchlistButton } from '../components/WatchlistButton'
 import { PriceAlertButton } from '../components/PriceAlertButton'
 import { Screen } from '../components/Screen'
+import { AiCoach } from '../components/AiCoach'
 import { EmptySearchArt } from '../components/Illustrations'
 import { useWatchlist } from '../hooks/useWatchlist'
 import {
@@ -515,6 +516,8 @@ export function StockPage() {
               </div>
             </section>
           )}
+
+          <AiCoach mode="stock" symbol={live.symbol} compact />
         </div>
 
         <div className="stock-ticket">

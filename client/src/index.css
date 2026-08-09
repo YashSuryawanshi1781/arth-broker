@@ -3220,3 +3220,140 @@ html[data-theme="dark"] .trade-dock { background: rgb(18 28 46 / 0.94); }
   cursor: crosshair;
 }
 
+
+/* ---- Arth Coach (AI) ---------------------------------------------------- */
+.ai-coach {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 280px;
+}
+.ai-coach-compact { min-height: 240px; }
+.ai-coach-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--color-line);
+}
+.ai-coach-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.ai-coach-title h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.ai-coach-title p {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.ai-coach-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+}
+.ai-coach-badge.is-live {
+  background: var(--color-up-bg);
+  color: var(--color-up);
+}
+.ai-coach-thread {
+  flex: 1;
+  min-height: 140px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: color-mix(in srgb, var(--color-surface-2) 45%, #fff);
+}
+.ai-coach-empty p {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  line-height: 1.45;
+}
+.ai-coach-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.ai-chip {
+  border: 1px solid var(--color-line);
+  background: #fff;
+  color: var(--color-ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ai-chip:hover { border-color: var(--color-accent); color: var(--color-accent-2); }
+.ai-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-bubble {
+  max-width: 92%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.ai-bubble.is-user {
+  align-self: flex-end;
+  background: var(--color-brand);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.ai-bubble.is-assistant {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-bottom-left-radius: 4px;
+  color: var(--color-ink);
+}
+.ai-bubble.is-typing { color: var(--color-muted); font-weight: 700; }
+.ai-bubble-meta {
+  margin-top: 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ai-coach-error {
+  margin: 0;
+  padding: 0.4rem 1rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-down);
+}
+.ai-coach-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-line);
+  background: #fff;
+}
+.ai-coach-form .field { flex: 1; min-width: 0; }
+html[data-theme="dark"] .ai-coach-thread {
+  background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+}
+html[data-theme="dark"] .ai-chip,
+html[data-theme="dark"] .ai-bubble.is-assistant,
+html[data-theme="dark"] .ai-coach-form {
+  background: var(--color-surface);
+}

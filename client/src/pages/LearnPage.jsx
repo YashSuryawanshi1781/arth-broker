@@ -6,6 +6,7 @@ import { setUser } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
 import { PageHeader, Screen } from '../components/Screen'
 import { PaperWalletBanner } from '../components/PaperWalletBanner'
+import { AiCoach } from '../components/AiCoach'
 import { IconSparkles } from '../components/Icons'
 
 export function LearnPage() {
@@ -124,6 +125,8 @@ export function LearnPage() {
       />
 
       <PaperWalletBanner onReset={resetPractice} resetting={resetting} onPracticeTrade={startPracticeTrade} />
+
+      <AiCoach mode="learn" />
 
       <section className="card space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
