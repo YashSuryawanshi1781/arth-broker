@@ -257,7 +257,7 @@ function migrateColumns() {
   }
   const userCols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name)
   if (!userCols.includes('learning_mode')) {
-    db.exec('ALTER TABLE users ADD COLUMN learning_mode INTEGER NOT NULL DEFAULT 1')
+    db.exec('ALTER TABLE users ADD COLUMN learning_mode INTEGER NOT NULL DEFAULT 0')
   }
   if (!userCols.includes('nominee_name')) {
     db.exec('ALTER TABLE users ADD COLUMN nominee_name TEXT')

@@ -7,7 +7,6 @@ import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
 import { EmptyState, PageHeader, Screen } from '../components/Screen'
-import { PaperWalletBanner } from '../components/PaperWalletBanner'
 import { EmptyPortfolioArt, EmptySipArt, EmptyFundsArt } from '../components/Illustrations'
 import {
   IconBriefcase,
@@ -68,15 +67,14 @@ export function InvestmentsPage() {
     <Screen theme="investments" className="space-y-5">
       <PageHeader
         icon={IconBriefcase}
-        eyebrow="Paper portfolio"
+        eyebrow="Portfolio"
         title="Investments"
         subtitle={
           <>
-            Practice holdings from paper trades · live feed{' · '}
+            Holdings & positions · live feed{' · '}
             <span className={market.connected && market.status?.source === 'yahoo' ? 'font-bold text-up' : 'font-bold text-down'}>
               {feedLabel}
             </span>
-            {' · '}not real money
           </>
         }
         actions={
@@ -97,12 +95,10 @@ export function InvestmentsPage() {
         }
       />
 
-      <PaperWalletBanner compact />
-
       <section className="card overflow-hidden">
         <div className="hero-mesh grid gap-5 px-5 py-5 text-white md:grid-cols-[1.2fr_1fr] md:px-7">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Paper equity portfolio</p>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-white/50 uppercase">Equity portfolio</p>
             <div className="mt-2 font-mono text-3xl font-bold">₹{formatINR(totals.current)}</div>
             <div className={`mt-2 text-sm font-bold ${totals.pnl >= 0 ? 'text-[#7dffc8]' : 'text-[#ff9d9d]'}`}>
               {totals.pnl >= 0 ? '+' : ''}₹{formatINR(totals.pnl)} ({totals.pnlPct.toFixed(2)}%) overall
@@ -143,7 +139,7 @@ export function InvestmentsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
           <div>
             <h3 className="font-extrabold tracking-tight">Intraday positions (MIS)</h3>
-            <p className="text-xs text-muted">Auto square-off near 15:20 IST · paper only</p>
+            <p className="text-xs text-muted">Auto square-off near 15:20 IST</p>
           </div>
           <button
             type="button"

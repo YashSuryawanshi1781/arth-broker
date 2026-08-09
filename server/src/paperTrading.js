@@ -1,14 +1,15 @@
 /**
- * Arth is a paper-trading sandbox. Every learner gets the same starting
- * fake capital; nothing here is real money or a SEBI brokerage balance.
+ * Arth executes all orders in-app against live-style prices.
+ * The Learn section is the practice classroom (₹1L starter reset).
+ * Trading surfaces use normal broker language — not a second ledger.
  */
 export const PAPER_STARTING_CASH = 100_000
 
 export const PAPER_COPY = {
-  walletLabel: 'Paper cash',
-  portfolioLabel: 'Paper portfolio',
+  walletLabel: 'Cash',
+  portfolioLabel: 'Portfolio',
   banner:
-    'Practice wallet — ₹1,00,000 fake currency. Buy & sell freely to learn. Not real money.',
+    'Practice classroom — reset to ₹1,00,000 fake currency anytime from Learn. Trading elsewhere uses your account cash.',
 }
 
 export function paperMeta(cash) {

@@ -100,7 +100,7 @@ export function NavDrawer({ open, onClose }) {
             Log out
           </button>
           <p className="mt-2.5 text-center text-[10px] text-muted">
-            Paper-trading demo · no real money involved
+            Trading terminal · practice classroom in Learn
           </p>
         </div>
       </aside>

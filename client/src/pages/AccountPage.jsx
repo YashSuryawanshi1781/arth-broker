@@ -214,26 +214,27 @@ export function AccountPage() {
             Learning mode
           </h2>
           <p className="text-xs muted">
-            Guided tips, challenges and soft risk warnings while you practice with paper money.
+            Tips and risk checks while you learn. Paper practice reset stays on Learn —
+            the rest of Arth is your trading terminal.
           </p>
           <label className="row gap-sm text-sm">
             <input
               type="checkbox"
-              checked={user?.learningMode !== false}
+              checked={!!user?.learningMode}
               onChange={async (e) => {
                 try {
                   const data = await api('/learn/mode', { method: 'PATCH', body: { enabled: e.target.checked } })
                   dispatch(setUser(data.user))
                   dispatch(showToast({
                     type: 'success',
-                    title: e.target.checked ? 'Learning mode on' : 'Learning mode off',
+                    title: e.target.checked ? 'Learning tips on' : 'Trading mode',
                   }))
                 } catch (err) {
                   dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
                 }
               }}
             />
-            Show lessons, tour and sandbox warnings
+            Show tour and learning tips while trading
           </label>
         </div>
 

@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../app/hooks'
 
 const STEPS = [
-  { label: 'Wallet', body: 'Your paper cash lives in Funds. Add money anytime — it is simulated.', to: '/app/funds' },
-  { label: 'Explore', body: 'Browse live (delayed) NSE names, sectors and watchlists.', to: '/app/explore' },
-  { label: 'Buy', body: 'Open a stock, pick CNC or MIS, preview charges, then place a paper order.', to: '/app/explore' },
+  { label: 'Wallet', body: 'Your cash lives in Funds. Add or withdraw anytime, then trade.', to: '/app/funds' },
+  { label: 'Explore', body: 'Browse live NSE names, sectors and watchlists.', to: '/app/explore' },
+  { label: 'Buy', body: 'Open a stock, pick CNC or MIS, preview charges, then place an order.', to: '/app/explore' },
   { label: 'Orders', body: 'Track open limits, fills and cancels in the order book.', to: '/app/orders' },
-  { label: 'Portfolio', body: 'See live P&L, XIRR and sector exposure on Investments.', to: '/app/investments' },
+  { label: 'Learn', body: 'Paper practice lives in Learn — lessons, challenges, and a ₹1L reset.', to: '/app/learn' },
 ]
 
 const KEY = 'arth_onboarding_done'
@@ -52,10 +52,10 @@ export function OnboardingTour() {
 
   return (
     <Dialog open={open} onClose={finish} fullWidth maxWidth="sm">
-      <DialogTitle>Welcome to paper trading</DialogTitle>
+      <DialogTitle>Welcome to Arth</DialogTitle>
       <DialogContent className="stack gap-lg">
         <Typography color="text.secondary">
-          Arth is a learning brokerage. No real money moves — practice orders, SIPs and risk habits safely.
+          Trade from your wallet across the terminal. Use Learn when you want the practice classroom and ₹1L reset.
         </Typography>
         <Stepper activeStep={active} alternativeLabel>
           {STEPS.map((s) => (

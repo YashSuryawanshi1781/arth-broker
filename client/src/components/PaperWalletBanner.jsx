@@ -6,9 +6,10 @@ import { IconSparkles, IconWallet } from './Icons'
 const STARTING = 100000
 
 /**
- * Persistent reminder that Arth cash/holdings are paper-only practice money.
+ * Practice classroom banner — use on Learn only.
+ * Trading pages use normal Cash / Portfolio language.
  */
-export function PaperWalletBanner({ compact = false }) {
+export function PaperWalletBanner({ compact = false, onReset, resetting = false }) {
   const user = useAppSelector((s) => s.auth.user)
   const cash = user?.paperCash ?? user?.cash ?? 0
   const ready = !!user?.kycComplete
@@ -17,7 +18,7 @@ export function PaperWalletBanner({ compact = false }) {
     return (
       <div className="paper-banner paper-banner-compact">
         <IconSparkles size={14} />
-        <span>Paper trading · ₹{formatINR(cash)} practice cash · not real money</span>
+        <span>Practice classroom · ₹{formatINR(cash)} starter cash · learning only</span>
       </div>
     )
   }
@@ -28,23 +29,27 @@ export function PaperWalletBanner({ compact = false }) {
         <IconWallet size={20} />
       </div>
       <div className="paper-banner-copy">
-        <p className="paper-banner-eyebrow">Paper trading classroom</p>
+        <p className="paper-banner-eyebrow">Paper trading · Learn only</p>
         <h2>
           {ready
-            ? `Practice with ₹${formatINR(cash)} fake currency`
-            : `Get ₹${formatINR(STARTING)} paper cash after KYC`}
+            ? `Practice with ₹${formatINR(cash)} classroom cash`
+            : `Complete KYC to unlock ₹${formatINR(STARTING)} practice cash`}
         </h2>
         <p>
-          Buy & sell stocks, watch charts, and track a practice portfolio.
-          This balance is not your bank account — it&apos;s for learning only.
+          This is the practice classroom. Lessons and challenges use the same account cash —
+          reset to ₹1L here when you want a clean slate. Outside Learn, Arth behaves like your trading terminal.
         </p>
       </div>
       <div className="paper-banner-actions">
         {ready ? (
           <>
-            <Link to="/app/explore" className="btn btn-primary text-xs bold">Trade stocks</Link>
-            <Link to="/app/investments" className="btn btn-ghost text-xs bold">Paper portfolio</Link>
-            <Link to="/app/funds" className="btn btn-ghost text-xs bold">Paper wallet</Link>
+            <Link to="/app/explore" className="btn btn-primary text-xs bold">Practice a trade</Link>
+            {onReset && (
+              <button type="button" className="btn btn-ghost text-xs bold" onClick={onReset} disabled={resetting}>
+                {resetting ? 'Resetting…' : 'Reset → ₹1L'}
+              </button>
+            )}
+            <Link to="/app/funds" className="btn btn-ghost text-xs bold">Open wallet</Link>
           </>
         ) : (
           <Link to="/kyc" className="btn btn-primary text-xs bold">Complete KYC · unlock ₹1L</Link>

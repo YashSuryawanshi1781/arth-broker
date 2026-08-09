@@ -158,7 +158,7 @@ export function StockPage() {
     const cash = user?.cash || 0
     const spend = marginRequired + charges.total
     if (cash > 0 && spend / cash >= 0.85) {
-      warnings.push('This uses most of your practice cash (all-in risk).')
+      warnings.push('This uses most of your available cash (all-in risk).')
     }
     const holdingValue = (position?.value || 0) + orderValue
     const equity = cash + (position?.value || 0) + orderValue
@@ -166,7 +166,7 @@ export function StockPage() {
       warnings.push(`Heavy concentration in ${live.symbol} — diversify when you can.`)
     }
     if (product === 'intraday') {
-      warnings.push('MIS positions auto square-off near 15:20 IST in this paper sandbox.')
+      warnings.push('MIS positions auto square-off near 15:20 IST.')
     }
     return warnings
   }
@@ -657,13 +657,13 @@ export function StockPage() {
                     <ChargeLine label="GST (18%)" value={charges.gst} />
                     {user?.learningMode && (
                       <p className="text-muted">
-                        STT is a government tax on securities. GST applies on brokerage + exchange fees. These are paper stubs matching demo settlement.
+                        STT is a government tax on securities. GST applies on brokerage + exchange fees.
                       </p>
                     )}
                   </div>
                 )}
                 <div className="flex items-center justify-between border-t border-line px-3 py-2 text-xs">
-                  <span className="text-muted">Paper cash</span>
+                  <span className="text-muted">Available cash</span>
                   <span className="font-mono">₹{formatINR(user?.cash)}</span>
                 </div>
               </div>
@@ -717,10 +717,17 @@ export function StockPage() {
                 {busy ? 'Placing…' : `${side === 'buy' ? 'BUY' : 'SELL'} ${qty} ${live.symbol}`}
               </button>
 
-              <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
-                <IconShield size={13} className="text-page-accent" />
-                Paper trade · uses practice cash · not real money
-              </p>
+              {user?.learningMode ? (
+                <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
+                  <IconShield size={13} className="text-page-accent" />
+                  Learning mode · practice tips on · reset cash from Learn
+                </p>
+              ) : (
+                <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
+                  <IconShield size={13} className="text-page-accent" />
+                  Order uses available cash from your wallet
+                </p>
+              )}
             </div>
           </section>
         </div>

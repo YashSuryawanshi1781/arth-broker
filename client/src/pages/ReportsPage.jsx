@@ -121,7 +121,7 @@ const REPORTS = {
   },
   tax: {
     label: 'Tax P&L',
-    description: 'Paper STCG / LTCG stub for interview demos',
+    description: 'STCG / LTCG summary for your closed trades',
     icon: IconCalculator,
     search: '',
     defaultSort: 'symbol',
@@ -363,9 +363,9 @@ export function ReportsPage() {
     <Screen theme="reports" className="reports-page">
       <PageHeader
         icon={IconDocument}
-        eyebrow="Paper statements"
+        eyebrow="Statements"
         title="Reports"
-        subtitle="Tradebook, P&L, funds and charges from your practice account"
+        subtitle="Tradebook, P&L, funds and charges from your trading account"
         actions={
           <div className="reports-actions">
             <button type="button" className="btn btn-ghost text-xs bold" onClick={load} disabled={loading}>
@@ -527,7 +527,7 @@ export function ReportsPage() {
           <div className="reports-empty">
             <IconDocument size={32} className="text-muted" />
             <p className="font-extrabold">No records found</p>
-            <p className="text-sm text-muted">Adjust dates or filters, or place paper trades to populate this report.</p>
+            <p className="text-sm text-muted">Adjust dates or filters, or place trades to populate this report.</p>
           </div>
         ) : (
           <div className="reports-table-wrap">
@@ -581,7 +581,7 @@ export function ReportsPage() {
       )}
       {type === 'pnl' && (
         <p className="reports-footnote">
-          Realised P&L uses weighted-average buy price. Unrealised P&L uses the latest market price on your paper holdings.
+          Realised P&L uses weighted-average buy price. Unrealised P&L uses the latest market price on your holdings.
         </p>
       )}
     </Screen>

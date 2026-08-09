@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { setUser } from '../features/auth/authSlice'
 import { showToast } from '../features/ui/uiSlice'
 import { PageHeader, Screen } from '../components/Screen'
+import { PaperWalletBanner } from '../components/PaperWalletBanner'
 import { IconSparkles } from '../components/Icons'
 
 export function LearnPage() {
@@ -12,6 +13,7 @@ export function LearnPage() {
   const dispatch = useAppDispatch()
   const [data, setData] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [openLesson, setOpenLesson] = useState(null)
 
   const load = () => {
@@ -29,11 +31,37 @@ export function LearnPage() {
       const res = await api('/learn/mode', { method: 'PATCH', body: { enabled } })
       dispatch(setUser(res.user))
       setData((d) => (d ? { ...d, learningMode: enabled } : d))
-      dispatch(showToast({ type: 'success', title: enabled ? 'Learning mode on' : 'Learning mode off' }))
+      dispatch(showToast({
+        type: 'success',
+        title: enabled ? 'Learning tips on' : 'Trading mode',
+        message: enabled
+          ? 'Guided tips and risk checks while you practice.'
+          : 'Trading terminal — tips off. Practice reset stays on Learn.',
+      }))
     } catch (err) {
       dispatch(showToast({ type: 'error', title: 'Could not update', message: err.message }))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const resetPractice = async () => {
+    if (!window.confirm('Reset practice portfolio? Holdings and open orders will be cleared and cash restored to ₹1,00,000.')) {
+      return
+    }
+    setResetting(true)
+    try {
+      const res = await api('/portfolio/paper/reset', { method: 'POST' })
+      dispatch(setUser(res.user))
+      dispatch(showToast({
+        type: 'success',
+        title: 'Practice wallet reset',
+        message: '₹1,00,000 classroom cash restored. Continue lessons or place a practice trade.',
+      }))
+    } catch (err) {
+      dispatch(showToast({ type: 'error', title: 'Reset failed', message: err.message }))
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -48,18 +76,18 @@ export function LearnPage() {
   }
 
   const pct = data ? Math.round((data.completedCount / Math.max(data.totalChallenges, 1)) * 100) : 0
-  const learningOn = data?.learningMode ?? user?.learningMode ?? true
+  const learningOn = data?.learningMode ?? user?.learningMode ?? false
 
   return (
     <Screen theme="home" className="stack gap-lg">
       <PageHeader
         icon={IconSparkles}
-        eyebrow="Paper trading school"
+        eyebrow="Practice classroom"
         title="Learn"
-        subtitle="Guided practice for beginners — still simulated money only."
+        subtitle="Paper trading lives here — lessons, challenges, and a ₹1L practice reset. Elsewhere, Arth is your trading terminal."
         actions={
           <label className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm">
-            <span className="text-muted">Learning mode</span>
+            <span className="text-muted">Learning tips</span>
             <input
               type="checkbox"
               checked={learningOn}
@@ -69,6 +97,8 @@ export function LearnPage() {
           </label>
         }
       />
+
+      <PaperWalletBanner onReset={resetPractice} resetting={resetting} />
 
       <section className="card space-y-3 p-5">
         <div className="flex items-center justify-between gap-3">
@@ -81,7 +111,7 @@ export function LearnPage() {
           <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-xs text-muted">
-          Complete challenges by trading for real on Arth (paper). Sync runs automatically.
+          Complete challenges by placing real trades on Arth. Sync runs automatically.
         </p>
       </section>
 

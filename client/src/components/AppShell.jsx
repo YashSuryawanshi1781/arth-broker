@@ -123,11 +123,11 @@ export function AppShell() {
               {unread > 0 && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
             </button>
 
-            <Link to="/app/funds" className="wallet-chip hidden sm:flex" title="Paper cash — practice wallet, not real money">
+            <Link to="/app/funds" className="wallet-chip hidden sm:flex" title="Available cash">
               <IconWallet size={17} className="text-[#7dffc8]" />
               <span className="text-right leading-none">
                 <span className="block text-[9px] font-bold tracking-[0.12em] text-white/50 uppercase">
-                  Paper cash
+                  Cash
                 </span>
                 <span className="mt-0.5 block font-mono text-[13px] font-bold text-[#7dffc8]">
                   ₹{formatINR(user?.cash)}
