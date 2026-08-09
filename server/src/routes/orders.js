@@ -30,9 +30,29 @@ function mapOrder(order) {
     status: order.status,
     product: order.product,
     reservedCash: order.reserved_cash || 0,
+    isPractice: !!order.is_practice,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
   }
+}
+
+function isPracticeOrder(user, body) {
+  return !!(user?.learning_mode || body?.practice)
+}
+
+function insertOpenOrder({
+  id, userId, symbol, side, type, qty, price, product, reservedCash, now, practice,
+}) {
+  db.prepare(`
+    INSERT INTO orders (
+      id, user_id, symbol, side, type, qty, price, fill_price, status, product,
+      reserved_cash, is_practice, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'open', ?, ?, ?, ?, ?)
+  `).run(
+    id, userId, symbol, side, type, qty, price, product,
+    reservedCash || 0, practice ? 1 : 0, now, now,
+  )
 }
 
 router.get('/', authRequired, (req, res) => {
@@ -103,6 +123,7 @@ router.post('/', authRequired, (req, res) => {
   const now = Date.now()
   const id = nanoid(10)
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
+  const practice = isPracticeOrder(user, req.body)
 
   if (type === 'limit') {
     const limitPrice = Number(price)
@@ -131,10 +152,10 @@ router.post('/', authRequired, (req, res) => {
             adjustCash(user.id, -reservedCash)
             writeLedger(user.id, 'debit', reservedCash, `Block ${sym} limit`, now)
           }
-          db.prepare(`
-            INSERT INTO orders (id, user_id, symbol, side, type, qty, price, fill_price, status, product, reserved_cash, created_at, updated_at)
-            VALUES (?, ?, ?, ?, 'limit', ?, ?, NULL, 'open', ?, ?, ?, ?)
-          `).run(id, user.id, sym, side, quantity, limitPrice, product, reservedCash, now, now)
+          insertOpenOrder({
+            id, userId: user.id, symbol: sym, side, type: 'limit', qty: quantity,
+            price: limitPrice, product, reservedCash, now, practice,
+          })
           const fillPrice = side === 'buy' ? Math.min(ltp, limitPrice) : Math.max(ltp, limitPrice)
           const settled = settleFilledOrder({
             userId: user.id,
@@ -167,13 +188,13 @@ router.post('/', authRequired, (req, res) => {
         adjustCash(user.id, -reservedCash)
         writeLedger(user.id, 'debit', reservedCash, `Block ${sym} limit`, now)
       }
-      db.prepare(`
-        INSERT INTO orders (id, user_id, symbol, side, type, qty, price, fill_price, status, product, reserved_cash, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'limit', ?, ?, NULL, 'open', ?, ?, ?, ?)
-      `).run(id, user.id, sym, side, quantity, limitPrice, product, reservedCash, now, now)
+      insertOpenOrder({
+        id, userId: user.id, symbol: sym, side, type: 'limit', qty: quantity,
+        price: limitPrice, product, reservedCash, now, practice,
+      })
     })()
 
-    logActivity(user.id, 'order', `Placed ${side.toUpperCase()} ${sym}`, `Limit ${quantity} @ ₹${limitPrice}`, { orderId: id })
+    logActivity(user.id, 'order', `Placed ${side.toUpperCase()} ${sym}`, `Limit ${quantity} @ ₹${limitPrice}`, { orderId: id, practice })
     return res.status(201).json({
       order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id)),
       cash: roundMoney(db.prepare('SELECT cash FROM users WHERE id = ?').get(user.id).cash),
@@ -192,10 +213,10 @@ router.post('/', authRequired, (req, res) => {
         throw new Error(product === 'intraday' ? 'Insufficient intraday position' : 'Insufficient holdings')
       }
 
-      db.prepare(`
-        INSERT INTO orders (id, user_id, symbol, side, type, qty, price, fill_price, status, product, reserved_cash, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'market', ?, ?, NULL, 'open', ?, 0, ?, ?)
-      `).run(id, user.id, sym, side, quantity, fillPrice, product, now, now)
+      insertOpenOrder({
+        id, userId: user.id, symbol: sym, side, type: 'market', qty: quantity,
+        price: fillPrice, product, reservedCash: 0, now, practice,
+      })
 
       const settled = settleFilledOrder({
         userId: user.id,
@@ -213,7 +234,7 @@ router.post('/', authRequired, (req, res) => {
     })()
 
     addNotification(user.id, 'Order filled', `${side === 'buy' ? 'Bought' : 'Sold'} ${quantity} ${sym} @ ₹${fillPrice}`)
-    logActivity(user.id, 'order', `Filled ${side.toUpperCase()} ${sym}`, `${quantity} @ ₹${fillPrice}`, { orderId: id })
+    logActivity(user.id, 'order', `Filled ${side.toUpperCase()} ${sym}`, `${quantity} @ ₹${fillPrice}`, { orderId: id, practice })
     res.status(201).json({
       order: mapOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id)),
       cash: roundMoney(result.cash),

@@ -9,7 +9,7 @@ const STARTING = 100000
  * Practice classroom banner — use on Learn only.
  * Trading pages use normal Cash / Portfolio language.
  */
-export function PaperWalletBanner({ compact = false, onReset, resetting = false }) {
+export function PaperWalletBanner({ compact = false, onReset, resetting = false, onPracticeTrade }) {
   const user = useAppSelector((s) => s.auth.user)
   const cash = user?.paperCash ?? user?.cash ?? 0
   const ready = !!user?.kycComplete
@@ -36,14 +36,20 @@ export function PaperWalletBanner({ compact = false, onReset, resetting = false 
             : `Complete KYC to unlock ₹${formatINR(STARTING)} practice cash`}
         </h2>
         <p>
-          This is the practice classroom. Lessons and challenges use the same account cash —
-          reset to ₹1L here when you want a clean slate. Outside Learn, Arth behaves like your trading terminal.
+          Paper orders and holdings show in the trade book below. Turn on Practice trading,
+          place a buy/sell, then come back here to review them.
         </p>
       </div>
       <div className="paper-banner-actions">
         {ready ? (
           <>
-            <Link to="/app/explore" className="btn btn-primary text-xs bold">Practice a trade</Link>
+            {onPracticeTrade ? (
+              <button type="button" className="btn btn-primary text-xs bold" onClick={onPracticeTrade}>
+                Practice a trade
+              </button>
+            ) : (
+              <Link to="/app/explore" className="btn btn-primary text-xs bold">Practice a trade</Link>
+            )}
             {onReset && (
               <button type="button" className="btn btn-ghost text-xs bold" onClick={onReset} disabled={resetting}>
                 {resetting ? 'Resetting…' : 'Reset → ₹1L'}

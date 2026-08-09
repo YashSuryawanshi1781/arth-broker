@@ -3,8 +3,103 @@ import { db } from '../db.js'
 import { authRequired, publicUser } from '../auth.js'
 import { LESSONS, CHALLENGES, GLOSSARY } from '../learnContent.js'
 import { logActivity } from '../activity.js'
+import { market } from '../market.js'
+import { roundMoney } from '../money.js'
+import { PAPER_STARTING_CASH } from '../paperTrading.js'
 
 const router = Router()
+
+function mapPracticeOrder(order) {
+  return {
+    id: order.id,
+    symbol: order.symbol,
+    side: order.side,
+    type: order.type,
+    qty: order.qty,
+    price: order.price,
+    fillPrice: order.fill_price,
+    status: order.status,
+    product: order.product,
+    isPractice: !!order.is_practice,
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+  }
+}
+
+function practiceBook(userId) {
+  const cash = roundMoney(db.prepare('SELECT cash FROM users WHERE id = ?').get(userId)?.cash || 0)
+  const orders = db.prepare(`
+    SELECT * FROM orders
+    WHERE user_id = ? AND is_practice = 1
+    ORDER BY created_at DESC
+    LIMIT 40
+  `).all(userId).map(mapPracticeOrder)
+
+  const practiceSymbols = new Set(
+    db.prepare(`
+      SELECT DISTINCT symbol FROM orders
+      WHERE user_id = ? AND is_practice = 1
+    `).all(userId).map((r) => r.symbol),
+  )
+
+  const holdings = db.prepare('SELECT symbol, qty, avg_price FROM holdings WHERE user_id = ?').all(userId)
+    .filter((h) => practiceSymbols.has(h.symbol) && h.qty > 0)
+    .map((h) => {
+      const ltp = market.get(h.symbol)?.price || h.avg_price
+      const invested = roundMoney(h.qty * h.avg_price)
+      const current = roundMoney(h.qty * ltp)
+      return {
+        symbol: h.symbol,
+        qty: h.qty,
+        avgPrice: h.avg_price,
+        ltp,
+        invested,
+        current,
+        pnl: roundMoney(current - invested),
+        product: 'delivery',
+      }
+    })
+
+  const positions = db.prepare('SELECT symbol, qty, avg_price FROM positions WHERE user_id = ?').all(userId)
+    .filter((h) => practiceSymbols.has(h.symbol) && h.qty > 0)
+    .map((h) => {
+      const ltp = market.get(h.symbol)?.price || h.avg_price
+      const invested = roundMoney(h.qty * h.avg_price)
+      const current = roundMoney(h.qty * ltp)
+      return {
+        symbol: h.symbol,
+        qty: h.qty,
+        avgPrice: h.avg_price,
+        ltp,
+        invested,
+        current,
+        pnl: roundMoney(current - invested),
+        product: 'intraday',
+      }
+    })
+
+  const filled = orders.filter((o) => o.status === 'filled')
+  const open = orders.filter((o) => o.status === 'open')
+  const invested = [...holdings, ...positions].reduce((s, h) => s + h.invested, 0)
+  const current = [...holdings, ...positions].reduce((s, h) => s + h.current, 0)
+
+  return {
+    cash,
+    startingCash: PAPER_STARTING_CASH,
+    orders,
+    openOrders: open,
+    holdings,
+    positions,
+    summary: {
+      tradeCount: filled.length,
+      openCount: open.length,
+      holdingCount: holdings.length + positions.length,
+      invested: roundMoney(invested),
+      current: roundMoney(current),
+      pnl: roundMoney(current - invested),
+    },
+  }
+}
 
 router.get('/content', authRequired, (req, res) => {
   const done = new Set(
@@ -17,7 +112,12 @@ router.get('/content', authRequired, (req, res) => {
     glossary: GLOSSARY,
     completedCount: done.size,
     totalChallenges: CHALLENGES.length,
+    practice: practiceBook(req.user.id),
   })
+})
+
+router.get('/practice', authRequired, (req, res) => {
+  res.json(practiceBook(req.user.id))
 })
 
 router.post('/lessons/:id/complete', authRequired, (req, res) => {

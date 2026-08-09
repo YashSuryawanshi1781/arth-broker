@@ -251,6 +251,9 @@ function migrateColumns() {
   if (!orderCols.includes('reserved_cash')) {
     db.exec('ALTER TABLE orders ADD COLUMN reserved_cash REAL NOT NULL DEFAULT 0')
   }
+  if (!orderCols.includes('is_practice')) {
+    db.exec('ALTER TABLE orders ADD COLUMN is_practice INTEGER NOT NULL DEFAULT 0')
+  }
   const sipCols = db.prepare('PRAGMA table_info(sips)').all().map((c) => c.name)
   if (!sipCols.includes('last_run_at')) {
     db.exec('ALTER TABLE sips ADD COLUMN last_run_at INTEGER')

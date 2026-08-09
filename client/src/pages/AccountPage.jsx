@@ -214,8 +214,8 @@ export function AccountPage() {
             Learning mode
           </h2>
           <p className="text-xs muted">
-            Tips and risk checks while you learn. Paper practice reset stays on Learn —
-            the rest of Arth is your trading terminal.
+            When on, new orders are tagged as paper and show in Learn → Paper trade book.
+            Reset practice cash from Learn.
           </p>
           <label className="row gap-sm text-sm">
             <input
@@ -225,16 +225,22 @@ export function AccountPage() {
                 try {
                   const data = await api('/learn/mode', { method: 'PATCH', body: { enabled: e.target.checked } })
                   dispatch(setUser(data.user))
+                  try {
+                    if (e.target.checked) sessionStorage.setItem('arth_practice_order', '1')
+                    else sessionStorage.removeItem('arth_practice_order')
+                  } catch {
+                    /* ignore */
+                  }
                   dispatch(showToast({
                     type: 'success',
-                    title: e.target.checked ? 'Learning tips on' : 'Trading mode',
+                    title: e.target.checked ? 'Practice trading on' : 'Practice trading off',
                   }))
                 } catch (err) {
                   dispatch(showToast({ type: 'error', title: 'Failed', message: err.message }))
                 }
               }}
             />
-            Show tour and learning tips while trading
+            Practice trading · tag orders for Learn
           </label>
         </div>
 

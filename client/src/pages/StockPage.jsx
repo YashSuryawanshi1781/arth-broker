@@ -175,6 +175,12 @@ export function StockPage() {
     const quantity = Number(qty)
     setBusy(true)
     try {
+      let practice = !!user?.learningMode
+      try {
+        practice = practice || sessionStorage.getItem('arth_practice_order') === '1'
+      } catch {
+        /* ignore */
+      }
       const data = await api('/orders', {
         method: 'POST',
         body: {
@@ -184,13 +190,16 @@ export function StockPage() {
           product,
           qty: quantity,
           price: type === 'limit' ? Number(limitPrice) : undefined,
+          practice,
         },
       })
       if (data.cash != null) dispatch(setUser({ ...user, cash: data.cash }))
       else dispatch(fetchMe())
       dispatch(showToast({
         type: 'success',
-        title: data.order.status === 'open' ? 'Limit order placed' : 'Order filled',
+        title: data.order?.isPractice
+          ? (data.order.status === 'open' ? 'Practice limit placed' : 'Practice order filled')
+          : (data.order.status === 'open' ? 'Limit order placed' : 'Order filled'),
         message: `${side.toUpperCase()} ${quantity} ${live.symbol} · ${product}`,
       }))
       api('/portfolio/holdings')
@@ -717,17 +726,12 @@ export function StockPage() {
                 {busy ? 'Placing…' : `${side === 'buy' ? 'BUY' : 'SELL'} ${qty} ${live.symbol}`}
               </button>
 
-              {user?.learningMode ? (
-                <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
-                  <IconShield size={13} className="text-page-accent" />
-                  Learning mode · practice tips on · reset cash from Learn
-                </p>
-              ) : (
-                <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
-                  <IconShield size={13} className="text-page-accent" />
-                  Order uses available cash from your wallet
-                </p>
-              )}
+              <p className="flex items-center justify-center gap-2 text-center text-[10px] text-muted">
+                <IconShield size={13} className="text-page-accent" />
+                {user?.learningMode
+                  ? 'Practice trading on · this order shows in Learn'
+                  : 'Order uses available cash · enable Practice trading on Learn to tag paper orders'}
+              </p>
             </div>
           </section>
         </div>
