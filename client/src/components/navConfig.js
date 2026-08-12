@@ -18,10 +18,10 @@ import {
 export const PRIMARY_NAV = [
   { to: '/app', end: true, label: 'Home', icon: IconHome, theme: 'home' },
   { to: '/app/explore', label: 'Explore', icon: IconExplore, theme: 'explore' },
+  { to: '/app/auto', label: 'Auto Desk', icon: IconRocket, theme: 'explore' },
   { to: '/app/learn', label: 'Learn · AI', icon: IconSparkles, theme: 'home' },
   { to: '/app/investments', label: 'Investments', icon: IconBriefcase, theme: 'investments' },
   { to: '/app/orders', label: 'Orders', icon: IconList, theme: 'orders' },
-  { to: '/app/funds', label: 'Funds', icon: IconWallet, theme: 'funds' },
 ]
 
 /** Grouped navigation for the drawer. */
