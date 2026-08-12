@@ -1030,7 +1030,6 @@ select.field-has-icon { padding-left: 2.5rem; }
   position: relative;
   z-index: 8;
 }
-}
 .chart-tf {
   display: flex;
   align-items: center;
