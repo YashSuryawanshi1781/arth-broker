@@ -1296,6 +1296,52 @@ html[data-theme="dark"] .mover-tab.is-active {
 @media (min-width: 1024px) {
   .nav-rail { display: flex; }
 }
+
+/* Mobile bottom bar — Auto Desk stays one tap away on phones. */
+.app-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 35;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.15rem;
+  padding: 0.35rem 0.4rem calc(0.4rem + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid var(--color-line);
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -10px 28px rgb(11 27 51 / 0.08);
+}
+[data-theme='dark'] .app-bottom-nav,
+.dark .app-bottom-nav {
+  background: rgb(12 18 28 / 0.96);
+}
+.app-bottom-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 3.1rem;
+  padding: 0.25rem 0.15rem;
+  border-radius: 0.7rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.app-bottom-link.is-active {
+  color: var(--page-accent, #00a878);
+  background: color-mix(in srgb, var(--page-accent, #00a878) 12%, transparent);
+}
+.app-bottom-link span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .nav-link {
   position: relative;
   display: flex;

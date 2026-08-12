@@ -185,9 +185,23 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-24 lg:pb-8">
         <Outlet />
       </main>
+
+      <nav className="app-bottom-nav lg:hidden" aria-label="Primary">
+        {PRIMARY_NAV.slice(0, 5).map((l) => (
+          <NavLink
+            key={l.to}
+            to={l.to}
+            end={l.end}
+            className={({ isActive }) => `app-bottom-link ${isActive ? 'is-active' : ''}`}
+          >
+            <l.icon size={18} />
+            <span>{l.label.replace(' · AI', '')}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       <NavDrawer open={drawerOpen} onClose={closeDrawer} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
