@@ -240,6 +240,39 @@ export function initDb() {
       avg_price REAL NOT NULL,
       PRIMARY KEY (user_id, symbol)
     );
+
+    CREATE TABLE IF NOT EXISTS auto_bots (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      strategy_id TEXT NOT NULL,
+      daily_goal REAL NOT NULL,
+      day_pnl REAL NOT NULL DEFAULT 0,
+      day_key TEXT NOT NULL,
+      status TEXT NOT NULL,
+      symbol TEXT,
+      qty REAL NOT NULL DEFAULT 0,
+      entry_price REAL,
+      stop_price REAL,
+      target_price REAL,
+      product TEXT,
+      entry_order_id TEXT,
+      stop_order_id TEXT,
+      target_order_id TEXT,
+      last_signal TEXT,
+      note TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS auto_bot_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      bot_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      created_at INTEGER NOT NULL
+    );
   `)
 
   migrateColumns()

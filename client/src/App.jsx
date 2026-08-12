@@ -30,6 +30,7 @@ import { MfCalculatorPage } from './pages/MfCalculatorPage'
 import { AccountPage } from './pages/AccountPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { LearnPage } from './pages/LearnPage'
+import { AutoDeskPage } from './pages/AutoDeskPage'
 import { ComparePage } from './pages/ComparePage'
 import { ScreenerPage } from './pages/ScreenerPage'
 import { BasketPage } from './pages/BasketPage'
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="account" element={<AccountPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="learn" element={<LearnPage />} />
+          <Route path="auto" element={<AutoDeskPage />} />
           <Route path="compare" element={<ComparePage />} />
           <Route path="screener" element={<ScreenerPage />} />
           <Route path="heatmap" element={<HeatmapPage />} />

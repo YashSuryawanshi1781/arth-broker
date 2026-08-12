@@ -4,6 +4,7 @@ import { processDueSips } from './sipRunner.js'
 import { processPriceAlerts } from './alertRunner.js'
 import { processConditionalOrders } from './conditionalRunner.js'
 import { processAutoSquareOff } from './squareOffRunner.js'
+import { processAutoBots } from './autoBotRunner.js'
 
 export const INSTRUMENTS = [
   { symbol: 'RELIANCE', name: 'Reliance Industries', sector: 'Energy', price: 2845.5, industry: 'Refineries & Petrochemicals', mcap: 1925000, pe: 28.4, pb: 2.1, eps: 100.2, divYield: 0.35, roe: 8.9, week52High: 3217, week52Low: 2220, faceValue: 10, about: 'India\'s largest conglomerate with operations spanning oil-to-chemicals, retail, digital services and new energy.' },
@@ -356,6 +357,11 @@ class MarketEngine {
         processConditionalOrders(prices)
       } catch (err) {
         console.warn('Conditional runner error:', err.message)
+      }
+      try {
+        processAutoBots()
+      } catch (err) {
+        console.warn('Auto bot runner error:', err.message)
       }
       try {
         processAutoSquareOff()

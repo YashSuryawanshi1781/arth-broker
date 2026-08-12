@@ -34,6 +34,11 @@ export function processConditionalOrders(priceMap) {
 
     try {
       db.transaction(() => {
+        const stillOpen = db
+          .prepare("SELECT id FROM conditional_orders WHERE id = ? AND status = 'open'")
+          .get(row.id)
+        if (!stillOpen) return
+
         db.prepare(`
           INSERT INTO orders (id, user_id, symbol, side, type, qty, price, fill_price, status, product, reserved_cash, created_at, updated_at)
           VALUES (?, ?, ?, ?, 'market', ?, ?, NULL, 'open', ?, 0, ?, ?)
@@ -67,7 +72,18 @@ export function processConditionalOrders(priceMap) {
           SET status = 'triggered', linked_order_id = ?, triggered_at = ?, updated_at = ?
           WHERE id = ?
         `).run(orderId, now, now, row.id)
+
+        // OCO: cancel sibling open legs on same symbol/side (stop vs target)
+        db.prepare(`
+          UPDATE conditional_orders
+          SET status = 'cancelled', updated_at = ?
+          WHERE user_id = ? AND symbol = ? AND side = ? AND product = ?
+            AND status = 'open' AND id != ?
+        `).run(now, row.user_id, row.symbol, row.side, row.product, row.id)
       })()
+
+      const triggered = db.prepare('SELECT status FROM conditional_orders WHERE id = ?').get(row.id)
+      if (triggered?.status !== 'triggered') continue
 
       addNotification(
         row.user_id,

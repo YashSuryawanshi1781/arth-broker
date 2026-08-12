@@ -32,6 +32,7 @@ export const DRAWER_SECTIONS = [
       { to: '/app', end: true, label: 'Dashboard', icon: IconHome, theme: 'home', hint: 'Portfolio overview' },
       { to: '/app/explore', label: 'Stocks', icon: IconCandles, theme: 'explore', hint: 'Live NSE universe' },
       { to: '/app/learn', label: 'Learn · AI', icon: IconSparkles, theme: 'home', hint: 'Coach, lessons & paper book' },
+      { to: '/app/auto', label: 'Auto Desk', icon: IconRocket, theme: 'explore', hint: 'Daily goal · auto entry & SL/TP' },
       { to: '/app/compare', label: 'Compare', icon: IconCandles, theme: 'explore', hint: 'Side-by-side stocks' },
       { to: '/app/screener', label: 'Screener', icon: IconExplore, theme: 'explore', hint: 'Technical filters' },
       { to: '/app/heatmap', label: 'Heatmap', icon: IconExplore, theme: 'explore', hint: 'Sector drill-down' },

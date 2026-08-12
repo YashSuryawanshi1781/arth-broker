@@ -504,6 +504,13 @@ export function HomePage() {
             icon: IconSparkles,
             theme: 'home',
           },
+          {
+            title: 'Auto Desk',
+            sub: 'Daily goal · auto SL/TP',
+            to: '/app/auto',
+            icon: IconRocket,
+            theme: 'explore',
+          },
         ].map((q) => (
           <Link
             key={q.to}

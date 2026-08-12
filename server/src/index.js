@@ -26,6 +26,7 @@ import conditionalRoutes from './routes/conditionalOrders.js'
 import goalsRoutes from './routes/goals.js'
 import adminRoutes from './routes/admin.js'
 import aiRoutes from './routes/ai.js'
+import autoRoutes from './routes/auto.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -124,6 +125,11 @@ app.use(
   '/api/ai',
   rateLimit({ windowMs: 60_000, max: 30 }),
   aiRoutes,
+)
+app.use(
+  '/api/auto',
+  rateLimit({ windowMs: 60_000, max: 40 }),
+  autoRoutes,
 )
 
 // Optional: serve the Vite build from the same process (Render one-box deploy).
