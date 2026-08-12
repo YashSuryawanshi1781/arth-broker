@@ -41,7 +41,7 @@ import {
   pointsNeeded,
   saveDrawings,
 } from '../lib/chartDrawings.js'
-import { IconMaximize, IconTrash } from './Icons'
+import { IconMaximize } from './Icons'
 
 export function chartPagePath({ symbol, candlesPath }) {
   if (candlesPath && candlesPath.includes('/indices/')) {
@@ -862,55 +862,52 @@ export function AdvancedChart({ symbol, live, candlesPath, variant = 'embedded' 
                   style={{ inset: 0, zIndex: 50, cursor: 'default', background: 'transparent', border: 0 }}
                   onClick={() => setShowTools(false)}
                 />
-                <div className="menu-pop stack chart-tools-menu" style={{ maxHeight: 380, overflow: 'auto', padding: 0 }}>
-                  {DRAW_TOOL_GROUPS.map((group, gi) => (
-                    <div key={group.id}>
-                      <div
-                        className="px-lg py-md text-xs bold muted uppercase"
-                        style={gi > 0 ? { borderTop: '1px solid var(--color-line)' } : undefined}
-                      >
-                        {group.label}
+                <div className="menu-pop chart-tools-menu">
+                  {DRAW_TOOL_GROUPS.map((group) => (
+                    <div key={group.id} className="chart-tools-section">
+                      <div className="chart-tools-heading">{group.label}</div>
+                      <div className="chart-tools-grid">
+                        {group.tools.map((tool) => (
+                          <button
+                            key={tool.id}
+                            type="button"
+                            title={tool.tip}
+                            className={`chart-tool-item${drawTool === tool.id ? ' is-active' : ''}`}
+                            onClick={() => {
+                              setDrawTool(tool.id)
+                              setDraft(null)
+                              if (tool.id === 'pan') setSelectedId(null)
+                              setShowTools(false)
+                            }}
+                          >
+                            <span
+                              className="chart-tool-dot"
+                              style={{ background: DRAW_COLORS[tool.id] || '#64748b' }}
+                            />
+                            {tool.label}
+                          </button>
+                        ))}
                       </div>
-                      {group.tools.map((tool) => (
-                        <ToolMenuItem
-                          key={tool.id}
-                          label={tool.label}
-                          tip={tool.tip}
-                          active={drawTool === tool.id}
-                          color={DRAW_COLORS[tool.id] || '#64748b'}
-                          onClick={() => {
-                            setDrawTool(tool.id)
-                            setDraft(null)
-                            if (tool.id === 'pan') setSelectedId(null)
-                            setShowTools(false)
-                          }}
-                        />
-                      ))}
                     </div>
                   ))}
-                  <div className="border" style={{ borderWidth: '1px 0 0' }}>
-                    <div className="px-lg py-md text-xs bold muted uppercase">Drawings</div>
-                    <button type="button" className="menu-item row w-full gap-md" onClick={undoDrawing} disabled={!drawings.length}>
-                      <span className="ink">Undo last</span>
-                    </button>
-                    <button type="button" className="menu-item row w-full gap-md" onClick={deleteSelected} disabled={!selectedId}>
-                      <span className="ink">Delete selected</span>
-                      <IconTrash size={14} className="ml-auto muted" />
-                    </button>
-                    <button type="button" className="menu-item row w-full gap-md" onClick={clearAllDrawings} disabled={!drawings.length}>
-                      <span className="ink">Clear all</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="menu-item row w-full gap-md"
-                      onClick={() => {
-                        persistDrawings(drawings, { toast: true })
-                        setShowTools(false)
-                      }}
-                      disabled={!drawings.length}
-                    >
-                      <span className="ink">Save drawings</span>
-                    </button>
+                  <div className="chart-tools-section">
+                    <div className="chart-tools-heading">Drawings</div>
+                    <div className="chart-tools-grid">
+                      <button type="button" className="chart-tool-item" onClick={undoDrawing} disabled={!drawings.length}>Undo</button>
+                      <button type="button" className="chart-tool-item" onClick={deleteSelected} disabled={!selectedId}>Delete</button>
+                      <button type="button" className="chart-tool-item" onClick={clearAllDrawings} disabled={!drawings.length}>Clear</button>
+                      <button
+                        type="button"
+                        className="chart-tool-item is-save"
+                        onClick={() => {
+                          persistDrawings(drawings, { toast: true })
+                          setShowTools(false)
+                        }}
+                        disabled={!drawings.length}
+                      >
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>
@@ -1333,34 +1330,6 @@ function IndicatorToggle({ color, label, active, onClick }) {
       </span>
       <span className={active ? 'ink' : 'muted'}>{label}</span>
       <span className="ml-auto rounded shrink-0" style={{ width: 8, height: 8, background: color, opacity: active ? 1 : 0.3 }} />
-    </button>
-  )
-}
-
-function ToolMenuItem({ color, label, tip, active, onClick }) {
-  return (
-    <button type="button" onClick={onClick} title={tip} className="menu-item row w-full gap-md">
-      <span
-        className="inline-flex shrink-0 items-center justify-center rounded border"
-        style={{
-          width: 18,
-          height: 18,
-          background: active ? color : 'transparent',
-          borderColor: active ? 'transparent' : 'var(--color-line)',
-          color: '#fff',
-        }}
-      >
-        {active && (
-          <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M2.5 6.5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </span>
-      <span className="min-w-0">
-        <span className={`block ${active ? 'ink' : 'muted'}`}>{label}</span>
-        <span className="block text-[10px] muted" style={{ fontWeight: 600 }}>{tip}</span>
-      </span>
-      <span className="ml-auto rounded shrink-0" style={{ width: 8, height: 8, background: color, opacity: active ? 1 : 0.35 }} />
     </button>
   )
 }

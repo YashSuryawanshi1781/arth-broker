@@ -1006,7 +1006,7 @@ select.field-has-icon { padding-left: 2.5rem; }
   border: 1px solid var(--color-line);
   border-radius: 0.9rem;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
 }
 .chart-shell.is-page {
   border: 0;
@@ -1027,6 +1027,9 @@ select.field-has-icon { padding-left: 2.5rem; }
   padding: 0.4rem 0.65rem;
   border-bottom: 1px solid var(--color-line);
   background: #fff;
+  position: relative;
+  z-index: 8;
+}
 }
 .chart-tf {
   display: flex;
@@ -1273,7 +1276,7 @@ html[data-theme="dark"] .mover-tab.is-active {
   font-size: 0.68rem;
   background: #fff;
 }
-.chart-canvas-wrap { background: #fff; }
+.chart-canvas-wrap { background: #fff; overflow: hidden; border-radius: 0 0 0.9rem 0.9rem; }
 
 /* A recessed trench cut into the header slab. */
 .nav-rail {
@@ -1452,7 +1455,76 @@ html[data-theme="dark"] .mover-tab.is-active {
 .menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
 .menu-item-danger { color: var(--color-down); }
 .chart-tools-menu {
-  width: min(18.5rem, calc(100vw - 1.5rem));
+  width: min(17.5rem, calc(100vw - 1.25rem));
+  max-height: min(28rem, calc(100vh - 8rem));
+  overflow: auto;
+  padding: 0.55rem 0.55rem 0.65rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted) 45%, transparent) transparent;
+}
+.chart-tools-menu::-webkit-scrollbar { width: 6px; }
+.chart-tools-menu::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted) 40%, transparent);
+  border-radius: 99px;
+}
+.chart-tools-section + .chart-tools-section {
+  margin-top: 0.55rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-line);
+}
+.chart-tools-heading {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  padding: 0 0.2rem 0.35rem;
+}
+.chart-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.28rem;
+}
+.chart-tool-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid transparent;
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+  border-radius: 0.5rem;
+  padding: 0.42rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.1;
+}
+.chart-tool-item:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  background: #fff;
+}
+.chart-tool-item.is-active {
+  background: color-mix(in srgb, var(--color-accent) 12%, #fff);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--color-accent-2);
+}
+.chart-tool-item.is-save {
+  background: var(--color-brand);
+  color: #fff;
+}
+.chart-tool-item:disabled { opacity: 0.38; cursor: not-allowed; }
+.chart-tool-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+html[data-theme="dark"] .chart-tool-item:hover,
+html[data-theme="dark"] .chart-tool-item.is-active {
+  background: var(--color-surface);
 }
 .menu-kyc {
   display: inline-flex;
