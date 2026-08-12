@@ -450,6 +450,13 @@ export function HomePage() {
                   <button
                     type="button"
                     className="btn border border-white/20 bg-white/10 text-xs text-white hover:bg-white/15"
+                    onClick={() => navigate('/app/auto')}
+                  >
+                    Auto Desk · set goal
+                  </button>
+                  <button
+                    type="button"
+                    className="btn border border-white/20 bg-white/10 text-xs text-white hover:bg-white/15"
                     onClick={() => navigate('/app/investments')}
                   >
                     View portfolio
