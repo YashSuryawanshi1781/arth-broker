@@ -110,7 +110,7 @@ export function LearnPage() {
         icon={IconSparkles}
         eyebrow="Practice classroom"
         title="Learn"
-        subtitle="Paper trades land here. Turn on Practice trading, place an order, and your book updates below."
+        subtitle="Arth Coach is the chat card below. Ask about CNC/MIS, challenges, or your paper book."
         actions={
           <label className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm">
             <span className="text-muted">Practice trading</span>

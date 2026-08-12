@@ -6,6 +6,7 @@ import { useLiveMarket } from '../hooks/useLiveMarket'
 import { enrichHoldings, portfolioTotals } from '../lib/livePortfolio'
 import { daysUntil, nseSession, sessionChip } from '../lib/marketSession'
 import { EmptyState, Screen } from '../components/Screen'
+import { AiCoach } from '../components/AiCoach'
 import { Skeleton, SkeletonRows } from '../components/Skeleton'
 import { WatchlistButton } from '../components/WatchlistButton'
 import { PAGE_THEMES } from '../lib/theme'
@@ -475,6 +476,8 @@ export function HomePage() {
         </div>
       </section>
 
+      <AiCoach mode="learn" compact />
+
       {/* Quick actions */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
@@ -495,8 +498,8 @@ export function HomePage() {
             theme: 'orders',
           },
           {
-            title: 'Learn',
-            sub: 'Practice classroom · ₹1L',
+            title: 'AI Coach',
+            sub: 'Ask CNC, MIS, risk',
             to: '/app/learn',
             icon: IconSparkles,
             theme: 'home',
