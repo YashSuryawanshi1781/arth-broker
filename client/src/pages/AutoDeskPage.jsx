@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, formatINR } from '../lib/api'
 import { useAppDispatch } from '../app/hooks'
@@ -6,14 +6,16 @@ import { showToast } from '../features/ui/uiSlice'
 import { PageHeader, Screen } from '../components/Screen'
 import { IconAlertTriangle, IconCandles, IconRefresh, IconRocket, IconSparkles } from '../components/Icons'
 
-const GOAL_PRESETS = [500, 1000, 2000, 5000]
+const MONTHLY_PRESETS = [20000, 50000, 100000]
+const DAILY_PRESETS = [500, 1000, 2000, 5000]
+const TRADING_DAYS = 22
 
 function statusLabel(status) {
   switch (status) {
     case 'armed':
-      return 'Scanning for entry'
+      return 'Hands-free · scanning'
     case 'in_trade':
-      return 'In trade · SL & TP live'
+      return 'In trade · auto SL & TP'
     case 'goal_hit':
       return 'Daily paper goal hit'
     case 'stopped':
@@ -34,8 +36,12 @@ export function AutoDeskPage() {
   const dispatch = useAppDispatch()
   const [strategies, setStrategies] = useState([])
   const [disclaimer, setDisclaimer] = useState('')
+  const [planPeriod, setPlanPeriod] = useState('monthly')
+  const [monthlyGoal, setMonthlyGoal] = useState(50000)
+  const [dailyGoal, setDailyGoal] = useState(Math.round(50000 / TRADING_DAYS))
+  const [maxDailyLoss, setMaxDailyLoss] = useState(1500)
+  const [instrumentMode, setInstrumentMode] = useState('stocks')
   const [strategyId, setStrategyId] = useState('momentum_breakout')
-  const [dailyGoal, setDailyGoal] = useState(2000)
   const [picks, setPicks] = useState([])
   const [bot, setBot] = useState(null)
   const [events, setEvents] = useState([])
@@ -44,6 +50,13 @@ export function AutoDeskPage() {
 
   const selected = strategies.find((s) => s.id === strategyId) || strategies[0]
 
+  const derivedDaily = useMemo(() => {
+    if (planPeriod === 'monthly') {
+      return Math.max(100, Math.round(Number(monthlyGoal) / TRADING_DAYS) || 0)
+    }
+    return Number(dailyGoal) || 0
+  }, [planPeriod, monthlyGoal, dailyGoal])
+
   const loadBot = useCallback(() => {
     return api('/auto/bot')
       .then((res) => {
@@ -51,60 +64,91 @@ export function AutoDeskPage() {
         setEvents(res.events || [])
         if (res.bot?.strategyId) setStrategyId(res.bot.strategyId)
         if (res.bot?.dailyGoal) setDailyGoal(Number(res.bot.dailyGoal))
+        if (res.bot?.monthlyGoal) {
+          setMonthlyGoal(Number(res.bot.monthlyGoal))
+          setPlanPeriod('monthly')
+        }
+        if (res.bot?.maxDailyLoss) setMaxDailyLoss(Number(res.bot.maxDailyLoss))
+        if (res.bot?.instrumentMode) setInstrumentMode(res.bot.instrumentMode)
       })
       .catch(() => {})
   }, [])
 
-  const loadPicks = useCallback((id) => {
-    return api(`/auto/picks?strategy=${encodeURIComponent(id || strategyId)}`)
+  const loadPicks = useCallback((id, mode) => {
+    const sid = id || strategyId
+    const m = mode || instrumentMode
+    return api(`/auto/picks?strategy=${encodeURIComponent(sid)}&mode=${encodeURIComponent(m)}`)
       .then((res) => setPicks(res.picks || []))
       .catch(() => setPicks([]))
-  }, [strategyId])
+  }, [strategyId, instrumentMode])
+
+  const loadStrategies = useCallback(async (mode) => {
+    const strat = await api(`/auto/strategies?mode=${encodeURIComponent(mode || instrumentMode)}`)
+    setStrategies(strat.strategies || [])
+    setDisclaimer(strat.disclaimer || '')
+    const ids = (strat.strategies || []).map((s) => s.id)
+    setStrategyId((prev) => (ids.includes(prev) ? prev : ids[0] || 'momentum_breakout'))
+  }, [instrumentMode])
 
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const strat = await api('/auto/strategies')
-      setStrategies(strat.strategies || [])
-      setDisclaimer(strat.disclaimer || '')
-      const sid = strat.strategies?.[0]?.id || 'momentum_breakout'
-      setStrategyId((prev) => prev || sid)
-      await Promise.all([loadBot(), loadPicks(strategyId || sid)])
+      await loadStrategies(instrumentMode)
+      await Promise.all([loadBot(), loadPicks(strategyId, instrumentMode)])
     } catch (err) {
       dispatch(showToast({ type: 'error', title: 'Auto desk unavailable', message: err.message }))
     } finally {
       setLoading(false)
     }
-  }, [dispatch, loadBot, loadPicks, strategyId])
+  }, [dispatch, loadBot, loadPicks, loadStrategies, instrumentMode, strategyId])
 
   useEffect(() => {
     refresh()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    loadPicks(strategyId)
-  }, [strategyId, loadPicks])
+    loadStrategies(instrumentMode).catch(() => {})
+  }, [instrumentMode, loadStrategies])
+
+  useEffect(() => {
+    loadPicks(strategyId, instrumentMode)
+  }, [strategyId, instrumentMode, loadPicks])
+
+  useEffect(() => {
+    if (planPeriod === 'monthly') {
+      setDailyGoal(Math.max(100, Math.round(Number(monthlyGoal) / TRADING_DAYS) || 100))
+    }
+  }, [planPeriod, monthlyGoal])
 
   useEffect(() => {
     const t = setInterval(() => {
       loadBot()
-      loadPicks(strategyId)
+      loadPicks(strategyId, instrumentMode)
     }, 8000)
     return () => clearInterval(t)
-  }, [loadBot, loadPicks, strategyId])
+  }, [loadBot, loadPicks, strategyId, instrumentMode])
 
   const arm = async () => {
     setArming(true)
     try {
+      const goal = derivedDaily
       const res = await api('/auto/bot', {
         method: 'POST',
-        body: { strategyId, dailyGoal: Number(dailyGoal) },
+        body: {
+          strategyId,
+          dailyGoal: goal,
+          monthlyGoal: planPeriod === 'monthly' ? Number(monthlyGoal) : null,
+          maxDailyLoss: Number(maxDailyLoss),
+          instrumentMode,
+          stopPct: selected?.stopPct,
+          targetPct: selected?.targetPct,
+        },
       })
       setBot(res.bot)
       dispatch(showToast({
         type: 'success',
-        title: 'Auto desk armed',
-        message: `Paper goal ${formatINR(dailyGoal)} · hunting setups`,
+        title: 'Hands-free desk armed',
+        message: `Daily paper target ${formatINR(goal)} · bot will buy & sell for you`,
       }))
       await loadBot()
     } catch (err) {
@@ -136,7 +180,7 @@ export function AutoDeskPage() {
         icon={IconRocket}
         eyebrow="Paper auto desk"
         title="Baba Auto Desk"
-        subtitle="Set a daily paper goal · pick a strategy · bot handles entry, stop & target"
+        subtitle="Set monthly/daily plan · affordable stop · bot buys & sells stocks or options for you"
         actions={(
           <button type="button" className="btn btn-ghost btn-sm" onClick={refresh} disabled={loading}>
             <IconRefresh size={16} />
@@ -149,50 +193,151 @@ export function AutoDeskPage() {
         <div className="flex gap-2">
           <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-700" />
           <div>
-            <p className="font-bold">Paper simulation only — not a profit guarantee</p>
+            <p className="font-bold">Hands-free paper bot — not a profit guarantee</p>
             <p className="mt-1 text-amber-900/90">
-              {disclaimer || 'Orders use Arth practice cash with stop-loss and target. Not SEBI advice. Goals are targets, not promises.'}
+              {disclaimer || 'You set the plan. Bot auto-enters and exits with SL/TP. Paper only · not SEBI advice.'}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">
           <section className="card p-4">
-            <h2 className="text-sm font-extrabold text-ink">1 · Daily paper goal</h2>
-            <p className="mt-1 text-xs text-muted">Bot sizes risk toward this target and pauses after ~1.5× loss.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {GOAL_PRESETS.map((g) => (
+            <h2 className="text-sm font-extrabold text-ink">1 · Your money plan</h2>
+            <p className="mt-1 text-xs text-muted">
+              Example: ₹50,000 / month → ~₹{formatINR(Math.round(50000 / TRADING_DAYS))} per trading day ({TRADING_DAYS} sessions).
+            </p>
+
+            <div className="mt-3 flex gap-2">
+              {[
+                ['monthly', 'Monthly goal'],
+                ['daily', 'Daily goal'],
+              ].map(([id, label]) => (
                 <button
-                  key={g}
+                  key={id}
                   type="button"
-                  className={`btn btn-sm ${Number(dailyGoal) === g ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setDailyGoal(g)}
                   disabled={live}
+                  className={`btn btn-sm flex-1 ${planPeriod === id ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setPlanPeriod(id)}
                 >
-                  {formatINR(g)}
+                  {label}
                 </button>
               ))}
             </div>
-            <label className="mt-3 block text-xs font-bold text-muted">
-              Custom goal (₹)
+
+            {planPeriod === 'monthly' ? (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {MONTHLY_PRESETS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`btn btn-sm ${Number(monthlyGoal) === g ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setMonthlyGoal(g)}
+                      disabled={live}
+                    >
+                      {formatINR(g)}/mo
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 block text-xs font-bold text-muted">
+                  Monthly paper target (₹)
+                  <input
+                    type="number"
+                    min={1000}
+                    max={5000000}
+                    step={1000}
+                    className="input mt-1 w-full"
+                    value={monthlyGoal}
+                    disabled={live}
+                    onChange={(e) => setMonthlyGoal(e.target.value)}
+                  />
+                </label>
+                <div className="mt-3 rounded-lg bg-surface px-3 py-2 text-sm">
+                  <span className="text-muted">Daily target ≈ </span>
+                  <span className="font-extrabold tabular-nums text-ink">{formatINR(derivedDaily)}</span>
+                  <span className="text-muted"> · {TRADING_DAYS} trading days</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {DAILY_PRESETS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`btn btn-sm ${Number(dailyGoal) === g ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setDailyGoal(g)}
+                      disabled={live}
+                    >
+                      {formatINR(g)}
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 block text-xs font-bold text-muted">
+                  Daily paper target (₹)
+                  <input
+                    type="number"
+                    min={100}
+                    max={100000}
+                    step={100}
+                    className="input mt-1 w-full"
+                    value={dailyGoal}
+                    disabled={live}
+                    onChange={(e) => setDailyGoal(e.target.value)}
+                  />
+                </label>
+              </>
+            )}
+
+            <label className="mt-4 block text-xs font-bold text-muted">
+              Max loss I can afford today (₹) — bot pauses if hit
               <input
                 type="number"
-                min={100}
-                max={100000}
+                min={50}
+                max={200000}
                 step={100}
                 className="input mt-1 w-full"
-                value={dailyGoal}
+                value={maxDailyLoss}
                 disabled={live}
-                onChange={(e) => setDailyGoal(e.target.value)}
+                onChange={(e) => setMaxDailyLoss(e.target.value)}
               />
             </label>
+            <p className="mt-1 text-[11px] text-muted">
+              Position size uses this budget so one bad trade cannot blow past your stop comfort.
+            </p>
           </section>
 
           <section className="card p-4">
-            <h2 className="text-sm font-extrabold text-ink">2 · Strategy playbook</h2>
-            <p className="mt-1 text-xs text-muted">Indicators + entry/exit rules the bot follows.</p>
+            <h2 className="text-sm font-extrabold text-ink">2 · What to auto-trade</h2>
+            <p className="mt-1 text-xs text-muted">Bot picks, buys, and exits — you don’t sit on the terminal.</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {[
+                ['stocks', 'Stocks'],
+                ['options', 'Index options'],
+                ['both', 'Both'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={live}
+                  className={`rounded-xl border px-2 py-3 text-center text-xs font-bold transition ${
+                    instrumentMode === id
+                      ? 'border-page-accent bg-[color-mix(in_srgb,var(--page-accent)_8%,white)] text-ink'
+                      : 'border-line text-muted hover:border-page-accent/40'
+                  }`}
+                  onClick={() => setInstrumentMode(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card p-4">
+            <h2 className="text-sm font-extrabold text-ink">3 · Strategy playbook</h2>
+            <p className="mt-1 text-xs text-muted">Indicators + entry/exit % the bot follows.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {strategies.map((s) => (
                 <button
@@ -206,17 +351,19 @@ export function AutoDeskPage() {
                       : 'border-line hover:border-page-accent/40'
                   }`}
                 >
-                  <div className="text-sm font-bold text-ink">{s.name}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold text-ink">{s.name}</div>
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted">
+                      {s.assetClass}
+                    </span>
+                  </div>
                   <div className="mt-0.5 text-xs text-muted">{s.tagline}</div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted">
-                      SL {(s.stopPct * 100).toFixed(1)}%
+                      SL {(s.stopPct * 100).toFixed(s.assetClass === 'options' ? 0 : 1)}%
                     </span>
                     <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted">
-                      TP {(s.targetPct * 100).toFixed(1)}%
-                    </span>
-                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted">
-                      {s.product}
+                      TP {(s.targetPct * 100).toFixed(s.assetClass === 'options' ? 0 : 1)}%
                     </span>
                   </div>
                 </button>
@@ -225,26 +372,21 @@ export function AutoDeskPage() {
             {selected ? (
               <div className="mt-3 rounded-lg bg-surface px-3 py-2 text-xs text-muted">
                 <p className="font-bold text-ink">{selected.vibe}</p>
-                <p className="mt-1">
-                  Indicators:{' '}
-                  {(selected.indicators || []).join(' · ')}
-                </p>
-                <p className="mt-1">
-                  Session: market hours 09:15–15:20 IST · auto BUY → GTT stop + target
-                </p>
+                <p className="mt-1">Indicators: {(selected.indicators || []).join(' · ')}</p>
+                <p className="mt-1">Session 09:15–15:20 IST · auto BUY → GTT stop + target · no manual clicks</p>
               </div>
             ) : null}
           </section>
 
           <section className="card overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <h2 className="text-sm font-extrabold text-ink">3 · Suggested stocks now</h2>
+              <h2 className="text-sm font-extrabold text-ink">4 · Bot will look at these next</h2>
               <span className="text-[10px] font-bold uppercase tracking-wide text-muted">Live score</span>
             </div>
             {loading && !picks.length ? (
               <p className="px-4 py-6 text-sm text-muted">Loading picks…</p>
             ) : !picks.length ? (
-              <p className="px-4 py-6 text-sm text-muted">No clean setup for this playbook right now.</p>
+              <p className="px-4 py-6 text-sm text-muted">No clean setup right now — bot keeps scanning when armed.</p>
             ) : (
               <ul className="divide-y divide-line">
                 {picks.slice(0, 6).map((p, i) => (
@@ -253,17 +395,25 @@ export function AutoDeskPage() {
                       {i + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <Link to={`/app/stocks/${p.symbol}`} className="text-sm font-bold text-ink hover:underline">
-                        {p.symbol}
-                      </Link>
+                      {p.isOption ? (
+                        <span className="text-sm font-bold text-ink">{p.name || p.symbol}</span>
+                      ) : (
+                        <Link to={`/app/stocks/${p.symbol}`} className="text-sm font-bold text-ink hover:underline">
+                          {p.symbol}
+                        </Link>
+                      )}
                       <p className="truncate text-xs text-muted">{p.reason}</p>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-bold tabular-nums">{formatINR(p.price)}</div>
-                      <div className={`text-xs font-bold tabular-nums ${p.changePct >= 0 ? 'text-pos' : 'text-neg'}`}>
-                        {p.changePct >= 0 ? '+' : ''}
-                        {Number(p.changePct).toFixed(2)}%
-                      </div>
+                      {p.isOption ? (
+                        <div className="text-[10px] font-bold uppercase text-muted">Option</div>
+                      ) : (
+                        <div className={`text-xs font-bold tabular-nums ${p.changePct >= 0 ? 'text-pos' : 'text-neg'}`}>
+                          {p.changePct >= 0 ? '+' : ''}
+                          {Number(p.changePct).toFixed(2)}%
+                        </div>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -277,7 +427,7 @@ export function AutoDeskPage() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h2 className="text-sm font-extrabold text-ink">Bot status</h2>
-                <p className="mt-0.5 text-xs text-muted">Automatic paper entry & exit</p>
+                <p className="mt-0.5 text-xs text-muted">Automatic entry & exit while you stay away</p>
               </div>
               {bot?.status ? (
                 <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusTone(bot.status)}`}>
@@ -288,6 +438,16 @@ export function AutoDeskPage() {
                   Idle
                 </span>
               )}
+            </div>
+
+            <div className="mt-3 rounded-lg border border-line bg-surface/50 px-3 py-2 text-xs text-muted">
+              <p className="font-bold text-ink">Plan snapshot</p>
+              <p className="mt-1 tabular-nums">
+                Daily {formatINR(derivedDaily)}
+                {planPeriod === 'monthly' ? ` · Monthly ${formatINR(monthlyGoal)}` : ''}
+                {' · '}Max loss {formatINR(maxDailyLoss)}
+                {' · '}{instrumentMode}
+              </p>
             </div>
 
             {bot ? (
@@ -312,12 +472,8 @@ export function AutoDeskPage() {
                   {bot.status === 'in_trade' && bot.symbol ? (
                     <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
                       <div>
-                        <span className="text-muted">Symbol</span>
-                        <div className="font-bold">
-                          <Link to={`/app/stocks/${bot.symbol}`} className="hover:underline">{bot.symbol}</Link>
-                          {' · '}
-                          {bot.qty} qty
-                        </div>
+                        <span className="text-muted">Contract</span>
+                        <div className="font-bold break-all">{bot.symbol} · {bot.qty}</div>
                       </div>
                       <div>
                         <span className="text-muted">Entry</span>
@@ -337,7 +493,7 @@ export function AutoDeskPage() {
               </div>
             ) : (
               <p className="mt-4 text-sm text-muted">
-                Arm the desk with a goal and strategy. During market hours it will pick a stock, buy, and place SL + TP.
+                Arm once. During market hours the bot picks, buys, places SL + TP, and exits — no clicking needed.
               </p>
             )}
 
@@ -353,7 +509,7 @@ export function AutoDeskPage() {
                   onClick={arm}
                   disabled={arming || loading}
                 >
-                  {arming ? 'Arming…' : `Arm · goal ${formatINR(dailyGoal)}`}
+                  {arming ? 'Arming…' : `Arm hands-free · ${formatINR(derivedDaily)}/day`}
                 </button>
               )}
               <Link to="/app/orders" className="btn btn-ghost">
@@ -391,19 +547,13 @@ export function AutoDeskPage() {
             <div className="flex items-start gap-2">
               <IconSparkles size={18} className="mt-0.5 text-page-accent" />
               <div className="text-xs text-muted">
-                <p className="font-bold text-ink">How it works</p>
+                <p className="font-bold text-ink">How hands-free works</p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4">
-                  <li>You set daily goal + strategy (indicators &amp; SL/TP %).</li>
-                  <li>In session, bot scores stocks and paper-buys the top pick.</li>
-                  <li>GTT stop + target placed automatically.</li>
-                  <li>On exit, day P&amp;L updates; re-enters until goal or risk guard.</li>
+                  <li>You set monthly/daily goal + max loss you can afford.</li>
+                  <li>Choose stocks, index options, or both + a playbook.</li>
+                  <li>Arm once — bot auto-buys, places stop & target, exits.</li>
+                  <li>Repeats until daily goal or your max-loss guard.</li>
                 </ol>
-                <p className="mt-2">
-                  Prefer lessons first?{' '}
-                  <Link to="/app/learn" className="font-bold text-page-accent hover:underline">
-                    Open Learn
-                  </Link>
-                </p>
               </div>
             </div>
           </section>

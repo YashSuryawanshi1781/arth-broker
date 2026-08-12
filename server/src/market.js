@@ -99,6 +99,8 @@ function finite(value, fallback) {
 class MarketEngine {
   constructor() {
     this.instruments = new Map()
+    /** Synthetic paper option contracts for Auto Desk (not shown in equity Explore). */
+    this.paperOptions = new Map()
     this.clients = new Set()
     this.timer = null
     this.refreshing = false
@@ -334,9 +336,17 @@ class MarketEngine {
 
   broadcast(payload) {
     if (payload?.type === 'ticks' && Array.isArray(payload.ticks)) {
+      try {
+        this.refreshPaperOptions()
+      } catch (err) {
+        console.warn('Paper option refresh error:', err.message)
+      }
       const prices = new Map(payload.ticks.map((tick) => [tick.symbol, tick.price]))
       for (const [key, idx] of Object.entries(this.indices || {})) {
         if (idx?.value != null) prices.set(key.toUpperCase(), idx.value)
+      }
+      for (const opt of this.paperOptions.values()) {
+        if (opt?.symbol && opt.price > 0) prices.set(opt.symbol, opt.price)
       }
       try {
         matchOpenOrders(prices)
@@ -404,7 +414,8 @@ class MarketEngine {
   }
 
   get(symbol) {
-    return this.instruments.get(symbol.toUpperCase()) || null
+    const upper = String(symbol || '').toUpperCase()
+    return this.instruments.get(upper) || this.paperOptions.get(upper) || null
   }
 
   getIndex(key) {
@@ -414,6 +425,75 @@ class MarketEngine {
 
   price(symbol) {
     return this.get(symbol)?.price ?? null
+  }
+
+  /** Build a stable paper option symbol, e.g. OPT-NIFTY-CE-24800-2026-04-16 */
+  optionSymbol(underlying, expiry, strike, optType) {
+    const u = String(underlying || '').toUpperCase()
+    const t = String(optType || 'CE').toUpperCase() === 'PE' ? 'PE' : 'CE'
+    const s = Math.round(Number(strike))
+    const e = String(expiry || '').slice(0, 10)
+    return `OPT-${u}-${t}-${s}-${e}`
+  }
+
+  upsertPaperOption({
+    underlying,
+    expiry,
+    strike,
+    optType,
+    price,
+    lotSize,
+    name,
+  }) {
+    const symbol = this.optionSymbol(underlying, expiry, strike, optType)
+    const prev = this.paperOptions.get(symbol)
+    const ltp = Number(price)
+    const row = {
+      symbol,
+      name: name || `${underlying} ${strike} ${optType}`,
+      sector: 'Options',
+      underlying: String(underlying).toUpperCase(),
+      expiry: String(expiry).slice(0, 10),
+      strike: Math.round(Number(strike)),
+      optType: String(optType).toUpperCase() === 'PE' ? 'PE' : 'CE',
+      lotSize: Number(lotSize) || 1,
+      isOption: true,
+      price: ltp,
+      prevClose: prev?.prevClose ?? ltp,
+      open: prev?.open ?? ltp,
+      high: Math.max(prev?.high || ltp, ltp),
+      low: Math.min(prev?.low || ltp, ltp),
+      volume: prev?.volume || 0,
+      change: +(ltp - (prev?.prevClose ?? ltp)).toFixed(2),
+      changePct: prev?.prevClose
+        ? +(((ltp - prev.prevClose) / prev.prevClose) * 100).toFixed(2)
+        : 0,
+      lastUpdate: Date.now(),
+      dataSource: 'paper-option',
+    }
+    this.paperOptions.set(symbol, row)
+    return row
+  }
+
+  /** Reprice registered paper options from the live synthetic chain. */
+  refreshPaperOptions() {
+    if (!this.paperOptions.size) return
+    for (const row of this.paperOptions.values()) {
+      const chain = this.optionChain(row.underlying)
+      if (!chain) continue
+      const strikeRow = chain.rows.find((r) => r.strike === row.strike)
+      if (!strikeRow) continue
+      const leg = row.optType === 'PE' ? strikeRow.put : strikeRow.call
+      if (!(leg?.ltp > 0)) continue
+      const ltp = leg.ltp
+      row.price = ltp
+      row.high = Math.max(row.high || ltp, ltp)
+      row.low = Math.min(row.low || ltp, ltp)
+      row.change = +(ltp - row.prevClose).toFixed(2)
+      row.changePct = row.prevClose ? +((row.change / row.prevClose) * 100).toFixed(2) : 0
+      row.lastUpdate = Date.now()
+      row.lotSize = chain.lotSize || row.lotSize
+    }
   }
 
   /**

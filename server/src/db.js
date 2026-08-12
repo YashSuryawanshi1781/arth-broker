@@ -246,6 +246,11 @@ export function initDb() {
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       strategy_id TEXT NOT NULL,
       daily_goal REAL NOT NULL,
+      monthly_goal REAL,
+      max_daily_loss REAL,
+      instrument_mode TEXT NOT NULL DEFAULT 'stocks',
+      stop_pct REAL,
+      target_pct REAL,
       day_pnl REAL NOT NULL DEFAULT 0,
       day_key TEXT NOT NULL,
       status TEXT NOT NULL,
@@ -310,6 +315,24 @@ function migrateColumns() {
   }
   if (!wlCols.includes('sort_order')) {
     db.exec('ALTER TABLE watchlists ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
+  }
+  const botCols = db.prepare('PRAGMA table_info(auto_bots)').all().map((c) => c.name)
+  if (botCols.length) {
+    if (!botCols.includes('monthly_goal')) {
+      db.exec('ALTER TABLE auto_bots ADD COLUMN monthly_goal REAL')
+    }
+    if (!botCols.includes('max_daily_loss')) {
+      db.exec('ALTER TABLE auto_bots ADD COLUMN max_daily_loss REAL')
+    }
+    if (!botCols.includes('instrument_mode')) {
+      db.exec("ALTER TABLE auto_bots ADD COLUMN instrument_mode TEXT NOT NULL DEFAULT 'stocks'")
+    }
+    if (!botCols.includes('stop_pct')) {
+      db.exec('ALTER TABLE auto_bots ADD COLUMN stop_pct REAL')
+    }
+    if (!botCols.includes('target_pct')) {
+      db.exec('ALTER TABLE auto_bots ADD COLUMN target_pct REAL')
+    }
   }
 }
 

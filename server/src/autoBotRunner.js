@@ -5,7 +5,7 @@ import { buyDebit, roundMoney } from './money.js'
 import { bookQty, settleFilledOrder } from './orderEngine.js'
 import { addNotification } from './auth.js'
 import { logActivity } from './activity.js'
-import { getStrategy, scorePicks, sizeQuantity } from './strategies.js'
+import { getStrategy, collectPicks, sizeQuantity } from './strategies.js'
 
 function istParts(now = Date.now()) {
   const fmt = new Intl.DateTimeFormat('en-GB', {
@@ -42,6 +42,11 @@ function mapBot(row) {
     strategyVibe: strategy.vibe,
     indicators: strategy.indicators,
     dailyGoal: row.daily_goal,
+    monthlyGoal: row.monthly_goal,
+    maxDailyLoss: row.max_daily_loss,
+    instrumentMode: row.instrument_mode || 'stocks',
+    stopPct: row.stop_pct,
+    targetPct: row.target_pct,
     dayPnl: row.day_pnl,
     dayKey: row.day_key,
     status: row.status,
@@ -247,7 +252,8 @@ function syncOpenTrade(bot) {
 }
 
 function tryEnter(bot, strategy) {
-  const picks = scorePicks(strategy, market.list(), 5)
+  const mode = bot.instrument_mode || 'stocks'
+  const picks = collectPicks(strategy, market, mode, 5)
   if (!picks.length) {
     db.prepare(`UPDATE auto_bots SET last_signal = ?, note = ?, updated_at = ? WHERE id = ?`).run(
       'waiting',
@@ -262,31 +268,39 @@ function tryEnter(bot, strategy) {
   const user = db.prepare('SELECT cash, kyc_complete FROM users WHERE id = ?').get(bot.user_id)
   if (!user?.kyc_complete) return
 
+  const stopPct = Number(bot.stop_pct) > 0 ? Number(bot.stop_pct) : strategy.stopPct
+  const targetPct = Number(bot.target_pct) > 0 ? Number(bot.target_pct) : strategy.targetPct
+  const product = pick.isOption ? 'intraday' : strategy.product
+
   const qty = sizeQuantity({
     cash: user.cash,
     entry: pick.price,
-    stopPct: strategy.stopPct,
-    targetPct: strategy.targetPct,
+    stopPct,
+    targetPct,
     dailyGoal: bot.daily_goal,
+    maxDailyLoss: bot.max_daily_loss,
+    lotSize: pick.lotSize || 1,
   })
   if (!(qty > 0)) {
     db.prepare(`UPDATE auto_bots SET note = ?, updated_at = ? WHERE id = ?`).run(
-      'Need more cash to size a safe lot for this goal',
+      pick.isOption
+        ? 'Need more cash / wider loss budget for 1 options lot'
+        : 'Need more cash to size a safe lot for this goal',
       Date.now(),
       bot.id,
     )
     return
   }
 
-  const stopPrice = roundMoney(pick.price * (1 - strategy.stopPct))
-  const targetPrice = roundMoney(pick.price * (1 + strategy.targetPct))
+  const stopPrice = roundMoney(pick.price * (1 - stopPct))
+  const targetPrice = roundMoney(pick.price * (1 + targetPct))
 
   const entry = placeMarketOrder({
     userId: bot.user_id,
     symbol: pick.symbol,
     side: 'buy',
     qty,
-    product: strategy.product,
+    product,
     practice: true,
   })
   if (!entry.ok) {
@@ -302,7 +316,7 @@ function tryEnter(bot, strategy) {
     userId: bot.user_id,
     symbol: pick.symbol,
     qty,
-    product: strategy.product,
+    product,
     stopPrice,
     targetPrice,
   })
@@ -320,7 +334,7 @@ function tryEnter(bot, strategy) {
     entry.fillPrice,
     stopPrice,
     targetPrice,
-    strategy.product,
+    product,
     entry.orderId,
     exits.stopId,
     exits.targetId,
@@ -382,14 +396,17 @@ export function processAutoBots() {
         continue
       }
 
-      // Max daily loss guard: -1.5x goal
-      if ((Number(bot.day_pnl) || 0) <= -1.5 * Number(bot.daily_goal)) {
+      // Max daily loss guard (user plan or 1.5× goal)
+      const maxLoss = Number(bot.max_daily_loss) > 0
+        ? Number(bot.max_daily_loss)
+        : 1.5 * Number(bot.daily_goal)
+      if ((Number(bot.day_pnl) || 0) <= -Math.abs(maxLoss)) {
         db.prepare(`UPDATE auto_bots SET status = 'stopped', note = ?, updated_at = ? WHERE id = ?`).run(
-          'Paused — day loss hit risk guard',
+          `Paused — hit your max daily loss ₹${maxLoss}`,
           Date.now(),
           bot.id,
         )
-        pushEvent(bot.user_id, bot.id, 'risk', 'Risk guard', 'Day loss exceeded 1.5× goal — bot paused')
+        pushEvent(bot.user_id, bot.id, 'risk', 'Risk guard', `Day loss hit your affordable stop ₹${maxLoss}`)
         continue
       }
 
@@ -400,14 +417,42 @@ export function processAutoBots() {
   }
 }
 
-export function createOrReplaceBot(userId, { strategyId, dailyGoal }) {
-  const strategy = getStrategy(strategyId)
+export function createOrReplaceBot(userId, {
+  strategyId,
+  dailyGoal,
+  monthlyGoal,
+  maxDailyLoss,
+  instrumentMode,
+  stopPct,
+  targetPct,
+}) {
+  const mode = ['stocks', 'options', 'both'].includes(instrumentMode) ? instrumentMode : 'stocks'
+  let strategy = getStrategy(strategyId)
+  if (mode === 'options' && strategy.assetClass !== 'options') {
+    strategy = getStrategy('index_options_pulse')
+  }
+  if (mode === 'stocks' && strategy.assetClass === 'options') {
+    strategy = getStrategy('momentum_breakout')
+  }
+
   const goal = Number(dailyGoal)
   if (!(goal >= 100 && goal <= 100000)) {
     const err = new Error('Daily goal must be between ₹100 and ₹1,00,000')
     err.status = 400
     throw err
   }
+
+  const monthly = Number(monthlyGoal) > 0 ? Number(monthlyGoal) : null
+  const maxLoss = Number(maxDailyLoss) > 0 ? Number(maxDailyLoss) : Math.round(goal * 0.75)
+  if (!(maxLoss >= 50 && maxLoss <= 200000)) {
+    const err = new Error('Max daily loss must be between ₹50 and ₹2,00,000')
+    err.status = 400
+    throw err
+  }
+
+  const stop = Number(stopPct) > 0 ? Number(stopPct) : strategy.stopPct
+  const target = Number(targetPct) > 0 ? Number(targetPct) : strategy.targetPct
+
   const user = db.prepare('SELECT kyc_complete FROM users WHERE id = ?').get(userId)
   if (!user?.kyc_complete) {
     const err = new Error('Complete KYC to arm the auto desk')
@@ -423,33 +468,42 @@ export function createOrReplaceBot(userId, { strategyId, dailyGoal }) {
     throw err
   }
 
-  // Stop previous bots
   db.prepare(`UPDATE auto_bots SET status = 'stopped', updated_at = ? WHERE user_id = ? AND status IN ('armed', 'goal_hit')`)
     .run(Date.now(), userId)
 
   const { dayKey } = istParts()
   const id = nanoid(12)
   const now = Date.now()
+  const planNote = monthly
+    ? `Armed · ${strategy.name} · monthly ₹${monthly} → daily ₹${goal} · max loss ₹${maxLoss} · ${mode}`
+    : `Armed · ${strategy.name} · daily ₹${goal} · max loss ₹${maxLoss} · ${mode}`
+
   db.prepare(`
     INSERT INTO auto_bots (
-      id, user_id, strategy_id, daily_goal, day_pnl, day_key, status, product,
+      id, user_id, strategy_id, daily_goal, monthly_goal, max_daily_loss, instrument_mode,
+      stop_pct, target_pct, day_pnl, day_key, status, product,
       last_signal, note, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, 0, ?, 'armed', ?, 'armed', ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'armed', ?, 'armed', ?, ?, ?)
   `).run(
     id,
     userId,
     strategy.id,
     goal,
+    monthly,
+    maxLoss,
+    mode,
+    stop,
+    target,
     dayKey,
     strategy.product,
-    `Armed · ${strategy.name} · goal ₹${goal}`,
+    planNote,
     now,
     now,
   )
 
-  pushEvent(userId, id, 'armed', 'Auto desk armed', `${strategy.name} · daily paper goal ₹${goal}`)
-  logActivity(userId, 'auto', 'Armed auto desk', `${strategy.name} · ₹${goal}/day`)
-  addNotification(userId, 'Auto desk armed', `${strategy.name} hunting paper setups for ₹${goal}`)
+  pushEvent(userId, id, 'armed', 'Auto desk armed', planNote)
+  logActivity(userId, 'auto', 'Armed auto desk', planNote)
+  addNotification(userId, 'Auto desk armed', `Hands-free paper bot · goal ₹${goal}/day`)
 
   return getUserBot(userId)
 }

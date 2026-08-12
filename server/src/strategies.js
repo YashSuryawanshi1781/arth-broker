@@ -1,5 +1,7 @@
 /** Paper strategy playbook — educational signals only, not SEBI advice. */
 
+export const TRADING_DAYS_PER_MONTH = 22
+
 export const STRATEGIES = [
   {
     id: 'momentum_breakout',
@@ -8,6 +10,7 @@ export const STRATEGIES = [
     vibe: 'Baba Nifty momentum — top gainers with volume, tight stop, quick target.',
     indicators: ['Day % change', 'Volume', 'Near day high'],
     product: 'intraday',
+    assetClass: 'stocks',
     stopPct: 0.012,
     targetPct: 0.024,
     maxPositions: 1,
@@ -20,6 +23,7 @@ export const STRATEGIES = [
     vibe: 'Baba dip buy — beaten-down names with a bounce setup, SL below low.',
     indicators: ['Day % change (negative)', 'RSI-ish bounce', 'Sector not collapsing'],
     product: 'intraday',
+    assetClass: 'stocks',
     stopPct: 0.01,
     targetPct: 0.02,
     maxPositions: 1,
@@ -32,6 +36,7 @@ export const STRATEGIES = [
     vibe: 'Baba banking book — HDFC, ICICI, SBI-class names when sector is green.',
     indicators: ['Banking/Finance sector', 'Positive day change', 'Liquidity'],
     product: 'intraday',
+    assetClass: 'stocks',
     stopPct: 0.01,
     targetPct: 0.018,
     maxPositions: 1,
@@ -45,10 +50,25 @@ export const STRATEGIES = [
     vibe: 'Baba swing — CNC hold, wider SL/TP, no same-day square-off rush.',
     indicators: ['Steady uptrend', 'Above prev close', 'Quality large-cap'],
     product: 'delivery',
+    assetClass: 'stocks',
     stopPct: 0.02,
     targetPct: 0.04,
     maxPositions: 1,
     session: 'any',
+  },
+  {
+    id: 'index_options_pulse',
+    name: 'Index options pulse',
+    tagline: 'ATM Nifty / BankNifty CE·PE on index direction',
+    vibe: 'Baba options — paper ATM call if index green, put if red. Hands-free SL/TP on premium.',
+    indicators: ['Index day %', 'ATM strike', 'PCR / OI context'],
+    product: 'intraday',
+    assetClass: 'options',
+    stopPct: 0.25,
+    targetPct: 0.45,
+    maxPositions: 1,
+    session: 'open',
+    underlyings: ['NIFTY', 'BANKNIFTY'],
   },
 ]
 
@@ -56,12 +76,30 @@ export function getStrategy(id) {
   return STRATEGIES.find((s) => s.id === id) || STRATEGIES[0]
 }
 
+/** Monthly ₹ goal → daily paper target using ~22 trading sessions. */
+export function planFromMonthly(monthlyGoal, tradingDays = TRADING_DAYS_PER_MONTH) {
+  const monthly = Number(monthlyGoal) || 0
+  const days = Math.max(1, Number(tradingDays) || TRADING_DAYS_PER_MONTH)
+  const daily = Math.round(monthly / days)
+  return {
+    monthlyGoal: monthly,
+    tradingDays: days,
+    dailyGoal: daily,
+  }
+}
+
+export function strategiesForMode(mode = 'stocks') {
+  if (mode === 'options') return STRATEGIES.filter((s) => s.assetClass === 'options')
+  if (mode === 'both') return STRATEGIES
+  return STRATEGIES.filter((s) => s.assetClass === 'stocks')
+}
+
 /**
- * Score instruments for a strategy. Higher = better candidate.
- * Uses live LTP fields from market.list().
+ * Score equity instruments for a strategy. Higher = better candidate.
  */
 export function scorePicks(strategy, instruments, limit = 5) {
-  const list = (instruments || []).filter((i) => i && i.symbol && Number(i.price) > 0)
+  if (strategy.assetClass === 'options') return []
+  const list = (instruments || []).filter((i) => i && i.symbol && Number(i.price) > 0 && !i.isOption)
   const scored = []
 
   for (const row of list) {
@@ -104,11 +142,81 @@ export function scorePicks(strategy, instruments, limit = 5) {
         volume,
         score: +score.toFixed(2),
         reason,
+        isOption: false,
       })
     }
   }
 
   return scored.sort((a, b) => b.score - a.score).slice(0, limit)
+}
+
+/**
+ * Score paper index option contracts from the synthetic chain.
+ * Registers quotes on market so GTT / fills can track premium.
+ */
+export function scoreOptionPicks(strategy, marketApi, limit = 5) {
+  const underlyings = strategy.underlyings || ['NIFTY', 'BANKNIFTY']
+  const scored = []
+
+  for (const key of underlyings) {
+    const chain = marketApi.optionChain(key)
+    const index = marketApi.getIndex(key)
+    if (!chain || !index) continue
+
+    const changePct = Number(index.changePct) || 0
+    // Directional: green → CE, red → PE; flat → skip weak setups
+    if (Math.abs(changePct) < 0.08) continue
+    const optType = changePct >= 0 ? 'CE' : 'PE'
+    const atm = chain.rows.find((r) => r.atm) || chain.rows[Math.floor(chain.rows.length / 2)]
+    if (!atm) continue
+    const leg = optType === 'CE' ? atm.call : atm.put
+    if (!(leg?.ltp > 0)) continue
+
+    const row = marketApi.upsertPaperOption({
+      underlying: key,
+      expiry: chain.expiry,
+      strike: atm.strike,
+      optType,
+      price: leg.ltp,
+      lotSize: chain.lotSize,
+      name: `${key} ${atm.strike} ${optType} ${chain.expiry}`,
+    })
+
+    const score = Math.abs(changePct) * 20 + Math.log10((leg.oi || 1) + 10)
+    scored.push({
+      symbol: row.symbol,
+      name: row.name,
+      sector: 'Options',
+      price: row.price,
+      changePct,
+      volume: leg.volume || 0,
+      score: +score.toFixed(2),
+      reason: `${key} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}% · ATM ${optType} ${atm.strike} · lot ${chain.lotSize}`,
+      isOption: true,
+      lotSize: chain.lotSize,
+      underlying: key,
+      strike: atm.strike,
+      optType,
+      expiry: chain.expiry,
+    })
+  }
+
+  return scored.sort((a, b) => b.score - a.score).slice(0, limit)
+}
+
+/** Collect picks for stocks / options / both. */
+export function collectPicks(strategy, marketApi, mode = 'stocks', limit = 8) {
+  const m = mode || 'stocks'
+  if (strategy.assetClass === 'options' || m === 'options') {
+    const optStrategy = strategy.assetClass === 'options' ? strategy : getStrategy('index_options_pulse')
+    return scoreOptionPicks(optStrategy, marketApi, limit)
+  }
+  if (m === 'both') {
+    const stocks = scorePicks(strategy.assetClass === 'options' ? getStrategy('momentum_breakout') : strategy, marketApi.list(), limit)
+    const opts = scoreOptionPicks(getStrategy('index_options_pulse'), marketApi, Math.max(2, Math.floor(limit / 2)))
+    return [...stocks, ...opts].sort((a, b) => b.score - a.score).slice(0, limit)
+  }
+  return scorePicks(strategy, marketApi.list(), limit)
 }
 
 function formatVol(v) {
@@ -117,27 +225,47 @@ function formatVol(v) {
   return String(v)
 }
 
-/** Size qty so stop distance ≈ risk budget, and target can approach daily goal. */
-export function sizeQuantity({ cash, entry, stopPct, targetPct, dailyGoal, riskFraction = 0.35 }) {
+/**
+ * Size qty so stop distance fits max daily loss / risk budget,
+ * and target can approach daily goal.
+ */
+export function sizeQuantity({
+  cash,
+  entry,
+  stopPct,
+  targetPct,
+  dailyGoal,
+  maxDailyLoss,
+  lotSize = 1,
+  riskFraction = 0.35,
+}) {
   const price = Number(entry)
   const stop = Number(stopPct)
   const target = Number(targetPct)
+  const lot = Math.max(1, Number(lotSize) || 1)
   if (!(price > 0) || !(stop > 0)) return 0
 
-  const riskBudget = Math.max(200, Math.min(Number(cash) * 0.08, Number(dailyGoal) * riskFraction || 500))
-  const lossPerShare = price * stop
-  let qty = Math.floor(riskBudget / lossPerShare)
+  const lossCap = Number(maxDailyLoss) > 0
+    ? Number(maxDailyLoss)
+    : Math.max(200, Number(dailyGoal) * riskFraction || 500)
+  const riskBudget = Math.max(100, Math.min(Number(cash) * 0.08, lossCap))
+  const lossPerUnit = price * stop
+  let units = Math.floor(riskBudget / lossPerUnit)
 
-  // Cap by cash (with buffer for charges)
   const maxByCash = Math.floor((Number(cash) * 0.92) / price)
-  qty = Math.max(0, Math.min(qty, maxByCash))
+  units = Math.max(0, Math.min(units, maxByCash))
 
-  // If target profit for 1 share already exceeds goal, keep qty small
-  if (qty > 0 && target > 0) {
-    const profitPerShare = price * target
-    const goalQty = Math.max(1, Math.ceil((Number(dailyGoal) || 500) / profitPerShare))
-    qty = Math.min(qty, goalQty + 1)
+  if (units > 0 && target > 0) {
+    const profitPerUnit = price * target
+    const goalUnits = Math.max(1, Math.ceil((Number(dailyGoal) || 500) / profitPerUnit))
+    units = Math.min(units, goalUnits + (lot > 1 ? lot : 1))
   }
 
-  return qty
+  // Options: round to full lots
+  if (lot > 1) {
+    const lots = Math.max(0, Math.floor(units / lot))
+    return lots * lot
+  }
+
+  return units
 }
