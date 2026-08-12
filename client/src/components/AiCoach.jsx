@@ -63,7 +63,7 @@ export function AiCoach({ mode = 'learn', symbol, compact = false }) {
         {
           role: 'assistant',
           content: data.reply,
-          meta: data.provider === 'openai' ? data.model : 'local coach',
+          meta: data.provider === 'openai' ? data.model : (data.fallbackReason || 'local coach'),
         },
       ])
     } catch (err) {
@@ -87,7 +87,9 @@ export function AiCoach({ mode = 'learn', symbol, compact = false }) {
             <p>
               {status?.configured
                 ? 'Powered by OpenAI gpt-4o-mini · education only'
-                : 'Local coach on · add OPENAI_API_KEY on API for gpt-4o-mini'}
+                : status?.keyPresent && !status?.keyLooksValid
+                  ? 'Key on Render is not an sk- OpenAI secret — replace it and redeploy'
+                  : 'Local coach · Render must save, rebuild, and deploy OPENAI_API_KEY'}
             </p>
           </div>
         </div>

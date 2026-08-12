@@ -11,8 +11,17 @@ import { PAPER_STARTING_CASH } from '../paperTrading.js'
 export const AI_MODEL = 'gpt-4o-mini'
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 
+export function openaiApiKey() {
+  return String(process.env.OPENAI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '')
+}
+
 export function aiConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY?.trim())
+  return Boolean(openaiApiKey())
+}
+
+export function aiKeyLooksValid() {
+  const key = openaiApiKey()
+  return key.startsWith('sk-')
 }
 
 export function buildLearnContext(userId) {
@@ -126,12 +135,21 @@ export async function askCoach({ userId, message, mode = 'learn', symbol, histor
     context = buildLearnContext(userId)
   }
 
-  const provider = aiConfigured() ? 'openai' : 'local'
   if (!aiConfigured()) {
     return {
       reply: localFallback(text, context),
-      provider,
+      provider: 'local',
       model: null,
+      contextSummary: summarizeContext(context),
+    }
+  }
+
+  if (!aiKeyLooksValid()) {
+    return {
+      reply: 'OPENAI_API_KEY is set on Render, but it is not an OpenAI secret. OpenAI keys start with sk- or sk-proj-. Replace the value, then Save, rebuild, and deploy.',
+      provider: 'local',
+      model: null,
+      fallbackReason: 'invalid_key_format',
       contextSummary: summarizeContext(context),
     }
   }
@@ -150,7 +168,7 @@ export async function askCoach({ userId, message, mode = 'learn', symbol, histor
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY.trim()}`,
+      Authorization: `Bearer ${openaiApiKey()}`,
     },
     body: JSON.stringify({
       model: AI_MODEL,
@@ -164,7 +182,7 @@ export async function askCoach({ userId, message, mode = 'learn', symbol, histor
     const body = await res.text().catch(() => '')
     console.error('OpenAI error', res.status, body.slice(0, 400))
     return {
-      reply: localFallback(text, context),
+      reply: openaiFailureMessage(res.status),
       provider: 'local',
       model: null,
       fallbackReason: `openai_${res.status}`,
@@ -178,7 +196,7 @@ export async function askCoach({ userId, message, mode = 'learn', symbol, histor
 
   return {
     reply,
-    provider,
+    provider: 'openai',
     model: AI_MODEL,
     contextSummary: summarizeContext(context),
   }
@@ -253,10 +271,23 @@ function localFallback(message, ctx) {
     ].join('\n')
   }
   return [
-    `Hi ${ctx.learner} — I’m Arth Coach (local mode until OPENAI_API_KEY is set on the API).`,
+    `Hi ${ctx.learner} — I’m Arth Coach in local mode (OpenAI is not connected on this API process).`,
     'I can explain CNC/MIS, challenges, risk sizing, and your paper trade book.',
     ctx.openChallenges?.[0]
       ? `Suggested next step: **${ctx.openChallenges[0]}**.`
       : 'Open a lesson, or tap Practice a trade to get a fill into your paper book.',
   ].join('\n')
+}
+
+function openaiFailureMessage(status) {
+  if (status === 401) {
+    return 'OpenAI rejected the key (401). On Render, click the eye on OPENAI_API_KEY — it must start with sk-. If you pasted the old key in chat, revoke it and create a new one, then Save, rebuild, and deploy.'
+  }
+  if (status === 403 || status === 429) {
+    return 'OpenAI blocked the request (billing or rate limit). Add a payment method at platform.openai.com/settings/organization/billing, then try again.'
+  }
+  if (status === 404) {
+    return 'OpenAI could not find the model. The API key is reaching OpenAI, but gpt-4o-mini may not be enabled on this account.'
+  }
+  return `OpenAI request failed (HTTP ${status}). Check Render logs for arth-api, confirm the service finished deploying after you saved the key, then try again.`
 }

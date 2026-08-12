@@ -1,18 +1,23 @@
 import { Router } from 'express'
 import { authRequired } from '../auth.js'
-import { aiConfigured, AI_MODEL, askCoach } from '../ai/coach.js'
+import { aiConfigured, aiKeyLooksValid, AI_MODEL, askCoach } from '../ai/coach.js'
 
 const router = Router()
 
 router.get('/status', authRequired, (_req, res) => {
   const live = aiConfigured()
+  const valid = aiKeyLooksValid()
   res.json({
-    configured: live,
-    provider: live ? 'openai' : 'local',
-    model: live ? AI_MODEL : null,
-    note: live
-      ? 'OpenAI gpt-4o-mini is active for Arth Coach.'
-      : 'Set OPENAI_API_KEY on the API for live OpenAI replies. Local educational fallback is on.',
+    configured: live && valid,
+    keyPresent: live,
+    keyLooksValid: valid,
+    provider: live && valid ? 'openai' : 'local',
+    model: live && valid ? AI_MODEL : null,
+    note: !live
+      ? 'OPENAI_API_KEY is missing on the running API. Save, rebuild, and deploy on Render.'
+      : !valid
+        ? 'OPENAI_API_KEY is set but does not start with sk-. Replace it with an OpenAI secret key.'
+        : 'OpenAI gpt-4o-mini is configured. Ask a question to confirm a live reply.',
   })
 })
 
